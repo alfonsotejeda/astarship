@@ -1,0 +1,35 @@
+# --- Entorno ---
+.env
+.env.local
+*.local
+
+# --- Python / backend ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# --- Node / frontend ---
+node_modules/
+dist/
+dist-ssr/
+.vite/
+
+# --- Editores ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# --- Sistema ---
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+npm-debug.log*
+pnpm-debug.log*

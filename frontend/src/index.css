@@ -1,0 +1,90 @@
+/* Tokens de diseño de Rutopia.
+   Paleta: azul noche de fondo, degradado de atardecer para los acentos.
+   El tema oscuro es el de referencia; el claro se deriva de los mismos tokens. */
+
+:root {
+  --bg: #0b1020;
+  --bg-elev: #121a33;
+  --bg-soft: #18213f;
+  --border: #253157;
+
+  --text: #eaf0ff;
+  --text-muted: #94a3c4;
+
+  --accent: #ff9d5c;
+  --accent-2: #ff5c8a;
+  --accent-3: #5ce1e6;
+
+  --sunset: linear-gradient(115deg, #ff9d5c 0%, #ff5c8a 55%, #a86bff 100%);
+  --glow: radial-gradient(60% 60% at 50% 0%, rgba(255, 157, 92, 0.18), transparent 70%);
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 18px 50px -18px rgba(0, 0, 0, 0.7);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #fbf9f6;
+    --bg-elev: #ffffff;
+    --bg-soft: #f2eee8;
+    --border: #e4ddd2;
+    --text: #17203a;
+    --text-muted: #5f6b88;
+    --glow: radial-gradient(60% 60% at 50% 0%, rgba(255, 92, 138, 0.12), transparent 70%);
+    --shadow: 0 18px 40px -22px rgba(23, 32, 58, 0.35);
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: #fbf9f6;
+  --bg-elev: #ffffff;
+  --bg-soft: #f2eee8;
+  --border: #e4ddd2;
+  --text: #17203a;
+  --text-muted: #5f6b88;
+  --glow: radial-gradient(60% 60% at 50% 0%, rgba(255, 92, 138, 0.12), transparent 70%);
+  --shadow: 0 18px 40px -22px rgba(23, 32, 58, 0.35);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  background-image: var(--glow);
+  background-repeat: no-repeat;
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+a {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

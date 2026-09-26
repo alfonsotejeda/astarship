@@ -1,0 +1,49 @@
+# Entorno de desarrollo de Rutopia.
+#
+# Levanta PostgreSQL y la API. El frontend se corre aparte con `pnpm dev`,
+# que es mas comodo para trabajar porque conserva el hot reload.
+#
+#   docker compose up -d        arranca base de datos y API
+#   docker compose logs -f api  sigue los logs de la API
+#   docker compose down         para todo (los datos se conservan)
+#   docker compose down -v      para todo y BORRA los datos
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: rutopia-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rutopia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rutopia}
+      POSTGRES_DB: ${POSTGRES_DB:-rutopia}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rutopia} -d ${POSTGRES_DB:-rutopia}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    container_name: rutopia-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rutopia}:${POSTGRES_PASSWORD:-rutopia}@db:5432/${POSTGRES_DB:-rutopia}
+      ENVIRONMENT: development
+      DEBUG: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      # Monta el codigo para tener recarga automatica sin reconstruir la imagen.
+      - ./backend/app:/srv/app:ro
+
+volumes:
+  pgdata:
