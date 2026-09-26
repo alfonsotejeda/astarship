@@ -12,6 +12,8 @@ venv/
 .ruff_cache/
 .mypy_cache/
 *.egg-info/
+*.db
+*.sqlite3
 
 # --- Node / frontend ---
 node_modules/

@@ -106,11 +106,36 @@ rutopia/
 | Pruebas | `backend/` | `uv run pytest` |
 | Lint y formato | `backend/` | `uv run ruff check . && uv run ruff format .` |
 | Añadir dependencia | `backend/` | `uv add <paquete>` |
+| Crear migración | `backend/` | `uv run alembic revision --autogenerate -m "qué cambia"` |
+| Aplicar migraciones | `backend/` | `uv run alembic upgrade head` |
+| Deshacer la última | `backend/` | `uv run alembic downgrade -1` |
+| Ver en qué versión estás | `backend/` | `uv run alembic current` |
 | Correr el frontend | `frontend/` | `pnpm dev` |
 | Compilar el frontend | `frontend/` | `pnpm build` |
 | Levantar todo | raíz | `docker compose up -d` |
 | Ver logs de la API | raíz | `docker compose logs -f api` |
 | Parar todo | raíz | `docker compose down` |
+
+## Migraciones
+
+El esquema de la base de datos se versiona con [Alembic](https://alembic.sqlalchemy.org/), igual que el código con git. **Nunca se toca la base de datos a mano**: cada cambio es una migración que se commitea.
+
+Después de cada `git pull`:
+
+```bash
+cd backend && uv run alembic upgrade head
+```
+
+Al añadir o cambiar un modelo:
+
+```bash
+uv run alembic revision --autogenerate -m "añade tabla actividad"
+```
+
+Dos cosas que hay que tener presentes:
+
+- **Revisa siempre el fichero generado** antes de aplicarlo. Alembic acierta con tablas y columnas nuevas, pero un renombrado lo interpreta como "borra una columna y crea otra", y eso se lleva los datos por delante.
+- **Importa el modelo en `migrations/env.py`.** Si no está importado, Alembic no lo ve y la migración sale vacía.
 
 ## Convenciones
 
