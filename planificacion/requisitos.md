@@ -1,6 +1,6 @@
 # Requisitos del sistema
 
-> **Estado: borrador para discutir.** Este documento lo redactó Alfonso a partir del
+> **Estado: borrador para discutir.** Este documento se redactó a partir del
 > enunciado, para que el equipo lo revise y lo corrija entre los cinco. Nada de lo que
 > hay aquí está cerrado. La sección [8. Puntos abiertos](#8-puntos-abiertos) recoge las
 > decisiones que todavía no hemos tomado y que bloquean partes del modelo.
@@ -8,6 +8,46 @@
 **Proyecto:** Rutopía — generación automática de itinerarios turísticos
 **Asignaturas:** Bases de Datos II · Ingeniería de Software · Curso 2026–2027
 **Equipo:** HAVING Fe
+
+---
+
+## Índice
+
+- [Cómo leer este documento](#cómo-leer-este-documento) — qué significa RF, RNF, RC, RN y PA
+- [1. Propósito y alcance](#1-propósito-y-alcance)
+- [2. Actores](#2-actores)
+- [3. Requisitos funcionales](#3-requisitos-funcionales) — qué tiene que hacer el sistema
+- [4. Requisitos no funcionales](#4-requisitos-no-funcionales) — cómo tiene que funcionar
+- [5. Las seis consultas](#5-las-seis-consultas) — el criterio de evaluación de Bases de Datos
+- [6. Reglas de negocio](#6-reglas-de-negocio)
+- [7. Restricciones técnicas](#7-restricciones-técnicas) — el stack ya decidido
+- [8. Puntos abiertos](#8-puntos-abiertos) — **lo que hay que decidir en la reunión**
+- [9. Trazabilidad](#9-trazabilidad)
+
+---
+
+## Cómo leer este documento
+
+Cada línea numerada lleva un prefijo que dice de qué tipo de cosa se trata:
+
+| Prefijo | Qué es | Cómo distinguirlo | Ejemplo de aquí |
+|---|---|---|---|
+| **RF** | **Requisito funcional.** Algo que el sistema tiene que **hacer**. | Es una acción, y se puede probar: o la hace o no la hace. | RF-05: asignar el nivel de esfuerzo a una actividad. |
+| **RNF** | **Requisito no funcional.** No es una función, es una **cualidad** de cómo tiene que funcionar. | No describe qué hace el sistema, sino cómo de rápido, seguro, mantenible o accesible tiene que ser. | RNF-01: entregar el itinerario del día sin demoras perceptibles. |
+| **RC** | **Requisito de consulta.** Las seis consultas que el enunciado enumera. | Técnicamente son requisitos funcionales; los separamos porque son el criterio de evaluación de Bases de Datos. | RC-6: correlación entre esfuerzo y valoración. |
+| **RN** | **Regla de negocio.** Una restricción que se cumple **siempre**. | No es una acción que alguien ejecuta, es un límite que el sistema nunca puede violar. | RN-01: un guía solo clasifica las actividades que él describió. |
+| **PA** | **Punto abierto.** Una decisión que el equipo **todavía no ha tomado**. | No es un requisito: es algo que hay que resolver antes de poder escribir uno. | PA-3: qué significa exactamente "asignación doble". |
+
+La diferencia práctica entre **RF** y **RNF**: si falla un RF, falta una funcionalidad
+—el botón no está—. Si falla un RNF, la funcionalidad está pero el sistema es lento,
+inseguro o imposible de mantener.
+
+La diferencia entre **RF** y **RN**: "registrar una actividad" es una acción (RF);
+"no pueden existir actividades duplicadas" es un límite que se respeta en todo momento (RN).
+
+La columna **Fuente** de cada tabla cita la frase del enunciado que justifica ese requisito.
+Donde dice *interpretación*, es una deducción nuestra y no una cita: son justo los puntos
+que conviene mirar con lupa, porque es donde podemos habernos equivocado.
 
 ---
 
