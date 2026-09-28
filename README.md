@@ -148,8 +148,12 @@ Dos cosas que hay que tener presentes:
 
 El diseño de la base de datos está en curso — el MERX va por la v1.6 y le faltan cardinalidades en el bloque de usuarios y permisos. Las versiones están en [`docs/merx/`](docs/merx/); los `.md` se abren con el plugin de Excalidraw en Obsidian.
 
+La planificación vive en [`planificacion/`](planificacion/). Empieza por [`requisitos.md`](planificacion/requisitos.md), y en particular por su sección de **puntos abiertos**: son las decisiones que todavía bloquean el modelo.
+
 - [x] Stack decidido y aprobado
 - [x] Repositorio y esqueleto del proyecto
+- [x] Requisitos funcionales y no funcionales (borrador)
+- [ ] Milestones y detalle por pantalla
 - [ ] MERX cerrado y validado por el profesor
 - [ ] Esquema lógico relacional y migraciones
 - [ ] Generación automática de itinerarios
