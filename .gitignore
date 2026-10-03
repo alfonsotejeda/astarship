@@ -22,8 +22,10 @@ dist-ssr/
 .vite/
 
 # --- Editores ---
-.vscode/*
-!.vscode/extensions.json
+# Con slash y sin "**/" delante, estos patrones solo anclan a la raiz del
+# repo; "**/" los aplica tambien a backend/.vscode y frontend/.vscode.
+**/.vscode/*
+!**/.vscode/extensions.json
 .idea/
 *.swp
 
