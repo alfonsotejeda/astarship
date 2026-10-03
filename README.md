@@ -2,11 +2,11 @@
 
 <img src="frontend/public/favicon.svg" width="76" alt="">
 
-# Rutopía
+# Astarship
 
 **Generación automática de itinerarios turísticos**
 
-*ruta + utopía*
+*A\* + starship*
 
 <br>
 
@@ -37,8 +37,8 @@ Las atracciones no viven sueltas: forman una **red de conexiones de transporte**
 Necesitas [Docker](https://www.docker.com/), [uv](https://docs.astral.sh/uv/) y [pnpm](https://pnpm.io/).
 
 ```bash
-git clone https://github.com/alfonsotejeda/rutopia.git
-cd rutopia
+git clone https://github.com/alfonsotejeda/astarship.git
+cd astarship
 cp .env.example .env
 ```
 
@@ -77,7 +77,7 @@ uv run fastapi dev app/main.py
 ## Estructura
 
 ```
-rutopia/
+astarship/
 ├── backend/              API en FastAPI
 │   ├── app/
 │   │   ├── api/          enrutadores HTTP, una carpeta por área

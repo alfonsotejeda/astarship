@@ -1,7 +1,7 @@
 [project]
-name = "rutopia-backend"
+name = "astarship-backend"
 version = "0.1.0"
-description = "API de Rutopia: generacion automatica de itinerarios turisticos"
+description = "API de Astarship: generacion automatica de itinerarios turisticos"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.0",

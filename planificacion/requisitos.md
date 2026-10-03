@@ -5,7 +5,7 @@
 > hay aquí está cerrado. La sección [8. Puntos abiertos](#8-puntos-abiertos) recoge las
 > decisiones que todavía no hemos tomado y que bloquean partes del modelo.
 
-**Proyecto:** Rutopía — generación automática de itinerarios turísticos
+**Proyecto:** Astarship — generación automática de itinerarios turísticos
 **Asignaturas:** Bases de Datos II · Ingeniería de Software · Curso 2026–2027
 **Equipo:** HAVING Fe
 

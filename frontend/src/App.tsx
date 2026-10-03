@@ -1,5 +1,5 @@
 /**
- * Portada de Rutopia.
+ * Portada de Astarship.
  *
  * Pantalla de arranque del proyecto: presenta el sistema, deja a la vista el
  * estado de la API y sirve de punto de partida para las vistas reales
@@ -35,7 +35,7 @@ function App() {
       <header className="topbar">
         <span className="brand">
           <span className="brand__mark" aria-hidden="true" />
-          Rutopía
+          Astarship
         </span>
         <span className="topbar__team">HAVING&nbsp;Fe</span>
       </header>
@@ -59,7 +59,7 @@ function App() {
           </a>
           <a
             className="btn"
-            href="https://github.com/alfonsotejeda/rutopia"
+            href="https://github.com/alfonsotejeda/astarship"
             target="_blank"
             rel="noreferrer"
           >
@@ -104,7 +104,7 @@ function App() {
       </section>
 
       <footer className="footer">
-        <span>Rutopía · ruta + utopía</span>
+        <span>Astarship · A* + starship</span>
         <span className="footer__dot" aria-hidden="true">
           ·
         </span>

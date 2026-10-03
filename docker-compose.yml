@@ -1,4 +1,4 @@
-# Entorno de desarrollo de Rutopia.
+# Entorno de desarrollo de Astarship.
 #
 # Levanta PostgreSQL y la API. El frontend se corre aparte con `pnpm dev`,
 # que es mas comodo para trabajar porque conserva el hot reload.
@@ -11,18 +11,18 @@
 services:
   db:
     image: postgres:18-alpine
-    container_name: rutopia-db
+    container_name: astarship-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-rutopia}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rutopia}
-      POSTGRES_DB: ${POSTGRES_DB:-rutopia}
+      POSTGRES_USER: ${POSTGRES_USER:-astarship}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-astarship}
+      POSTGRES_DB: ${POSTGRES_DB:-astarship}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rutopia} -d ${POSTGRES_DB:-rutopia}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-astarship} -d ${POSTGRES_DB:-astarship}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -30,13 +30,13 @@ services:
   api:
     build:
       context: ./backend
-    container_name: rutopia-api
+    container_name: astarship-api
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-rutopia}:${POSTGRES_PASSWORD:-rutopia}@db:5432/${POSTGRES_DB:-rutopia}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-astarship}:${POSTGRES_PASSWORD:-astarship}@db:5432/${POSTGRES_DB:-astarship}
       ENVIRONMENT: development
       DEBUG: "true"
     ports:

@@ -27,10 +27,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "Rutopia API"
+    app_name: str = "Astarship API"
     environment: str = "development"
     debug: bool = True
-    database_url: str = "postgresql+psycopg://rutopia:rutopia@localhost:5432/rutopia"
+    database_url: str = "postgresql+psycopg://astarship:astarship@localhost:5432/astarship"
     cors_origins: list[str] = ["http://localhost:5173"]
 
 

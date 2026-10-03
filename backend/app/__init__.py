@@ -1,1 +1,1 @@
-"""Paquete raiz de la API de Rutopia."""
+"""Paquete raiz de la API de Astarship."""

@@ -8,4 +8,4 @@ from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
-    """Base declarativa comun a todas las tablas del esquema de Rutopia."""
+    """Base declarativa comun a todas las tablas del esquema de Astarship."""

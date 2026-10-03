@@ -1,4 +1,4 @@
-"""Punto de entrada de la API de Rutopia.
+"""Punto de entrada de la API de Astarship.
 
 Construye la aplicacion FastAPI, aplica la configuracion de CORS y monta el
 enrutador raiz bajo el prefijo `/api`.

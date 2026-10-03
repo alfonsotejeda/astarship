@@ -1,1 +1,1 @@
-"""Modelos ORM del esquema de Rutopia (se llenan al cerrar el MERX)."""
+"""Modelos ORM del esquema de Astarship (se llenan al cerrar el MERX)."""
