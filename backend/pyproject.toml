@@ -34,6 +34,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
+"migrations/versions/*" = ["D", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
