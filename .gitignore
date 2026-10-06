@@ -2,6 +2,7 @@
 .env
 .env.local
 *.local
+.obsidian
 
 # --- Python / backend ---
 __pycache__/
