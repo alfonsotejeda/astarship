@@ -1,13 +1,4 @@
-"""Punto de entrada de la API de Astarship.
-
-Construye la aplicacion FastAPI, aplica la configuracion de CORS y monta el
-enrutador raiz bajo el prefijo `/api`.
-
-Ejecutar en desarrollo:
-    uv run fastapi dev app/main.py
-
-La documentacion interactiva queda en http://localhost:8000/docs
-"""
+"""Astarship API entry point."""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,9 +31,5 @@ app.include_router(api_router, prefix="/api")
 
 @app.get("/", tags=["diagnostico"])
 def root() -> dict[str, str]:
-    """Presenta la API y apunta a su documentacion.
-
-    Returns:
-        Un diccionario con el nombre del servicio y la ruta de la documentacion.
-    """
+    """Expose the service name and a pointer to the docs."""
     return {"servicio": settings.app_name, "documentacion": "/docs"}

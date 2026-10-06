@@ -1,14 +1,4 @@
-"""Declarative base de SQLAlchemy.
-
-Todos los modelos de `app.models` heredan de `Base` para registrarse en
-`Base.metadata`, que es lo que lee Alembic al generar migraciones (ver
-`migrations/env.py`).
-
-La `naming_convention` fija nombres predecibles para indices, FKs y demas
-constraints (en vez de los autogenerados por cada backend), necesario para
-que `alembic revision --autogenerate` pueda referenciarlos sin ambiguedad en
-operaciones de alter/drop posteriores.
-"""
+"""Shared SQLAlchemy declarative base and metadata naming convention."""
 
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
@@ -23,6 +13,6 @@ NAMING_CONVENTION = {
 
 
 class Base(DeclarativeBase):
-    """Clase base declarativa compartida por todos los modelos."""
+    """Declarative base shared by every model."""
 
     metadata = MetaData(naming_convention=NAMING_CONVENTION)

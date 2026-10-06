@@ -1,8 +1,4 @@
-"""Motor y sesiones de SQLAlchemy.
-
-Expone `get_db`, la dependencia que usan las rutas de FastAPI para obtener una
-sesion por peticion y cerrarla al terminar.
-"""
+"""SQLAlchemy engine and session factory."""
 
 from collections.abc import Generator
 
@@ -23,12 +19,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 
 
 def get_db() -> Generator[Session, None, None]:
-    """Entrega una sesion de base de datos para una peticion.
-
-    Yields:
-        La sesion activa, que se cierra automaticamente al finalizar la peticion
-        aunque la ruta lance una excepcion.
-    """
+    """Yield a database session for a single request."""
     db = SessionLocal()
     try:
         yield db

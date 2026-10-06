@@ -1,9 +1,4 @@
-"""Configuracion de la aplicacion, leida del entorno.
-
-Todos los valores tienen un valor por defecto pensado para desarrollo local con
-el `docker compose` del repositorio, de forma que `uv run fastapi dev` funcione
-sin crear un `.env` a mano.
-"""
+"""Application settings read from the environment."""
 
 from functools import lru_cache
 
@@ -11,15 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Ajustes de la aplicacion.
-
-    Attributes:
-        app_name: Nombre que se muestra en la documentacion de la API.
-        environment: Entorno de ejecucion (`development`, `test`, `production`).
-        debug: Activa trazas detalladas y recarga automatica.
-        database_url: Cadena de conexion a PostgreSQL en formato SQLAlchemy.
-        cors_origins: Origenes autorizados a consumir la API desde el navegador.
-    """
+    """Application settings."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -36,12 +23,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    """Devuelve los ajustes de la aplicacion.
-
-    El resultado se cachea para que el fichero `.env` se lea una sola vez por
-    proceso y para poder sustituir la dependencia con facilidad en los tests.
-
-    Returns:
-        La instancia unica de `Settings`.
-    """
+    """Return the cached application settings."""
     return Settings()

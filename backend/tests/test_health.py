@@ -1,9 +1,4 @@
-"""Pruebas de las rutas de diagnostico.
-
-No necesitan PostgreSQL: solo comprueban que la aplicacion se construye y que
-`/api/health` responde. La prueba de `/api/health/db` llegara cuando montemos
-los fixtures con base de datos de test.
-"""
+"""Tests for the health-check routes."""
 
 from fastapi.testclient import TestClient
 
