@@ -1,7 +1,6 @@
 """Modelos de SQLAlchemy del dominio.
 
-Aun no hay modelos definidos: el esquema de datos (actividades, itinerarios,
-paquetes, turistas...) esta pendiente de las decisiones abiertas en
-`docs/requisitos.md`. Cada entidad se anadira como un modulo propio en este
-paquete.
+El esquema de datos esta definido en `docs/merx/astarship-logical-schema.md`.
+Cada entidad se anade como un modulo propio en este paquete, heredando de
+`app.db.base.Base` para quedar registrada en `Base.metadata`.
 """
