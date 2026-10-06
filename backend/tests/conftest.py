@@ -1,5 +1,7 @@
 """Shared pytest fixtures."""
 
+from collections.abc import Generator
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -12,7 +14,7 @@ from app.main import app
 
 
 @pytest.fixture
-def db_session() -> Session:
+def db_session() -> Generator[Session, None, None]:
     """In-memory SQLite session with a fresh schema for each test."""
     engine = create_engine(
         "sqlite://",
@@ -28,7 +30,7 @@ def db_session() -> Session:
 
 
 @pytest.fixture
-def client(db_session: Session) -> TestClient:
+def client(db_session: Session) -> Generator[TestClient, None, None]:
     """TestClient with the database dependency pointed at the test session."""
     app.dependency_overrides[get_db] = lambda: db_session
     yield TestClient(app)
