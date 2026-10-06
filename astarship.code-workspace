@@ -11,17 +11,12 @@
     {
       "name": "frontend",
       "path": "frontend"
-    },
-    {
-      "name": "docs",
-      "path": "docs"
     }
   ],
   "settings": {
     "files.exclude": {
       "backend": true,
-      "frontend": true,
-      "docs": true
+      "frontend": true
     }
   }
 }
