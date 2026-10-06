@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 
-router = APIRouter(tags=["diagnostico"])
+router = APIRouter(tags=["health"])
 
 
 @router.get("/health")

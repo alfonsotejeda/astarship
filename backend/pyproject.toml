@@ -1,7 +1,7 @@
 [project]
 name = "astarship-backend"
 version = "0.1.0"
-description = "API de Astarship: generacion automatica de itinerarios turisticos"
+description = "Astarship API: automatic tourist itinerary generation"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.0",
@@ -24,7 +24,7 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-# E/F: errores y pyflakes | I: imports ordenados | D: docstrings (requisito 5 de IS)
+# E/F: pyflakes/errors | I: import sorting | D: docstrings
 select = ["E", "F", "I", "D"]
 ignore = ["D203", "D213"]
 
