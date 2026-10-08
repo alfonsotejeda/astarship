@@ -1,18 +1,6 @@
-# Entorno de desarrollo de Astarship.
-#
-# Levanta PostgreSQL y la API. El frontend se corre aparte con `pnpm dev`,
-# que es mas comodo para trabajar porque conserva el hot reload.
-#
-#   docker compose up -d        arranca base de datos y API
-#   docker compose logs -f api  sigue los logs de la API
-#   docker compose down         para todo (los datos se conservan)
-#   docker compose down -v      para todo y BORRA los datos
-
 services:
-  db:
+  database:
     image: postgres:18-alpine
-    container_name: astarship-db
-    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-astarship}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-astarship}
@@ -20,7 +8,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-astarship} -d ${POSTGRES_DB:-astarship}"]
       interval: 5s
@@ -30,19 +18,16 @@ services:
   api:
     build:
       context: ./backend
-    container_name: astarship-api
-    restart: unless-stopped
     depends_on:
-      db:
+      database:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-astarship}:${POSTGRES_PASSWORD:-astarship}@db:5432/${POSTGRES_DB:-astarship}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-astarship}:${POSTGRES_PASSWORD:-astarship}@database:5432/${POSTGRES_DB:-astarship}
       ENVIRONMENT: development
       DEBUG: "true"
     ports:
       - "8000:8000"
     volumes:
-      # Monta el codigo para tener recarga automatica sin reconstruir la imagen.
       - ./backend/app:/srv/app:ro
 
 volumes:
