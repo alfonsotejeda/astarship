@@ -11,7 +11,7 @@ from app.schemas.category import CategoryCreate, CategoryUpdate
 def list_categories(db: Session) -> list[Category]:
     """list_categories returns a list of categories."""
 
-    stmt = select(Category)
+    stmt = select(Category).order_by(Category.id)
     return db.scalars(stmt).all()
 
 
