@@ -164,6 +164,9 @@ una deducción nuestra que conviene confirmar.
 | RF-33 | Recorrer la red para **proponer alternativas** cuando una actividad no pueda realizarse en el horario previsto. | Sistema | "el sistema debe recorrer dicha red para proponer alternativas cuando una actividad no pueda realizarse en el horario previsto" |
 
 > Esta red tiene tratamiento especial: ver [RNF-02](#4-requisitos-no-funcionales).
+> Para RF-33 (recorrer la red y proponer alternativas) se propone usar **A\*** como
+> algoritmo de búsqueda de ruta. Ver [PA-10](#pa-10-algoritmo-para-recorrer-la-red-de-atracciones)
+> para la heurística y el resto de decisiones pendientes.
 
 ### 3.8 Reportes y exportación
 
@@ -313,6 +316,31 @@ usabilidad pero no respaldadas por el texto. Conviene tenerlo claro por si nos l
 
 Sin resolver entre Alfonso (SQL directo) y Miguel (ORM). Afecta sobre todo a RC-1 a RC-6, que
 son analíticas. Una salida intermedia: ORM para el CRUD, SQL a mano para las seis consultas.
+
+### PA-10. Algoritmo para recorrer la red de atracciones
+
+RF-33 exige recorrer la red de atracciones (RF-32) para proponer alternativas cuando una
+actividad no se pueda realizar en el horario previsto. **Propuesta: algoritmo A\*** para
+calcular la ruta alternativa de menor coste entre dos atracciones.
+
+- **Peso de la arista:** el **tiempo** de conexión (RF-32), salvo que la alternativa se
+  busque explícitamente por costo monetario; en ese caso el peso es el **costo**.
+- **Heurística:** si la atracción almacena coordenadas geográficas, distancia en línea
+  recta (Haversine) entre el nodo y el destino, dividida por una velocidad media de
+  referencia — admisible mientras el peso de arista sea tiempo. **Si el peso de arista es
+  costo monetario, no hay heurística geométrica admisible conocida; en ese caso A\* se
+  degrada a Dijkstra (heurística 0).** Hay que decidir si se implementan ambos modos o solo
+  uno.
+- **Dónde vive:** no como tabla del esquema relacional (RNF-02). Candidato a un servicio de
+  backend independiente (p. ej. `services/attraction_network/`) con el grafo en memoria o en
+  Redis, aislado del ORM — lo que también lo hace candidato a contar como uno de los dos
+  patrones de diseño exigidos por RNF-05 (p. ej. Strategy para intercambiar la heurística o
+  el algoritmo).
+
+**Queda pendiente:** confirmar con el equipo si A\* es el algoritmo a usar (frente a
+Dijkstra simple u otra alternativa), si se soportan los dos pesos (tiempo y costo) o solo
+uno, y si las coordenadas geográficas de las atracciones se guardan como atributo (afecta a
+[PA-8](#pa-8-atributos-que-el-enunciado-no-define)).
 
 ---
 

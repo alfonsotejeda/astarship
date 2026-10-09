@@ -14,7 +14,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "Astarship API"
+    app_name: str = "AstarShip API"
     environment: str = "development"
     debug: bool = True
     database_url: str = "postgresql+psycopg://astarship:astarship@localhost:5432/astarship"
