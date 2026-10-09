@@ -30,6 +30,10 @@ dist-ssr/
 .idea/
 *.swp
 
+# --- opencode ---
+.opencode/
+opencode.json
+
 # --- Sistema ---
 .DS_Store
 Thumbs.db
