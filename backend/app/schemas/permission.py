@@ -1,6 +1,6 @@
 """Permission schema."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.base import ORMSchema
 
@@ -8,7 +8,7 @@ from app.schemas.base import ORMSchema
 class PermissionCreate(BaseModel):
     """Create a new permission."""
 
-    name: str
+    name: str = Field(min_length=1, max_length=255)
 
 
 class PermissionRead(ORMSchema):
