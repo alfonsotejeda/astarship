@@ -10,8 +10,6 @@ from app.services import package as package_service
 
 router = APIRouter(prefix="/packages", tags=["packages"])
 
-_CONFLICT_DETAIL = "Package with this name and destination already exists"
-
 
 def _get_package_or_404(db: Session, package_id: int):
     """Return the package or raise a 404."""
@@ -22,9 +20,15 @@ def _get_package_or_404(db: Session, package_id: int):
 
 
 def _raise_conflict(db: Session, exc: Exception) -> None:
-    """Roll back the session and raise a 409 for a (name, destination) collision."""
-    db.rollback()
-    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_CONFLICT_DETAIL) from exc
+    """Raise a 409 for a (name, destination) collision.
+
+    Rolls back only when the flush failed (IntegrityError); a ValueError
+    from the pre-check leaves no pending state in the session.
+    """
+    if isinstance(exc, IntegrityError):
+        db.rollback()
+    conflict_detail = "Package with this name and destination already exists"
+    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=conflict_detail) from exc
 
 
 @router.get("", response_model=list[PackageRead])

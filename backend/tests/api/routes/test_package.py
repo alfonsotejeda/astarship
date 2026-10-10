@@ -112,3 +112,26 @@ def test_delete_package_removes_it(client):
 
     assert response.status_code == 204
     assert client.get(f"/api/packages/{created['id']}").status_code == 404
+
+
+def test_create_package_conflict_leaves_session_usable(client, db_session, monkeypatch):
+    """A 409 from a real IntegrityError must not poison the shared session."""
+    from app.models.package import Package
+    from app.services import package as package_service
+
+    # Simulate the race window: the pre-check sees no duplicate...
+    monkeypatch.setattr(package_service, "find_package_by_name_destination", lambda *a, **k: None)
+    # ...but another request already committed the pair.
+    db_session.add(Package(name="Roma", destination="Coliseo"))
+    db_session.commit()
+
+    response = client.post("/api/packages", json={"name": "Roma", "destination": "Coliseo"})
+
+    assert response.status_code == 409
+    # The session must still be usable: no PendingRollbackError.
+    assert client.get("/api/packages").status_code == 200
+    # And a subsequent create on the same session works.
+    assert (
+        client.post("/api/packages", json={"name": "Otro", "destination": "Lugar"}).status_code
+        == 201
+    )
