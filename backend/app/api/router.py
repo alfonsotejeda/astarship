@@ -2,9 +2,10 @@
 
 from fastapi import APIRouter
 
-from app.api.routes import activity, health, user
+from app.api.routes import activity, health, user, permission
 
 api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(user.router)
 api_router.include_router(activity.router)
+api_router.include_router(permission.router)
