@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.db.base import Base
 from app.models import category  # noqa: F401
 from app.models import activity, user  # noqa: F401
+from app.models import permission  # noqa: F401
 
 config = context.config
 
