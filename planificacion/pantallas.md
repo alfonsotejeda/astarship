@@ -14,7 +14,7 @@
 - [2. Decisiones de modelo que asume el diseño](#2-decisiones-de-modelo-que-asume-el-diseño)
 - [3. Stack y estructura del frontend](#3-stack-y-estructura-del-frontend)
 - [4. Componentes](#4-componentes)
-- [5. Pantallas](#5-pantallas)
+- [5. Pantallas y páginas](#5-pantallas-y-páginas)
 - [6. Endpoints que necesita el frontend](#6-endpoints-que-necesita-el-frontend)
 - [7. Plan de trabajo e issues](#7-plan-de-trabajo-e-issues)
 - [8. Definición de hecho](#8-definición-de-hecho)
@@ -91,11 +91,11 @@ Reglas de negocio nuevas (a añadir a `requisitos.md` §6):
 
 Ya decidido (requisitos §7): React 19 + TypeScript + Vite.
 
-**Propuesta para el resto.** Se cierra en la issue F0-1:
+**Propuesta para el resto.** Se cierra en el issue #61:
 
 | Necesidad | Librería | Por qué |
 |---|---|---|
-| Rutas | `react-router` | Rutas por rol y protegidas. |
+| Rutas | `react-router` | Rutas protegidas por rol y subrutas dentro de cada página. |
 | Datos del servidor | `@tanstack/react-query` | Caché y reintentos; ayuda a que «Hoy» cargue al instante (RNF-01). |
 | Gráficos | `recharts` | La recomienda el Design System; los colores salen de los tokens. |
 | Exportar PDF | `jspdf` + `jspdf-autotable` | RF-36: lo que se ve, en el orden actual de la tabla. |
@@ -106,9 +106,9 @@ Ya decidido (requisitos §7): React 19 + TypeScript + Vite.
 
 ```
 src/
-├── app/          App.tsx, router, rutas por rol
+├── app/          App.tsx, router, layout por rol (AppShell)
 ├── components/   un componente del Design System por carpeta (Button/, DataTable/…)
-├── pages/        una carpeta por rol: guia/, jefe/, turista/, admin/, reportes/, login/
+├── pages/        una carpeta por página (§5.1): ActividadesPage/, ItinerariosPage/, ViajePage/…
 ├── providers/    AuthProvider (usuario y rol), ThemeProvider (claro/oscuro)
 ├── lib/          cliente de la API, hooks de react-query, exportar PDF, formato de fechas y números
 └── styles/       tokens.css (copiado del Design System), index.css
@@ -124,8 +124,9 @@ src/
 
 ## 4. Componentes
 
-Son los 29 del Design System. Cada uno tiene en él su preview, su guía y sus props. La
-columna *Usos* cuenta en cuántas pantallas aparece y sirve para priorizar.
+Son los 29 del Design System. Cada uno tiene en él su preview, su guía y sus props, y su
+issue en GitHub (#66–#94, ver §7). La columna *Usos* cuenta en cuántas pantallas aparece
+y sirve para priorizar.
 
 ### Base
 
@@ -188,10 +189,37 @@ columna *Usos* cuenta en cuántas pantallas aparece y sirve para priorizar.
 
 ---
 
-## 5. Pantallas
+## 5. Pantallas y páginas
 
 **Todo funciona primero en ordenador.** El móvil reutiliza la misma página con
 `AppShell layout="mobile"`; no hay páginas separadas para móvil.
+
+Las **29 pantallas** del canvas (P-01…P-29) se implementan en **11 páginas de React**.
+Una página reúne las pantallas que trabajan sobre los mismos datos y cambia lo que
+muestra según el rol, con navegación interna (pestañas o subrutas). Cada artboard es un
+**estado** de una página (ruta + pestaña + rol), así que el diseño se calca pantalla a
+pantalla. Las rutas no llevan prefijo de rol: el rol sale de la sesión.
+
+### 5.1 Páginas
+
+| Página | Ruta | Pantallas | Roles | Navegación interna | Issue |
+|---|---|---|---|---|---|
+| LoginPage | `/login` | P-01 | — | — | #95 |
+| ActividadesPage | `/actividades` | P-02 · P-21 | guía, admin | pestaña «Duplicados» para el admin; panel lateral de alta | #96 |
+| GeneradorPage | `/itinerarios/nuevo` | P-03 | guía | parámetros → candidatas → resultado | #97 |
+| ItinerariosPage | `/itinerarios` · `/itinerarios/:id` | P-04 · P-08 · P-10 · P-05 · P-09 | guía, jefe | pestañas «Por revisar / Todos / Míos / De otros»; el detalle muestra ReviewPanel solo al jefe | #98 |
+| PaquetesPage | `/paquetes` | P-17 · P-28 · P-29 | admin, guía, jefe | panel lateral; acciones según permisos | #99 |
+| SolicitudesPage | `/solicitudes` | P-06 · P-15 | guía, turista | el guía atiende y registra el resultado; el turista crea y sigue | #100 |
+| ValoracionesPage | `/valoraciones` | P-07 · P-16 | guía, turista | el guía ve sus actividades; el turista, las suyas por paquete | #101 |
+| ViajePage | `/viaje/hoy` · `/viaje/itinerarios` · `/viaje/itinerarios/:id/valorar` | P-12 · P-13 · P-14 | turista | subrutas | #102 |
+| PersonasPage | `/personas` | P-18 · P-19 | admin | pestañas «Guías y permisos / Turistas y grupos» | #103 |
+| AsignacionesPage | `/asignaciones` | P-20 | admin | — | #104 |
+| ReportesPage | `/reportes/:rc` | P-22–P-27 · P-11 | todos | pestañas RC-1 a RC-6 | #105 (+ #106–#111) |
+
+Página inicial de cada rol: guía `/actividades`, jefe `/itinerarios`, turista `/viaje/hoy`,
+admin `/paquetes`.
+
+### 5.2 Pantallas
 
 Las plantillas están descritas en el README del Design System:
 
@@ -200,63 +228,65 @@ Las plantillas están descritas en el README del Design System:
 - **Detalle de itinerario:** a la izquierda, días con RouteTimeline; a la derecha, criterios y acciones.
 - **Propia:** disposición única de esa pantalla.
 
-### Acceso
+La columna *Artboard* es el título en el canvas (página del canvas → artboard).
 
-| ID | Pantalla | Ruta | Artboard | Plantilla | Componentes clave | Requisitos |
+#### Acceso
+
+| ID | Pantalla | Página · ruta | Artboard | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-01 | Iniciar sesión | `/login` | Acceso · Iniciar sesión | propia | Field, Checkbox, Button, Alert | RNF-10 |
+| P-01 | Iniciar sesión | LoginPage · `/login` | 1 · Acceso → P-01 | propia | Field, Checkbox, Button, Alert | RNF-10 |
 
-### Guía turístico
+#### Guía turístico
 
-| ID | Pantalla | Ruta | Artboard | Plantilla | Componentes clave | Requisitos |
+| ID | Pantalla | Página · ruta | Artboard | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-02 | Banco de actividades | `/guia/actividades` | Guía · Banco de actividades | Listado | FilterBar, DataTable, Field, Alert (duplicado) | RF-01–07, RN-01, RN-03 |
-| P-03 | Generar itinerario | `/guia/generar` | Guía · Generar itinerario | propia | ProportionInput, ChipSelect, ActivityRow, RouteTimeline, CriteriaCheck | RF-13–17 |
-| P-04 | Itinerarios del paquete | `/guia/itinerarios` | Guía · Itinerarios del paquete | Listado | Tabs (míos / de otros), DataTable, EffortSplit | RF-18 |
-| P-05 | Detalle de itinerario | `/guia/itinerarios/:id` | (= Revisión sin ReviewPanel) | Detalle | Tabs, RouteTimeline, ChartPanel, CriteriaCheck | RF-16, RF-21 |
-| P-06 | Solicitudes de modificación | `/guia/solicitudes` | Guía · Solicitudes de modificación | propia | Tabs, RequestCard, Field, Checkbox | RF-30, RF-31, RN-08 |
-| P-07 | Valoraciones | `/guia/valoraciones` | Guía · Valoraciones | Listado | StatTile, DataTable, Rating | RF-27 |
-| P-28 | Paquetes | `/guia/paquetes` | Guía · Paquetes (sus permisos) | Listado | DataTable con columna «Tus permisos», panel de edición o de solo lectura | RF-08, §2.1 |
+| P-02 | Banco de actividades | ActividadesPage · `/actividades` | 2 · Guía → P-02 | Listado | FilterBar, DataTable, Field, Alert (duplicado) | RF-01–07, RN-01, RN-03 |
+| P-03 | Generar itinerario | GeneradorPage · `/itinerarios/nuevo` | 2 · Guía → P-03 | propia | ProportionInput, ChipSelect, ActivityRow, RouteTimeline, CriteriaCheck | RF-13–17 |
+| P-04 | Itinerarios del paquete | ItinerariosPage · `/itinerarios` | 2 · Guía → P-04 | Listado | Tabs (míos / de otros), DataTable, EffortSplit | RF-18 |
+| P-05 | Detalle de itinerario | ItinerariosPage · `/itinerarios/:id` | (= P-09 sin ReviewPanel) | Detalle | Tabs, RouteTimeline, ChartPanel, CriteriaCheck | RF-16, RF-21 |
+| P-28 | Paquetes | PaquetesPage · `/paquetes` | 2 · Guía → P-28 | Listado | DataTable con «Tus permisos», panel de edición o solo lectura | RF-08, §2.1 |
+| P-06 | Solicitudes de modificación | SolicitudesPage · `/solicitudes` | 2 · Guía → P-06 | propia | Tabs, RequestCard, Field, Checkbox | RF-30, RF-31, RN-08 |
+| P-07 | Valoraciones | ValoracionesPage · `/valoraciones` | 2 · Guía → P-07 | Listado | StatTile, DataTable, Rating | RF-27 |
 
-### Jefe de operaciones
+#### Jefe de operaciones
 
-| ID | Pantalla | Ruta | Artboard | Plantilla | Componentes clave | Requisitos |
+| ID | Pantalla | Página · ruta | Artboard | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-08 | Por revisar | `/jefe/revision` | Jefe · Por revisar | propia | ItineraryCard, DataTable | RF-19 |
-| P-09 | Revisar itinerario | `/jefe/revision/:id` | Jefe · Revisar itinerario | Detalle | RouteTimeline, ChartPanel, CriteriaCheck, ReviewPanel | RF-19–21, RN-07 |
-| P-10 | Itinerarios | `/jefe/itinerarios` | (= P-04 sin pestaña «Míos») | Listado | DataTable | RF-19 |
-| P-11 | Mis validaciones | `/jefe/validaciones` | (= Reporte RC-3 filtrado por el usuario) | Reporte | ver RC-3 | RC-3 |
-| P-29 | Paquetes por validar | `/jefe/paquetes` | Jefe · Paquetes por validar | Listado | DataTable, lista de comprobación, «Validar paquete» / «Devolver» | §2.1, RN-09 |
+| P-08 | Por revisar | ItinerariosPage · `/itinerarios` (pestaña «Por revisar») | 3 · Jefe → P-08 | propia | ItineraryCard, DataTable | RF-19 |
+| P-09 | Revisar itinerario | ItinerariosPage · `/itinerarios/:id` | 3 · Jefe → P-09 | Detalle | RouteTimeline, ChartPanel, CriteriaCheck, ReviewPanel | RF-19–21, RN-07 |
+| P-10 | Itinerarios | ItinerariosPage · `/itinerarios` (pestaña «Todos») | (= P-04 sin «Míos») | Listado | DataTable | RF-19 |
+| P-29 | Paquetes por validar | PaquetesPage · `/paquetes` | 3 · Jefe → P-29 | Listado | DataTable, lista de comprobación, «Validar paquete» / «Devolver» | §2.1, RN-09 |
+| P-11 | Mis validaciones | ReportesPage · `/reportes/rc3` (filtrado por el usuario) | (= RC-3) | Reporte | ver RC-3 | RC-3 |
 
-### Turista
+#### Turista
 
-| ID | Pantalla | Ruta | Artboard (ordenador · móvil) | Plantilla | Componentes clave | Requisitos |
+| ID | Pantalla | Página · ruta | Artboard (ordenador · móvil) | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-12 | Hoy | `/turista/hoy` | Turista · Hoy (ordenador) · Turista móvil · Hoy | propia | RouteTimeline (modo turista), Skeleton, Alert, Toast, EffortSplit | RF-24, RF-25, RF-33, RNF-01 |
-| P-13 | Mis itinerarios | `/turista/itinerarios` | Turista · Mis itinerarios · Turista móvil · Mis itinerarios | propia | ItineraryCard, Rating | RF-24 |
-| P-14 | Valorar el viaje | `/turista/itinerarios/:id/valorar` | Turista · Valorar el viaje · Turista móvil · Valorar | propia | Rating, Field, EffortMeter | RF-26 |
-| P-15 | Pedir modificación | `/turista/solicitudes` | Turista · Pedir modificación · Turista móvil · Pedir modificación | propia | Field, ChipSelect, Checkbox, RequestCard | RF-29, RF-30 |
-| P-16 | Mis valoraciones | `/turista/valoraciones` | Turista · Mis valoraciones · Turista móvil · Mis valoraciones | Listado | StatTile, DataTable por paquete, Rating | RF-27, RF-28 |
+| P-12 | Hoy | ViajePage · `/viaje/hoy` | 4 · Turista → P-12 · P-12 móvil · P-12 móvil oscuro | propia | RouteTimeline (modo turista), Skeleton, Alert, Toast, EffortSplit | RF-24, RF-25, RF-33, RNF-01 |
+| P-13 | Mis itinerarios | ViajePage · `/viaje/itinerarios` | 4 · Turista → P-13 · P-13 móvil | propia | ItineraryCard, Rating | RF-24 |
+| P-14 | Valorar el viaje | ViajePage · `/viaje/itinerarios/:id/valorar` | 4 · Turista → P-14 · P-14 móvil | propia | Rating, Field, EffortMeter | RF-26 |
+| P-15 | Pedir modificación | SolicitudesPage · `/solicitudes` | 4 · Turista → P-15 · P-15 móvil | propia | Field, ChipSelect, Checkbox, RequestCard | RF-29, RF-30 |
+| P-16 | Mis valoraciones | ValoracionesPage · `/valoraciones` | 4 · Turista → P-16 · P-16 móvil | Listado | StatTile, DataTable por paquete, Rating | RF-27, RF-28 |
 
-### Administrador
+#### Administrador
 
-| ID | Pantalla | Ruta | Artboard | Plantilla | Componentes clave | Requisitos |
+| ID | Pantalla | Página · ruta | Artboard | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-17 | Paquetes turísticos | `/admin/paquetes` | Admin · Paquetes turísticos | Listado | DataTable, ChipSelect, estado de validación y quién validó | RF-08 |
-| P-18 | Guías y permisos | `/admin/permisos` | Admin · Guías y permisos | propia | matriz persona × paquete con 4 casillas (itinerarios: genera/valida; paquete: edita/valida) y columna global «Crea paquetes» | RF-09, RF-11, RN-02, RN-10 |
+| P-17 | Paquetes turísticos | PaquetesPage · `/paquetes` | 5 · Administrador → P-17 | Listado | DataTable, ChipSelect, estado de validación y quién validó | RF-08 |
+| P-18 | Guías y permisos | PersonasPage · `/personas` (pestaña) | 5 · Administrador → P-18 | propia | matriz persona × paquete con 4 casillas (itinerarios: genera/valida; paquete: edita/valida) y «Crea paquetes» | RF-09, RF-11, RN-02, RN-10 |
+| P-19 | Turistas y grupos | PersonasPage · `/personas` (pestaña) | 5 · Administrador → P-19 | Listado | lista de grupos, DataTable | RF-10, RF-12 |
+| P-20 | Asignaciones | AsignacionesPage · `/asignaciones` | 5 · Administrador → P-20 | propia | Field, Checkbox, Alert, Dialog, ItineraryCard | RF-22, RF-23, RN-04 |
+| P-21 | Actividades duplicadas | ActividadesPage · `/actividades` (pestaña «Duplicados») | 5 · Administrador → P-21 | propia | Tabs, comparación lado a lado, Button danger | RF-06, RN-03 |
 
-P-17, P-28 y P-29 son **un solo componente de página** con `role` (`admin`, `guia`, `jefe`):
-el admin ve todos los paquetes, el guía y el jefe solo aquellos en los que tienen algún
-permiso, y las acciones dependen de esos permisos. En el canvas es `AdminPaquetes.dc.html`.
-| P-19 | Turistas y grupos | `/admin/turistas` | Admin · Turistas y grupos | Listado | lista de grupos, DataTable | RF-10, RF-12 |
-| P-20 | Asignaciones | `/admin/asignaciones` | Admin · Asignaciones | propia | Field, Checkbox, Alert, Dialog, ItineraryCard | RF-22, RF-23, RN-04 |
-| P-21 | Actividades duplicadas | `/admin/duplicados` | Admin · Actividades duplicadas | propia | Tabs, comparación lado a lado, Button danger | RF-06, RN-03 |
+P-17, P-28 y P-29 son la misma PaquetesPage: el admin ve todos los paquetes; el guía y el
+jefe, solo aquellos en los que tienen algún permiso, y las acciones dependen de esos
+permisos. En el canvas es `AdminPaquetes.dc.html` con `role`.
 
-### Reportes (todos los roles)
+#### Reportes (todos los roles)
 
-Una sola página `/reportes/:rc` con pestañas; cada reporte es una configuración de la
-plantilla Reporte. En el canvas, RC-1 a RC-5 comparten el archivo `Reportes.dc.html`, y
-RC-6 tiene artboard propio.
+ReportesPage `/reportes/:rc` con pestañas; cada reporte es una configuración de la
+plantilla Reporte. En el canvas, RC-1 a RC-5 comparten `Reportes.dc.html` y RC-6 tiene
+artboard propio.
 
 | ID | Reporte | Ruta | Filtros | Gráfico | Tabla | Requisitos |
 |---|---|---|---|---|---|---|
@@ -306,61 +336,69 @@ ve, en el orden elegido.
 
 ## 7. Plan de trabajo e issues
 
-Cuatro fases. Dentro de cada fase, las issues son independientes y se pueden repartir en
-paralelo. Cada issue indica de qué depende.
+Los issues de frontend están en GitHub con la etiqueta **frontend** y una etiqueta de
+fase. Cada uno lleva su referencia al Design System o al canvas y sus dependencias por
+número. Dentro de cada fase se pueden repartir en paralelo. Las páginas se pueden empezar
+con los datos de ejemplo de los artboards y conectar la API cuando exista el endpoint de
+backend que citan.
 
-### Fase 0: fundaciones (bloquea todo; 1–2 personas, primero)
+### Fase 0 · `front-0-base` (primero; bloquea todo)
 
-| Issue | Qué | Depende de |
-|---|---|---|
-| F0-1 | Instalar las librerías de §3, configurar vitest y alias de rutas | — |
-| F0-2 | `styles/tokens.css` desde el Design System, fuentes de Google, ThemeProvider (claro/oscuro con `data-theme`) | F0-1 |
-| F0-3 | Router con rutas por rol, AuthProvider (con usuario simulado mientras no exista `/auth`) y redirección según rol | F0-1 |
-| F0-4 | `lib/api.ts` (cliente con la URL de `.env`) y helpers de formato: fechas `12 oct 2026`, horas 24 h, decimales con coma | F0-1 |
+| Issue | Qué |
+|---|---|
+| #61 | Dependencias de §3, alias y tests |
+| #62 | `tokens.css`, fuentes y tema claro/oscuro |
+| #63 | Router, sesión y layout por rol (rutas de §5.1) |
+| #64 | Cliente de la API y formatos |
+| #65 | Exportar a PDF |
 
-### Fase 1: componentes (5 personas en paralelo)
+### Fase 1 · `front-1-componentes` (un issue por componente)
 
-Cada issue incluye el componente, su test unitario y JSDoc.
+| Grupo | Issues |
+|---|---|
+| Base | #66 Icon · #67 Button · #68 Badge · #69 StatusPill · #70 EffortMeter · #71 Rating |
+| Estructura | #72 AppShell · #73 PageHeader · #74 Panel · #75 Tabs |
+| Formularios | #76 Field · #77 Checkbox · #78 ChipSelect · #79 FilterBar |
+| Feedback | #80 Alert · #81 Toast · #82 Dialog · #83 EmptyState · #84 Skeleton |
+| Datos | #85 StatTile · #86 DataTable · #87 ChartPanel |
+| Dominio | #88 RouteTimeline · #89 ActivityRow · #90 ProportionInput · #91 CriteriaCheck · #92 ItineraryCard (+ EffortSplit) · #93 ReviewPanel · #94 RequestCard |
 
-| Issue | Componentes | Depende de |
-|---|---|---|
-| F1-1 | Icon, Button, Badge, StatusPill, EffortMeter, Rating | F0-2 |
-| F1-2 | AppShell, PageHeader, Panel, Tabs | F0-2, F0-3 |
-| F1-3 | Field, Checkbox, ChipSelect, FilterBar, Alert, Toast, Dialog, EmptyState, Skeleton | F0-2 |
-| F1-4 | DataTable (ordenación + exportar PDF con `lib/pdf.ts`), StatTile, ChartPanel (Recharts) | F0-2, F1-1 |
-| F1-5 | RouteTimeline, ActivityRow, ProportionInput, CriteriaCheck, ItineraryCard + EffortSplit, ReviewPanel, RequestCard | F1-1 |
+Orden sugerido: primero los que no dependen de otros componentes (Icon, Badge,
+StatusPill, EffortMeter, Panel, Tabs, Field, Skeleton, StatTile); después el resto.
 
-### Fase 2: pantallas (reparto propuesto por rol)
+### Fase 2 · `front-2-pantallas` (una página por issue)
 
-Se pueden empezar con datos simulados (los del artboard) y conectar la API cuando el
-endpoint exista.
+Cada issue incluye la tabla «artboard → estado de la página» para calcar el diseño.
 
-| Issue | Pantallas | Persona sugerida | Depende de |
+| Issue | Página | Pantallas | Reparto sugerido |
 |---|---|---|---|
-| F2-1 | P-01 Login | 1 | F1-3 |
-| F2-2 | P-02 Banco, P-04 Itinerarios, P-07 Valoraciones | 1 | F1-2, F1-4 |
-| F2-10 | Página de paquetes con `role`: P-17 (admin), P-28 (guía), P-29 (jefe, validar o devolver) | 5 | F1-3, F1-4 |
-| F2-3 | P-03 Generador, P-05 Detalle | 2 | F1-5 |
-| F2-4 | P-06 Solicitudes del guía | 2 | F1-5 |
-| F2-5 | P-08 Por revisar, P-09 Revisar, P-10 Itinerarios del jefe | 3 | F1-5 |
-| F2-6 | P-12 Hoy, P-13 Mis itinerarios | 4 | F1-5 |
-| F2-7 | P-14 Valorar, P-15 Pedir modificación, P-16 Mis valoraciones | 4 | F1-5 |
-| F2-8 | P-18 Permisos, P-19 Turistas y grupos | 5 | F1-3, F1-4 |
-| F2-9 | P-20 Asignaciones, P-21 Duplicados | 5 | F1-3, F1-4 |
+| #97 | GeneradorPage | P-03 | 1 |
+| #98 | ItinerariosPage | P-04 · P-05 · P-08 · P-09 · P-10 | 1 |
+| #102 | ViajePage | P-12 · P-13 · P-14 | 2 |
+| #100 | SolicitudesPage | P-06 · P-15 | 2 |
+| #101 | ValoracionesPage | P-07 · P-16 | 2 |
+| #96 | ActividadesPage | P-02 · P-21 | 3 |
+| #99 | PaquetesPage | P-17 · P-28 · P-29 | 3 |
+| #103 | PersonasPage | P-18 · P-19 | 4 |
+| #104 | AsignacionesPage | P-20 | 4 |
+| #95 | LoginPage | P-01 | 4 |
 
-### Fase 3: reportes
+### Fase 3 · `front-3-reportes`
 
-| Issue | Qué | Depende de |
+| Issue | Qué | Reparto sugerido |
 |---|---|---|
-| F3-1 | Página `/reportes/:rc` con pestañas y la configuración de cada reporte | F1-4 |
-| F3-2 | RC-1, RC-2, RC-3 conectados a `/reports/*` (P-22–P-24, P-11) | F3-1 |
-| F3-3 | RC-4, RC-5 (P-25, P-26) | F3-1 |
-| F3-4 | RC-6 (P-27) | F3-1 |
+| #105 | ReportesPage con pestañas y la plantilla Reporte | 5 |
+| #106 · #107 · #108 | RC-1 · RC-2 · RC-3 (también P-11) | 5 |
+| #109 · #110 · #111 | RC-4 · RC-5 · RC-6 | 5 |
 
-### Transversal (al cerrar cada fase)
+Cada reporte se conecta con su consulta de backend (#55–#60).
 
-- Revisar las pantallas a 400 px de ancho (móvil) y en tema oscuro.
-- Comprobar que todas las tablas ordenan y exportan a PDF.
+### Fase 4 · `front-4-transversal` (al cerrar las páginas)
+
+| Issue | Qué |
+|---|---|
+| #112 | Repaso de móvil (400 px) |
+| #113 | Repaso de tema oscuro y accesibilidad |
 
 ---
 
