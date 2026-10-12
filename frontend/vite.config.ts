@@ -3,9 +3,9 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 /**
- * En desarrollo el frontend corre en :5173 y la API en :8000.
- * El proxy evita lidiar con CORS y permite llamar a `/api/...` desde el
- * navegador como si todo saliera del mismo origen.
+ * In development the frontend runs on :5173 and the API on :8000.
+ * The proxy avoids CORS and lets the browser call `/api/...` as if
+ * everything came from the same origin.
  */
 export default defineConfig({
   plugins: [react()],

@@ -1,29 +1,33 @@
 # Astarship frontend
 
-React + TypeScript + Vite. El backend corre en `:8000`; en dev, Vite hace proxy de `/api`, `/docs` y `/openapi.json` (ver `vite.config.ts`).
+React + TypeScript + Vite. The backend runs on `:8000`; in dev, Vite proxies `/api`, `/docs` and `/openapi.json` (see `vite.config.ts`).
 
 ## Scripts
 
 ```sh
-pnpm dev      # servidor de desarrollo en :5173
+pnpm dev      # dev server on :5173
 pnpm lint     # oxlint
 pnpm build    # tsc + vite build
 ```
 
-Importa desde `src/` con el alias `@/` (`import { useTheme } from "@/providers/theme"`).
-Los colores, espacios, radios y tipografía salen de `src/styles/tokens.css` (copiado del Design System).
+Import from `src/` with the `@/` alias (`import { useTheme } from "@/app/providers/theme/ThemeContext"`).
+Colors, spacing, radii and type come from `src/styles/tokens.css` (copied from the Design System).
 
-## Estructura
+## Structure
 
-```
+```text
 src/
-  main.tsx
+  main.tsx              mounts <App />
   app/
-  pages/
-  components/
-  providers/
-  lib/
-  styles/
+    App.tsx             providers + RouterProvider
+    providers/          auth/ and theme/: context + hook, provider and their data
+    router/             routes and per-role navigation
+  pages/                one folder per page: ActivitiesPage/, ItinerariesPage/...
+  components/           one folder per Design System component: Button/, DataTable/...
+  lib/                  API client, formatting, PDF export
+  styles/               tokens.css, index.css
 ```
 
-Estructura por capas: lo específico de cada entidad (User, Activity, Itinerary...) vive en `pages/` y `components/`, no en carpetas separadas por dominio. Si alguna de estas carpetas crece demasiado, subagrupar por dominio dentro de ella (`pages/activities/`, `components/activities/`) antes que migrar a una estructura por features.
+Code is in English (identifiers, comments, roles, keys). User-facing text and URLs are in Spanish, like the rest of the UI.
+
+Layered structure: what is specific to each entity (User, Activity, Itinerary...) lives in `pages/` and `components/`, not in per-domain folders. If one of these folders grows too much, group by domain inside it (`pages/activities/`, `components/activities/`) before moving to a feature-based structure.
