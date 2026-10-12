@@ -7,6 +7,7 @@ import { ItinerariesPage } from "@/pages/ItinerariesPage/ItinerariesPage";
 import { LoginPage } from "@/pages/LoginPage/LoginPage";
 import { PackagesPage } from "@/pages/PackagesPage/PackagesPage";
 import { PeoplePage } from "@/pages/PeoplePage/PeoplePage";
+import { PreviewPage } from "@/pages/PreviewPage/PreviewPage";
 import { RatingsPage } from "@/pages/RatingsPage/RatingsPage";
 import { ReportsPage } from "@/pages/ReportsPage/ReportsPage";
 import { RequestsPage } from "@/pages/RequestsPage/RequestsPage";
@@ -14,6 +15,7 @@ import { TripPage } from "@/pages/TripPage/TripPage";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
+  { path: "/preview/:name?", element: <PreviewPage /> },
   {
     element: <AppShell />,
     children: [
