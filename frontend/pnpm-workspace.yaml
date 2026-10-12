@@ -1,0 +1,3 @@
+allowBuilds:
+  # Su postinstall solo imprime un mensaje; no hace falta ejecutarlo.
+  core-js: false
