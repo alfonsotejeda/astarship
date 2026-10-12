@@ -3,6 +3,7 @@ import { useAuth } from "@/app/providers/auth/AuthContext";
 import { ROLE_LABEL } from "@/app/providers/auth/roles";
 import { useTheme } from "@/app/providers/theme/ThemeContext";
 import { NAV_BY_ROLE } from "@/app/router/navigation";
+import { Button } from "@/components/Button/Button";
 import { Icon } from "@/components/Icon/Icon";
 import "./RootLayout.css";
 
@@ -28,14 +29,12 @@ export function RootLayout() {
             </NavLink>
           ))}
         </nav>
-        <button type="button" onClick={toggleTheme}>
-          <Icon name={theme === "light" ? "moon" : "sun"} />
+        <Button variant="ghost" icon={theme === "light" ? "moon" : "sun"} onClick={toggleTheme}>
           {theme === "light" ? "Tema oscuro" : "Tema claro"}
-        </button>
-        <button type="button" onClick={logout}>
-          <Icon name="logout" />
+        </Button>
+        <Button variant="ghost" icon="logout" onClick={logout}>
           Cerrar sesión
-        </button>
+        </Button>
       </aside>
       <main className="shell__main">
         <Outlet />
