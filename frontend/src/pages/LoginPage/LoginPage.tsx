@@ -1,4 +1,4 @@
-import { Navigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { useAuth } from "@/app/providers/auth/AuthContext";
 import { HOME_BY_ROLE, ROLE_LABEL } from "@/app/providers/auth/roles";
 import type { User } from "@/app/providers/auth/roles";
@@ -14,6 +14,7 @@ const MOCK_USERS: User[] = [
 
 export function LoginPage() {
   const { user, login } = useAuth();
+  const navigate = useNavigate();
 
   if (user) return <Navigate to={HOME_BY_ROLE[user.role]} replace />;
 
@@ -25,6 +26,9 @@ export function LoginPage() {
           Entrar como {ROLE_LABEL[mock.role].toLowerCase()}
         </Button>
       ))}
+      <Button variant="ghost" icon="layers" onClick={() => navigate("/preview")}>
+        Ver componentes
+      </Button>
     </main>
   );
 }

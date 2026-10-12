@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Navigate, NavLink, Outlet } from "react-router";
 import { useAuth } from "@/app/providers/auth/AuthContext";
 import { ROLE_LABEL } from "@/app/providers/auth/roles";
@@ -11,16 +12,19 @@ import "./AppShell.css";
 
 interface AppShellProps {
   counts?: Record<string, number>;
+  layout?: "desktop" | "mobile";
+  children?: ReactNode;
 }
 
 function initials(name: string) {
   return name.split(" ").map(word => word[0]).slice(0, 2).join("");
 }
 
-export function AppShell({ counts = {} }: AppShellProps) {
+export function AppShell({ counts = {}, layout, children = <Outlet /> }: AppShellProps) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const mobile = useMediaQuery("(max-width: 480px)");
+  const isPhone = useMediaQuery("(max-width: 480px)");
+  const mobile = layout ? layout === "mobile" : isPhone;
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -72,7 +76,7 @@ export function AppShell({ counts = {} }: AppShellProps) {
             {avatar}
           </div>
         </header>
-        <main className="app-shell__main"><Outlet /></main>
+        <main className="app-shell__main">{children}</main>
         {navigation}
       </div>
     );
@@ -93,7 +97,7 @@ export function AppShell({ counts = {} }: AppShellProps) {
           {logoutButton}
         </div>
       </aside>
-      <main className="app-shell__main"><Outlet /></main>
+      <main className="app-shell__main">{children}</main>
     </div>
   );
 }
