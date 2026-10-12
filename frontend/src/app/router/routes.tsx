@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router";
-import { RootLayout } from "@/components/RootLayout/RootLayout";
+import { AppShell } from "@/components/AppShell/AppShell";
 import { ActivitiesPage } from "@/pages/ActivitiesPage/ActivitiesPage";
 import { AssignmentsPage } from "@/pages/AssignmentsPage/AssignmentsPage";
 import { GeneratorPage } from "@/pages/GeneratorPage/GeneratorPage";
@@ -15,7 +15,7 @@ import { TripPage } from "@/pages/TripPage/TripPage";
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   {
-    element: <RootLayout />,
+    element: <AppShell />,
     children: [
       { path: "/actividades", element: <ActivitiesPage /> },
       { path: "/itinerarios", element: <ItinerariesPage /> },
