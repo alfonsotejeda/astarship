@@ -112,6 +112,7 @@ src/
 │   └── router/     rutas y navegación por rol
 ├── components/   un componente del Design System por carpeta (Button/, DataTable/…)
 ├── pages/        una carpeta por página (§5.1): ActivitiesPage/, ItinerariesPage/, TripPage/…
+├── hooks/        hooks compartidos (useMediaQuery…)
 ├── lib/          cliente de la API, hooks de react-query, exportar PDF, formato de fechas y números
 └── styles/       tokens.css (copiado del Design System), index.css
 ```

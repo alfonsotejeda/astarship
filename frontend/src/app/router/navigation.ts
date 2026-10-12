@@ -2,6 +2,7 @@ import type { Role } from "@/app/providers/auth/roles";
 import type { IconName } from "@/components/Icon/icons";
 
 export interface NavItem {
+  key: string;
   label: string;
   icon: IconName;
   to: string;
@@ -9,31 +10,31 @@ export interface NavItem {
 
 export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   guide: [
-    { label: "Banco de actividades", icon: "layers", to: "/actividades" },
-    { label: "Generar itinerario", icon: "sparkles", to: "/itinerarios/nuevo" },
-    { label: "Itinerarios", icon: "route", to: "/itinerarios" },
-    { label: "Paquetes", icon: "package", to: "/paquetes" },
-    { label: "Solicitudes", icon: "message", to: "/solicitudes" },
-    { label: "Valoraciones", icon: "star", to: "/valoraciones" },
-    { label: "Reportes", icon: "chart", to: "/reportes/rc1" },
+    { key: "activities", label: "Banco de actividades", icon: "layers", to: "/actividades" },
+    { key: "generate", label: "Generar itinerario", icon: "sparkles", to: "/itinerarios/nuevo" },
+    { key: "itineraries", label: "Itinerarios", icon: "route", to: "/itinerarios" },
+    { key: "packages", label: "Paquetes", icon: "package", to: "/paquetes" },
+    { key: "requests", label: "Solicitudes", icon: "message", to: "/solicitudes" },
+    { key: "ratings", label: "Valoraciones", icon: "star", to: "/valoraciones" },
+    { key: "reports", label: "Reportes", icon: "chart", to: "/reportes/rc1" },
   ],
   manager: [
-    { label: "Itinerarios", icon: "route", to: "/itinerarios" },
-    { label: "Paquetes", icon: "package", to: "/paquetes" },
-    { label: "Mis validaciones", icon: "clock", to: "/reportes/rc3" },
-    { label: "Reportes", icon: "chart", to: "/reportes/rc1" },
+    { key: "itineraries", label: "Itinerarios", icon: "route", to: "/itinerarios" },
+    { key: "packages", label: "Paquetes", icon: "package", to: "/paquetes" },
+    { key: "validations", label: "Mis validaciones", icon: "clock", to: "/reportes/rc3" },
+    { key: "reports", label: "Reportes", icon: "chart", to: "/reportes/rc1" },
   ],
   tourist: [
-    { label: "Hoy", icon: "calendar", to: "/viaje/hoy" },
-    { label: "Mis itinerarios", icon: "route", to: "/viaje/itinerarios" },
-    { label: "Valoraciones", icon: "star", to: "/valoraciones" },
-    { label: "Solicitudes", icon: "message", to: "/solicitudes" },
+    { key: "today", label: "Hoy", icon: "calendar", to: "/viaje/hoy" },
+    { key: "itineraries", label: "Mis itinerarios", icon: "route", to: "/viaje/itinerarios" },
+    { key: "ratings", label: "Valoraciones", icon: "star", to: "/valoraciones" },
+    { key: "requests", label: "Solicitudes", icon: "message", to: "/solicitudes" },
   ],
   admin: [
-    { label: "Paquetes", icon: "package", to: "/paquetes" },
-    { label: "Personas", icon: "users", to: "/personas" },
-    { label: "Asignaciones", icon: "route", to: "/asignaciones" },
-    { label: "Banco de actividades", icon: "layers", to: "/actividades" },
-    { label: "Reportes", icon: "chart", to: "/reportes/rc1" },
+    { key: "packages", label: "Paquetes", icon: "package", to: "/paquetes" },
+    { key: "people", label: "Personas", icon: "users", to: "/personas" },
+    { key: "assignments", label: "Asignaciones", icon: "route", to: "/asignaciones" },
+    { key: "activities", label: "Banco de actividades", icon: "layers", to: "/actividades" },
+    { key: "reports", label: "Reportes", icon: "chart", to: "/reportes/rc1" },
   ],
 };
