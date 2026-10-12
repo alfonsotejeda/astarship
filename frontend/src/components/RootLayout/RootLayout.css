@@ -30,6 +30,13 @@
   margin-bottom: auto;
 }
 
+.shell__link,
+.shell__side button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .shell__link {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
