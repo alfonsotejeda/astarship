@@ -1,7 +1,7 @@
 """add package
 
 Revision ID: b9bc00d0f712
-Revises: 9d5d5350f5bf
+Revises: 238a068fd59a
 Create Date: 2026-10-08 21:10:40.578059
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'b9bc00d0f712'
-down_revision: Union[str, Sequence[str], None] = '9d5d5350f5bf'
+down_revision: Union[str, Sequence[str], None] = '238a068fd59a'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

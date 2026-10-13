@@ -1,7 +1,7 @@
 """add permission
 
 Revision ID: 3a00f2e974ec
-Revises: a0515928da2b
+Revises: 0cd0027063fa
 Create Date: 2026-10-09 17:58:49.461688
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '3a00f2e974ec'
-down_revision: Union[str, Sequence[str], None] = 'a0515928da2b'
+down_revision: Union[str, Sequence[str], None] = '0cd0027063fa'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

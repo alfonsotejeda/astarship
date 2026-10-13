@@ -1,6 +1,6 @@
 """Tests for the permission service."""
 
-from app.schemas.permission import PermissionCreate, PermissionRead
+from app.schemas.permission import PermissionCreate
 from app.services import permission as permission_sv
 
 
@@ -15,9 +15,7 @@ def test_list_permissions(db_session):
 
 def test_get_permission(db_session):
     """Test getting a specific permission"""
-    permission_creat = permission_sv.create_permission(
-        db_session, PermissionCreate(name="Test Permission")
-    )
+    permission_sv.create_permission(db_session, PermissionCreate(name="Test Permission"))
     permission = permission_sv.get_permission(db_session, name="Test Permission")
     assert permission is not None
     assert permission.name == "Test Permission"

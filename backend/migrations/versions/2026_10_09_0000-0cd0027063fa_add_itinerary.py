@@ -1,7 +1,7 @@
 """add itinerary
 
 Revision ID: 0cd0027063fa
-Revises: 238a068fd59a
+Revises: b9bc00d0f712
 Create Date: 2026-10-09 00:00:00.000000
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '0cd0027063fa'
-down_revision: Union[str, Sequence[str], None] = '238a068fd59a'
+down_revision: Union[str, Sequence[str], None] = 'b9bc00d0f712'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

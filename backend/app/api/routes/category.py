@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryRead
+from app.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
 from app.services import category as category_sv
 
 router = APIRouter(prefix="/categories", tags=["categories"])
@@ -12,7 +12,6 @@ router = APIRouter(prefix="/categories", tags=["categories"])
 
 def get_category(db: Session, category_id: int):
     """Return a category by its ID."""
-
     category = category_sv.category_by_id(db, category_id)
     if not category:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")

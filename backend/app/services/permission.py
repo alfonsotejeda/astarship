@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.permission import Permission
-from app.schemas.permission import PermissionCreate, PermissionRead
+from app.schemas.permission import PermissionCreate
 
 
 def list_permissions(db: Session) -> list[Permission]:
@@ -21,7 +21,6 @@ def get_permission(db: Session, name: str) -> Permission | None:
 
 def create_permission(db: Session, data: PermissionCreate) -> Permission:
     """Create and persist a new permission."""
-
     permission = Permission(name = data.name)
     db.add(permission)
     db.commit()

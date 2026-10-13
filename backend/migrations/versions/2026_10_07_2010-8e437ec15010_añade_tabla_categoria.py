@@ -1,7 +1,7 @@
 """añade tabla categoria
 
 Revision ID: 8e437ec15010
-Revises:
+Revises: 115b16ab4009
 Create Date: 2026-10-07 20:10:52.896406
 
 """
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "8e437ec15010"
-down_revision: Union[str, Sequence[str], None] = None
+down_revision: Union[str, Sequence[str], None] = "115b16ab4009"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

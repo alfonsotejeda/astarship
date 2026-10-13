@@ -2,7 +2,8 @@
 
 import pytest
 from pydantic import ValidationError
-from app.schemas.permission import PermissionCreate, PermissionRead
+
+from app.schemas.permission import PermissionCreate
 
 
 def test_permission_create_invalid():
