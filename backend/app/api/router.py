@@ -2,11 +2,24 @@
 
 from fastapi import APIRouter
 
-from app.api.routes import activity, activity_type, health, travel_group, user
+from app.api.routes import (
+    activity,
+    activity_type,
+    category,
+    health,
+    package,
+    permission,
+    travel_group,
+    user,
+)
 
 api_router = APIRouter()
+
 api_router.include_router(health.router)
+api_router.include_router(package.router)
+api_router.include_router(category.router)
 api_router.include_router(user.router)
 api_router.include_router(activity.router)
 api_router.include_router(activity_type.router)
+api_router.include_router(permission.router)
 api_router.include_router(travel_group.router)

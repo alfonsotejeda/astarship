@@ -68,10 +68,10 @@ Y ya tienes:
 Más cómodo si estás tocando la API a cada rato. Deja la base de datos en Docker y corre la API a mano:
 
 ```bash
-docker compose up -d db
+docker compose up -d database
 cd backend
 uv sync
-uv run fastapi dev app/main.py
+uv run uvicorn app.main:app --reload
 ```
 
 ## Estructura
@@ -100,9 +100,11 @@ astarship/
 
 ## Comandos
 
+Los comandos de `uv` se ejecutan desde `backend/`, donde vive el `pyproject.toml`; desde la raíz no los encuentra.
+
 | Qué | Dónde | Comando |
 |---|---|---|
-| Correr la API | `backend/` | `uv run fastapi dev app/main.py` |
+| Correr la API | `backend/` | `uv run uvicorn app.main:app --reload` |
 | Pruebas | `backend/` | `uv run pytest` |
 | Lint y formato | `backend/` | `uv run ruff check . && uv run ruff format .` |
 | Añadir dependencia | `backend/` | `uv add <paquete>` |
@@ -110,6 +112,7 @@ astarship/
 | Aplicar migraciones | `backend/` | `uv run alembic upgrade head` |
 | Deshacer la última | `backend/` | `uv run alembic downgrade -1` |
 | Ver en qué versión estás | `backend/` | `uv run alembic current` |
+| Comprobar deriva modelo↔BD | `backend/` | `uv run alembic check` |
 | Correr el frontend | `frontend/` | `pnpm dev` |
 | Compilar el frontend | `frontend/` | `pnpm build` |
 | Levantar todo | raíz | `docker compose up -d` |
