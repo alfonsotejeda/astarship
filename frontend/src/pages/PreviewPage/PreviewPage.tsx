@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useParams } from "react-router";
 import { useTheme } from "@/app/providers/theme/ThemeContext";
 import { Button } from "@/components/Button/Button";
 import { AppShellPreview } from "./previews/AppShellPreview";
+import { BadgePreview } from "./previews/BadgePreview";
 import { ButtonPreview } from "./previews/ButtonPreview";
 import { IconPreview } from "./previews/IconPreview";
 import "./PreviewPage.css";
@@ -10,6 +11,7 @@ import "./PreviewPage.css";
 const PREVIEWS: Record<string, ReactNode> = {
   Icon: <IconPreview />,
   Button: <ButtonPreview />,
+  Badge: <BadgePreview />,
   AppShell: <AppShellPreview />,
 };
 

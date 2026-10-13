@@ -1,0 +1,37 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 1px var(--space-2);
+  font: var(--type-small);
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+}
+
+.badge--neutral {
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+
+.badge--category {
+  background: var(--surface-raised);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.badge--visita {
+  background: var(--destination-soft);
+  color: var(--destination);
+}
+
+.badge--excursion {
+  background: var(--origin-soft);
+  color: var(--origin);
+}
+
+.badge--taller {
+  background: var(--workshop-soft);
+  color: var(--workshop);
+}
