@@ -1,0 +1,41 @@
+"""Itinerary service."""
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.models.itinerary import Itinerary
+from app.schemas.itinerary import ItineraryCreate, ItineraryUpdate
+
+
+def list_itineraries(db: Session) -> list[Itinerary]:
+    """Return all itineraries."""
+    return list(db.scalars(select(Itinerary)))
+
+
+def get_itinerary(db: Session, itinerary_id: int) -> Itinerary | None:
+    """Return an itinerary by id, or None if it doesn't exist."""
+    return db.get(Itinerary, itinerary_id)
+
+
+def create_itinerary(db: Session, data: ItineraryCreate) -> Itinerary:
+    """Create and persist a new itinerary."""
+    itinerary = Itinerary(**data.model_dump())
+    db.add(itinerary)
+    db.commit()
+    db.refresh(itinerary)
+    return itinerary
+
+
+def update_itinerary(db: Session, itinerary: Itinerary, data: ItineraryUpdate) -> Itinerary:
+    """Apply partial updates to an existing itinerary."""
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(itinerary, field, value)
+    db.commit()
+    db.refresh(itinerary)
+    return itinerary
+
+
+def delete_itinerary(db: Session, itinerary: Itinerary) -> None:
+    """Delete an itinerary."""
+    db.delete(itinerary)
+    db.commit()

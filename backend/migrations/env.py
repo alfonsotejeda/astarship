@@ -11,6 +11,7 @@ from app.models import (  # noqa: F401
     activity,
     activity_type,
     category,
+    itinerary,
     package,
     permission,
     travel_group,
