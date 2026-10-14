@@ -5,6 +5,7 @@ import { Button } from "@/components/Button/Button";
 import { AppShellPreview } from "./previews/AppShellPreview";
 import { BadgePreview } from "./previews/BadgePreview";
 import { ButtonPreview } from "./previews/ButtonPreview";
+import { EffortMeterPreview } from "./previews/EffortMeterPreview";
 import { IconPreview } from "./previews/IconPreview";
 import { StatusPillPreview } from "./previews/StatusPillPreview";
 import "./PreviewPage.css";
@@ -14,6 +15,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   Button: <ButtonPreview />,
   Badge: <BadgePreview />,
   StatusPill: <StatusPillPreview />,
+  EffortMeter: <EffortMeterPreview />,
   AppShell: <AppShellPreview />,
 };
 
