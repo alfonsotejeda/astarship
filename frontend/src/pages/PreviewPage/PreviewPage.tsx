@@ -10,6 +10,7 @@ import { CheckboxPreview } from "./previews/CheckboxPreview";
 import { ChipSelectPreview } from "./previews/ChipSelectPreview";
 import { EffortMeterPreview } from "./previews/EffortMeterPreview";
 import { FieldPreview } from "./previews/FieldPreview";
+import { FilterBarPreview } from "./previews/FilterBarPreview";
 import { IconPreview } from "./previews/IconPreview";
 import { PageHeaderPreview } from "./previews/PageHeaderPreview";
 import { PanelPreview } from "./previews/PanelPreview";
@@ -31,6 +32,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   Field: <FieldPreview />,
   Checkbox: <CheckboxPreview />,
   ChipSelect: <ChipSelectPreview />,
+  FilterBar: <FilterBarPreview />,
   AppShell: <AppShellPreview />,
 };
 
