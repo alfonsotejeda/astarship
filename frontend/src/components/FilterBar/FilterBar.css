@@ -1,0 +1,42 @@
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.filter-bar__fields {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* Fields share the row and wrap to the next line when they don't fit */
+.filter-bar__fields > * {
+  flex: 1 1 180px;
+  max-width: 280px;
+}
+
+.filter-bar__end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.filter-bar__summary {
+  font: var(--type-small);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.filter-bar__summary:empty {
+  display: none;
+}
