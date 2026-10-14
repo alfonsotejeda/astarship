@@ -7,6 +7,7 @@ import { BadgePreview } from "./previews/BadgePreview";
 import { ButtonPreview } from "./previews/ButtonPreview";
 import { EffortMeterPreview } from "./previews/EffortMeterPreview";
 import { IconPreview } from "./previews/IconPreview";
+import { PageHeaderPreview } from "./previews/PageHeaderPreview";
 import { RatingPreview } from "./previews/RatingPreview";
 import { StatusPillPreview } from "./previews/StatusPillPreview";
 import "./PreviewPage.css";
@@ -18,6 +19,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   StatusPill: <StatusPillPreview />,
   EffortMeter: <EffortMeterPreview />,
   Rating: <RatingPreview />,
+  PageHeader: <PageHeaderPreview />,
   AppShell: <AppShellPreview />,
 };
 
