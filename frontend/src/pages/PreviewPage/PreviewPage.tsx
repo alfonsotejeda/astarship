@@ -11,6 +11,7 @@ import { CheckboxPreview } from "./previews/CheckboxPreview";
 import { ChipSelectPreview } from "./previews/ChipSelectPreview";
 import { DialogPreview } from "./previews/DialogPreview";
 import { EffortMeterPreview } from "./previews/EffortMeterPreview";
+import { EmptyStatePreview } from "./previews/EmptyStatePreview";
 import { FieldPreview } from "./previews/FieldPreview";
 import { FilterBarPreview } from "./previews/FilterBarPreview";
 import { IconPreview } from "./previews/IconPreview";
@@ -39,6 +40,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   Alert: <AlertPreview />,
   Toast: <ToastPreview />,
   Dialog: <DialogPreview />,
+  EmptyState: <EmptyStatePreview />,
   AppShell: <AppShellPreview />,
 };
 
