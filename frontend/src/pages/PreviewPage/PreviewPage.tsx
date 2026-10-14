@@ -18,6 +18,7 @@ import { IconPreview } from "./previews/IconPreview";
 import { PageHeaderPreview } from "./previews/PageHeaderPreview";
 import { PanelPreview } from "./previews/PanelPreview";
 import { RatingPreview } from "./previews/RatingPreview";
+import { SkeletonPreview } from "./previews/SkeletonPreview";
 import { StatusPillPreview } from "./previews/StatusPillPreview";
 import { TabsPreview } from "./previews/TabsPreview";
 import { ToastPreview } from "./previews/ToastPreview";
@@ -41,6 +42,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   Toast: <ToastPreview />,
   Dialog: <DialogPreview />,
   EmptyState: <EmptyStatePreview />,
+  Skeleton: <SkeletonPreview />,
   AppShell: <AppShellPreview />,
 };
 
