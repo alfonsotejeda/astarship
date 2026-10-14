@@ -9,6 +9,7 @@ import { BadgePreview } from "./previews/BadgePreview";
 import { ButtonPreview } from "./previews/ButtonPreview";
 import { CheckboxPreview } from "./previews/CheckboxPreview";
 import { ChipSelectPreview } from "./previews/ChipSelectPreview";
+import { DataTablePreview } from "./previews/DataTablePreview";
 import { DialogPreview } from "./previews/DialogPreview";
 import { EffortMeterPreview } from "./previews/EffortMeterPreview";
 import { EmptyStatePreview } from "./previews/EmptyStatePreview";
@@ -45,6 +46,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   EmptyState: <EmptyStatePreview />,
   Skeleton: <SkeletonPreview />,
   StatTile: <StatTilePreview />,
+  DataTable: <DataTablePreview />,
   AppShell: <AppShellPreview />,
 };
 
