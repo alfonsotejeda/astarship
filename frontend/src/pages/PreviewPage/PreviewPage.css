@@ -25,10 +25,18 @@
   text-transform: uppercase;
 }
 
+/* Only the list scrolls, so the theme and login buttons below it are always visible */
 .preview__nav {
   display: grid;
+  flex: 1;
+  align-content: start;
   gap: 2px;
-  margin-bottom: auto;
+  min-height: 0;
+  margin: 0 calc(-1 * var(--space-1));
+  padding: 2px var(--space-1);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .preview__link {

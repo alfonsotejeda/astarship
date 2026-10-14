@@ -7,6 +7,7 @@ import { AlertPreview } from "./previews/AlertPreview";
 import { AppShellPreview } from "./previews/AppShellPreview";
 import { BadgePreview } from "./previews/BadgePreview";
 import { ButtonPreview } from "./previews/ButtonPreview";
+import { ChartPanelPreview } from "./previews/ChartPanelPreview";
 import { CheckboxPreview } from "./previews/CheckboxPreview";
 import { ChipSelectPreview } from "./previews/ChipSelectPreview";
 import { DataTablePreview } from "./previews/DataTablePreview";
@@ -47,6 +48,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   Skeleton: <SkeletonPreview />,
   StatTile: <StatTilePreview />,
   DataTable: <DataTablePreview />,
+  ChartPanel: <ChartPanelPreview />,
   AppShell: <AppShellPreview />,
 };
 

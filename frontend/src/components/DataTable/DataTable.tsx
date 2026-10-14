@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { Button } from "@/components/Button/Button";
 import { exportPdf } from "@/lib/pdf";
+import { cellValue, sortRows, toPdfRows } from "./rows";
+import type { Cell } from "./rows";
 import "./DataTable.css";
-
-type Cell = string | number;
 
 export type Column<Row> = {
   key: string;
@@ -42,18 +42,6 @@ type DataTableProps<Row> = {
   className?: string;
 };
 
-function compare(a: Cell | null | undefined, b: Cell | null | undefined) {
-  if (a == null) return b == null ? 0 : 1;
-  if (b == null) return -1;
-  if (typeof a === "number" && typeof b === "number") return a - b;
-  return String(a).localeCompare(String(b), "es", { numeric: true, sensitivity: "base" });
-}
-
-function cellValue<Row>(row: Row, key: string): Cell | undefined {
-  const value = (row as Record<string, unknown>)[key];
-  return typeof value === "string" || typeof value === "number" ? value : undefined;
-}
-
 function SortIcon({ dir }: { dir: SortState["dir"] | null }) {
   return (
     <svg className="data-table__sort-icon" viewBox="0 0 10 12" aria-hidden="true">
@@ -85,14 +73,7 @@ export function DataTable<Row>({
   const [uncontrolledSort, setUncontrolledSort] = useState(defaultSort);
   const sort = controlledSort ?? uncontrolledSort;
 
-  const sortedRows = useMemo(() => {
-    const column = columns.find(item => item.key === sort.key);
-    if (!column) return rows;
-
-    const getValue = column.sortValue ?? ((row: Row) => cellValue(row, column.key));
-    const direction = sort.dir === "desc" ? -1 : 1;
-    return [...rows].sort((a, b) => direction * compare(getValue(a), getValue(b)));
-  }, [columns, rows, sort]);
+  const sortedRows = useMemo(() => sortRows(rows, columns, sort), [columns, rows, sort]);
 
   function toggleSort(key: string) {
     const dir = sort.key === key && sort.dir === "asc" ? "desc" : "asc";
@@ -105,9 +86,7 @@ export function DataTable<Row>({
       title: title ?? "Tabla",
       filter: subtitle,
       columns: columns.map(column => column.label),
-      rows: sortedRows.map(row =>
-        columns.map(column => column.exportValue?.(row) ?? cellValue(row, column.key) ?? ""),
-      ),
+      rows: toPdfRows(sortedRows, columns),
     });
   }
 
