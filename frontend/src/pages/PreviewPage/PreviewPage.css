@@ -36,15 +36,15 @@
   border-radius: var(--radius-md);
   color: var(--ink-muted);
   text-decoration: none;
+  transition: color 0.2s ease;
 }
 
-.preview__link:hover {
+.preview__link:not(.active):hover {
   background: var(--surface-sunken);
   color: var(--ink);
 }
 
 .preview__link.active {
-  background: var(--route-soft);
   color: var(--route);
   font-weight: 600;
 }

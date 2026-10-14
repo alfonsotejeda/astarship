@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { NavLink, useNavigate, useParams } from "react-router";
 import { useTheme } from "@/app/providers/theme/ThemeContext";
 import { Button } from "@/components/Button/Button";
+import { PillNav } from "@/components/PillNav/PillNav";
 import { AppShellPreview } from "./previews/AppShellPreview";
 import { BadgePreview } from "./previews/BadgePreview";
 import { ButtonPreview } from "./previews/ButtonPreview";
@@ -36,13 +37,13 @@ export function PreviewPage() {
     <div className="preview">
       <aside className="preview__sidebar">
         <h1>Componentes</h1>
-        <nav className="preview__nav">
+        <PillNav className="preview__nav" aria-label="Componentes">
           {Object.keys(PREVIEWS).map(key => (
             <NavLink key={key} to={`/preview/${key}`} className="preview__link">
               {key}
             </NavLink>
           ))}
-        </nav>
+        </PillNav>
         <Button variant="ghost" size="sm" icon={theme === "light" ? "moon" : "sun"} onClick={toggleTheme}>
           {theme === "light" ? "Tema oscuro" : "Tema claro"}
         </Button>
