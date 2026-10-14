@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useParams } from "react-router";
 import { useTheme } from "@/app/providers/theme/ThemeContext";
 import { Button } from "@/components/Button/Button";
 import { PillNav } from "@/components/PillNav/PillNav";
+import { AlertPreview } from "./previews/AlertPreview";
 import { AppShellPreview } from "./previews/AppShellPreview";
 import { BadgePreview } from "./previews/BadgePreview";
 import { ButtonPreview } from "./previews/ButtonPreview";
@@ -33,6 +34,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   Checkbox: <CheckboxPreview />,
   ChipSelect: <ChipSelectPreview />,
   FilterBar: <FilterBarPreview />,
+  Alert: <AlertPreview />,
   AppShell: <AppShellPreview />,
 };
 
