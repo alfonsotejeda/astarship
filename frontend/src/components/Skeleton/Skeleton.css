@@ -1,0 +1,56 @@
+.skeleton {
+  display: block;
+  background: linear-gradient(90deg, var(--surface-sunken) 25%, var(--line) 50%, var(--surface-sunken) 75%);
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: skeleton-shimmer 1.4s linear infinite;
+}
+
+.skeleton--round {
+  border-radius: var(--radius-pill);
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.skeleton-stops {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* Only for screen readers: the blocks themselves are hidden */
+.skeleton-stops__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skeleton-stops__stop {
+  display: grid;
+  grid-template-columns: 52px 24px 1fr;
+  align-items: start;
+  justify-items: end;
+  gap: var(--space-3);
+}
+
+.skeleton-stops__stop > :nth-child(2) {
+  justify-self: center;
+}
+
+.skeleton-stops__lines {
+  display: grid;
+  justify-self: stretch;
+  gap: var(--space-2);
+}
