@@ -1,17 +1,9 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { Button } from "@/components/Button/Button";
 import { Icon } from "@/components/Icon/Icon";
-import type { IconName } from "@/components/Icon/icons";
+import { TONE_ICONS } from "./tones";
+import type { Tone } from "./tones";
 import "./Alert.css";
-
-export type Tone = "info" | "warn" | "bad" | "ok";
-
-const TONE_ICONS: Record<Tone, IconName> = {
-  info: "info",
-  warn: "alert",
-  bad: "alert",
-  ok: "check-circle",
-};
 
 type AlertProps = Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
   tone?: Tone;
