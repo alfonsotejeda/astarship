@@ -1,0 +1,53 @@
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+}
+
+/* Aligns the icon with the first line of text */
+.alert > .icon {
+  margin-top: 2px;
+}
+
+.alert--info {
+  color: var(--info);
+  background: var(--info-soft);
+}
+
+.alert--warn {
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.alert--bad {
+  color: var(--bad);
+  background: var(--bad-soft);
+}
+
+.alert--ok {
+  color: var(--ok);
+  background: var(--ok-soft);
+}
+
+.alert__body {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+}
+
+.alert__title {
+  font: var(--type-body-strong);
+}
+
+.alert__text {
+  font: var(--type-body);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.alert__action {
+  align-self: center;
+}
