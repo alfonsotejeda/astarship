@@ -18,6 +18,7 @@ import { PanelPreview } from "./previews/PanelPreview";
 import { RatingPreview } from "./previews/RatingPreview";
 import { StatusPillPreview } from "./previews/StatusPillPreview";
 import { TabsPreview } from "./previews/TabsPreview";
+import { ToastPreview } from "./previews/ToastPreview";
 import "./PreviewPage.css";
 
 const PREVIEWS: Record<string, ReactNode> = {
@@ -35,6 +36,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   ChipSelect: <ChipSelectPreview />,
   FilterBar: <FilterBarPreview />,
   Alert: <AlertPreview />,
+  Toast: <ToastPreview />,
   AppShell: <AppShellPreview />,
 };
 
