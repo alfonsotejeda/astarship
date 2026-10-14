@@ -11,6 +11,7 @@ import { PageHeaderPreview } from "./previews/PageHeaderPreview";
 import { PanelPreview } from "./previews/PanelPreview";
 import { RatingPreview } from "./previews/RatingPreview";
 import { StatusPillPreview } from "./previews/StatusPillPreview";
+import { TabsPreview } from "./previews/TabsPreview";
 import "./PreviewPage.css";
 
 const PREVIEWS: Record<string, ReactNode> = {
@@ -22,6 +23,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   Rating: <RatingPreview />,
   PageHeader: <PageHeaderPreview />,
   Panel: <PanelPreview />,
+  Tabs: <TabsPreview />,
   AppShell: <AppShellPreview />,
 };
 
