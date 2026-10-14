@@ -7,6 +7,7 @@ import { AppShellPreview } from "./previews/AppShellPreview";
 import { BadgePreview } from "./previews/BadgePreview";
 import { ButtonPreview } from "./previews/ButtonPreview";
 import { EffortMeterPreview } from "./previews/EffortMeterPreview";
+import { FieldPreview } from "./previews/FieldPreview";
 import { IconPreview } from "./previews/IconPreview";
 import { PageHeaderPreview } from "./previews/PageHeaderPreview";
 import { PanelPreview } from "./previews/PanelPreview";
@@ -25,6 +26,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   PageHeader: <PageHeaderPreview />,
   Panel: <PanelPreview />,
   Tabs: <TabsPreview />,
+  Field: <FieldPreview />,
   AppShell: <AppShellPreview />,
 };
 

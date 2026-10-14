@@ -1,0 +1,101 @@
+.field {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field__label {
+  font: var(--type-small);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.field__required {
+  margin-left: 2px;
+  color: var(--bad);
+}
+
+.field__control {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 var(--space-3);
+  font: var(--type-body);
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.field__control::placeholder {
+  color: var(--ink-muted);
+}
+
+.field__control:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.field__control:disabled {
+  color: var(--ink-muted);
+  background: var(--surface-sunken);
+  cursor: not-allowed;
+}
+
+.field__control--textarea {
+  height: auto;
+  min-height: 96px;
+  padding: var(--space-2) var(--space-3);
+  resize: vertical;
+}
+
+/* Chevron drawn with two gradients, so it follows the text color in both themes */
+.field__control--select {
+  padding-right: 32px;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 17px) 17px,
+    calc(100% - 12px) 17px;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.field__suffix-wrap {
+  position: relative;
+}
+
+.field__suffix-wrap .field__control {
+  padding-right: 40px;
+}
+
+.field__suffix {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  font: var(--type-small);
+  color: var(--ink-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.field__hint {
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
+
+.field__error {
+  font: var(--type-small);
+  font-weight: 500;
+  color: var(--bad);
+}
+
+.field--invalid .field__control {
+  border-color: var(--bad);
+  box-shadow: inset 0 0 0 1px var(--bad);
+}
