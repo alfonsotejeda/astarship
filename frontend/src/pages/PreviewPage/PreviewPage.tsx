@@ -9,6 +9,7 @@ import { BadgePreview } from "./previews/BadgePreview";
 import { ButtonPreview } from "./previews/ButtonPreview";
 import { CheckboxPreview } from "./previews/CheckboxPreview";
 import { ChipSelectPreview } from "./previews/ChipSelectPreview";
+import { DialogPreview } from "./previews/DialogPreview";
 import { EffortMeterPreview } from "./previews/EffortMeterPreview";
 import { FieldPreview } from "./previews/FieldPreview";
 import { FilterBarPreview } from "./previews/FilterBarPreview";
@@ -37,6 +38,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   FilterBar: <FilterBarPreview />,
   Alert: <AlertPreview />,
   Toast: <ToastPreview />,
+  Dialog: <DialogPreview />,
   AppShell: <AppShellPreview />,
 };
 
