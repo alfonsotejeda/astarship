@@ -1,0 +1,27 @@
+.pill-nav {
+  position: relative;
+}
+
+/* Links paint over the pill */
+.pill-nav > :not(.pill-nav__pill) {
+  position: relative;
+}
+
+.pill-nav__pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--route-soft);
+  border-radius: var(--radius-md);
+  pointer-events: none;
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0, 0, 1),
+    width 0.25s cubic-bezier(0.2, 0, 0, 1),
+    height 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-nav__pill {
+    transition: none;
+  }
+}

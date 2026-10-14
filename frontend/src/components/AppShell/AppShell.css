@@ -49,9 +49,10 @@
   font: var(--type-body);
   font-weight: 500;
   text-decoration: none;
+  transition: color 0.2s ease;
 }
 
-.app-shell__nav-item:hover {
+.app-shell__nav-item:not(.active):hover {
   background: var(--surface-sunken);
   color: var(--ink);
 }
@@ -62,7 +63,6 @@
 }
 
 .app-shell__nav-item.active {
-  background: var(--route-soft);
   color: var(--route);
   font-weight: 600;
 }
@@ -182,8 +182,8 @@
   text-align: center;
 }
 
-.app-shell__tabbar .app-shell__nav-item.active {
-  background: transparent;
+.app-shell__tabbar .pill-nav__pill {
+  display: none;
 }
 
 .app-shell__tabbar .app-shell__count {

@@ -5,6 +5,7 @@ import { useTheme } from "@/app/providers/theme/ThemeContext";
 import { NAV_BY_ROLE } from "@/app/router/navigation";
 import { Button } from "@/components/Button/Button";
 import { Icon } from "@/components/Icon/Icon";
+import { PillNav } from "@/components/PillNav/PillNav";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import "./AppShell.css";
 
@@ -49,7 +50,7 @@ export function AppShell({ counts = {} }: AppShellProps) {
   const avatar = <span className="app-shell__avatar" aria-hidden="true">{initials(user.name)}</span>;
 
   const navigation = (
-    <nav className={mobile ? "app-shell__tabbar" : "app-shell__nav"} aria-label="Navegación principal">
+    <PillNav className={mobile ? "app-shell__tabbar" : "app-shell__nav"} aria-label="Navegación principal">
       {(mobile ? nav.slice(0, 5) : nav).map(item => (
         <NavLink key={item.key} to={item.to} end className="app-shell__nav-item">
           <Icon name={item.icon} size={20} />
@@ -57,7 +58,7 @@ export function AppShell({ counts = {} }: AppShellProps) {
           {counts[item.key] ? <span className="app-shell__count">{counts[item.key]}</span> : null}
         </NavLink>
       ))}
-    </nav>
+    </PillNav>
   );
 
   if (mobile) {
