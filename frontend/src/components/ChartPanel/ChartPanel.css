@@ -1,0 +1,90 @@
+.chart-panel__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  padding: 0;
+  font: var(--type-small);
+  color: var(--ink);
+  list-style: none;
+}
+
+.chart-panel__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-panel__swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.chart-panel__swatch--round {
+  border-radius: var(--radius-pill);
+}
+
+.chart-panel__chart {
+  min-width: 0;
+}
+
+/* Recharts makes the chart focusable to move the tooltip with the arrow keys */
+.chart-panel__chart :focus {
+  outline: none;
+}
+
+.chart-panel__chart :focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.chart-panel__dot {
+  stroke: var(--surface-raised);
+  stroke-width: 1.5;
+}
+
+.chart-panel__dot--highlight {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.chart-panel__tooltip {
+  display: grid;
+  gap: 2px;
+  min-width: 140px;
+  padding: var(--space-2) var(--space-3);
+  font: var(--type-small);
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+}
+
+.chart-panel__tooltip-title {
+  font-weight: 600;
+}
+
+.chart-panel__tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-muted);
+}
+
+.chart-panel__tooltip-value {
+  margin-left: auto;
+  padding-left: var(--space-3);
+  font: var(--type-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.chart-panel__footnote {
+  margin: 0;
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
