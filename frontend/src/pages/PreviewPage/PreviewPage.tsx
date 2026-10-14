@@ -6,6 +6,7 @@ import { PillNav } from "@/components/PillNav/PillNav";
 import { AppShellPreview } from "./previews/AppShellPreview";
 import { BadgePreview } from "./previews/BadgePreview";
 import { ButtonPreview } from "./previews/ButtonPreview";
+import { CheckboxPreview } from "./previews/CheckboxPreview";
 import { EffortMeterPreview } from "./previews/EffortMeterPreview";
 import { FieldPreview } from "./previews/FieldPreview";
 import { IconPreview } from "./previews/IconPreview";
@@ -27,6 +28,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   Panel: <PanelPreview />,
   Tabs: <TabsPreview />,
   Field: <FieldPreview />,
+  Checkbox: <CheckboxPreview />,
   AppShell: <AppShellPreview />,
 };
 
