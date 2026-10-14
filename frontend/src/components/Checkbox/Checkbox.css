@@ -1,0 +1,68 @@
+.checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.checkbox--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* The native input stays on top of the box, invisible, so clicks and keyboard still reach it */
+.checkbox__input {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.checkbox__box {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: transparent;
+  background: var(--surface-raised);
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.checkbox:not(.checkbox--disabled):hover .checkbox__box {
+  border-color: var(--ink);
+}
+
+.checkbox__input:checked + .checkbox__box {
+  color: var(--on-action);
+  background: var(--action);
+  border-color: var(--action);
+}
+
+.checkbox__input:focus-visible + .checkbox__box {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.checkbox__text {
+  display: grid;
+}
+
+.checkbox__label {
+  font: var(--type-body);
+  color: var(--ink);
+}
+
+.checkbox__description {
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
