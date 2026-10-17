@@ -24,6 +24,7 @@ import { PageHeaderPreview } from "./previews/PageHeaderPreview";
 import { PanelPreview } from "./previews/PanelPreview";
 import { ProportionInputPreview } from "./previews/ProportionInputPreview";
 import { RatingPreview } from "./previews/RatingPreview";
+import { RequestCardPreview } from "./previews/RequestCardPreview";
 import { ReviewPanelPreview } from "./previews/ReviewPanelPreview";
 import { RouteTimelinePreview } from "./previews/RouteTimelinePreview";
 import { SkeletonPreview } from "./previews/SkeletonPreview";
@@ -61,6 +62,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   CriteriaCheck: <CriteriaCheckPreview />,
   ItineraryCard: <ItineraryCardPreview />,
   ReviewPanel: <ReviewPanelPreview />,
+  RequestCard: <RequestCardPreview />,
   AppShell: <AppShellPreview />,
 };
 
