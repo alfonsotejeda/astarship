@@ -19,6 +19,7 @@ import { EmptyStatePreview } from "./previews/EmptyStatePreview";
 import { FieldPreview } from "./previews/FieldPreview";
 import { FilterBarPreview } from "./previews/FilterBarPreview";
 import { IconPreview } from "./previews/IconPreview";
+import { ItineraryCardPreview } from "./previews/ItineraryCardPreview";
 import { PageHeaderPreview } from "./previews/PageHeaderPreview";
 import { PanelPreview } from "./previews/PanelPreview";
 import { ProportionInputPreview } from "./previews/ProportionInputPreview";
@@ -57,6 +58,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   ActivityRow: <ActivityRowPreview />,
   ProportionInput: <ProportionInputPreview />,
   CriteriaCheck: <CriteriaCheckPreview />,
+  ItineraryCard: <ItineraryCardPreview />,
   AppShell: <AppShellPreview />,
 };
 
