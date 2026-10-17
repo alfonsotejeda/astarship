@@ -20,6 +20,7 @@ import { IconPreview } from "./previews/IconPreview";
 import { PageHeaderPreview } from "./previews/PageHeaderPreview";
 import { PanelPreview } from "./previews/PanelPreview";
 import { RatingPreview } from "./previews/RatingPreview";
+import { RouteTimelinePreview } from "./previews/RouteTimelinePreview";
 import { SkeletonPreview } from "./previews/SkeletonPreview";
 import { StatTilePreview } from "./previews/StatTilePreview";
 import { StatusPillPreview } from "./previews/StatusPillPreview";
@@ -49,6 +50,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   StatTile: <StatTilePreview />,
   DataTable: <DataTablePreview />,
   ChartPanel: <ChartPanelPreview />,
+  RouteTimeline: <RouteTimelinePreview />,
   AppShell: <AppShellPreview />,
 };
 
