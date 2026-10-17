@@ -1,0 +1,135 @@
+.criteria-check {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.criteria-check__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.criteria-check__title {
+  margin: 0;
+  font: var(--type-heading);
+  color: var(--ink);
+}
+
+.criteria-check__summary {
+  font: var(--type-small);
+  font-weight: 600;
+}
+
+.criteria-check__summary--ok,
+.criteria-check__word--ok {
+  color: var(--ok);
+}
+
+.criteria-check__summary--bad,
+.criteria-check__word--bad,
+.criteria-check__value--bad {
+  color: var(--bad);
+}
+
+.criteria-check__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.criteria-check__item {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--line);
+}
+
+.criteria-check__item:last-child {
+  border-bottom: 0;
+}
+
+.criteria-check__mark {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+}
+
+.criteria-check__mark .icon {
+  stroke-width: 3;
+}
+
+.criteria-check__mark--ok {
+  color: var(--surface-raised);
+  background: var(--ok);
+}
+
+.criteria-check__mark--bad {
+  color: var(--bad);
+  background: var(--surface-raised);
+  border: 2px solid var(--bad);
+}
+
+.criteria-check__label {
+  font: var(--type-body-strong);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink);
+}
+
+.criteria-check__detail {
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
+
+.criteria-check__values {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-items: end;
+  gap: 0 var(--space-2);
+  margin: 0;
+  font: var(--type-small);
+}
+
+.criteria-check__values dt {
+  color: var(--ink-muted);
+}
+
+.criteria-check__values dd {
+  margin: 0;
+  font: var(--type-data);
+  color: var(--ink);
+}
+
+.criteria-check__values dd.criteria-check__value--bad {
+  color: var(--bad);
+}
+
+.criteria-check__word {
+  min-width: 72px;
+  font: var(--type-small);
+  font-weight: 600;
+  text-align: right;
+}
+
+@media (max-width: 520px) {
+  .criteria-check__item {
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+  }
+
+  .criteria-check__values {
+    grid-column: 2 / -1;
+    justify-items: start;
+  }
+}
