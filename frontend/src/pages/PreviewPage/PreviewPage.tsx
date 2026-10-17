@@ -11,6 +11,7 @@ import { ButtonPreview } from "./previews/ButtonPreview";
 import { ChartPanelPreview } from "./previews/ChartPanelPreview";
 import { CheckboxPreview } from "./previews/CheckboxPreview";
 import { ChipSelectPreview } from "./previews/ChipSelectPreview";
+import { CriteriaCheckPreview } from "./previews/CriteriaCheckPreview";
 import { DataTablePreview } from "./previews/DataTablePreview";
 import { DialogPreview } from "./previews/DialogPreview";
 import { EffortMeterPreview } from "./previews/EffortMeterPreview";
@@ -55,6 +56,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   RouteTimeline: <RouteTimelinePreview />,
   ActivityRow: <ActivityRowPreview />,
   ProportionInput: <ProportionInputPreview />,
+  CriteriaCheck: <CriteriaCheckPreview />,
   AppShell: <AppShellPreview />,
 };
 
