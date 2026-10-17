@@ -1,0 +1,120 @@
+.activity-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--line);
+  transition: background-color 0.12s ease;
+}
+
+.activity-row:last-child {
+  border-bottom: 0;
+}
+
+.activity-row--selectable {
+  cursor: pointer;
+}
+
+.activity-row--selectable:hover {
+  background: var(--surface-sunken);
+}
+
+.activity-row--selected,
+.activity-row--selected:hover {
+  background: var(--route-soft);
+}
+
+.activity-row__grip {
+  display: inline-flex;
+  color: var(--ink-muted);
+  cursor: grab;
+}
+
+.activity-row__grip--button {
+  padding: 2px;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+}
+
+.activity-row__grip--button:hover {
+  color: var(--ink);
+}
+
+.activity-row__grip--button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.activity-row__order {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  font: var(--type-data);
+  color: var(--ink);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-pill);
+}
+
+.activity-row .checkbox__box {
+  margin-top: 0;
+}
+
+.activity-row .checkbox__input {
+  top: 0;
+}
+
+.activity-row__main {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.activity-row__name {
+  font: var(--type-body-strong);
+  color: var(--ink);
+}
+
+.activity-row__sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
+
+.activity-row__sub span + span::before {
+  content: "·";
+  margin-right: var(--space-2);
+}
+
+.activity-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.activity-row__duration {
+  font: var(--type-data);
+  color: var(--ink-muted);
+}
+
+.activity-row__trailing {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.activity-row__warning {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 6px;
+  font: var(--type-small);
+  font-weight: 500;
+  color: var(--warn);
+}

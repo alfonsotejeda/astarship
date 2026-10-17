@@ -41,7 +41,11 @@
   padding: var(--space-4);
 }
 
-/* For lists of rows that reach the panel's edges */
+/* For lists of rows that reach the panel's edges; row backgrounds stay inside the rounded corners */
+.panel--flush {
+  overflow: hidden;
+}
+
 .panel--flush > .panel__body {
   gap: 0;
   padding: 0;
