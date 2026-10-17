@@ -20,6 +20,7 @@ import { FilterBarPreview } from "./previews/FilterBarPreview";
 import { IconPreview } from "./previews/IconPreview";
 import { PageHeaderPreview } from "./previews/PageHeaderPreview";
 import { PanelPreview } from "./previews/PanelPreview";
+import { ProportionInputPreview } from "./previews/ProportionInputPreview";
 import { RatingPreview } from "./previews/RatingPreview";
 import { RouteTimelinePreview } from "./previews/RouteTimelinePreview";
 import { SkeletonPreview } from "./previews/SkeletonPreview";
@@ -53,6 +54,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   ChartPanel: <ChartPanelPreview />,
   RouteTimeline: <RouteTimelinePreview />,
   ActivityRow: <ActivityRowPreview />,
+  ProportionInput: <ProportionInputPreview />,
   AppShell: <AppShellPreview />,
 };
 
