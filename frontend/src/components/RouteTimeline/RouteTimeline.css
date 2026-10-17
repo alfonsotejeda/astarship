@@ -1,0 +1,234 @@
+.route-timeline {
+  --route-columns: 52px 24px minmax(0, 1fr) auto;
+}
+
+.route-timeline--no-sum {
+  --route-columns: 52px 24px minmax(0, 1fr);
+}
+
+.route-timeline__head {
+  display: grid;
+  grid-template-columns: var(--route-columns);
+  column-gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  font: var(--type-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.route-timeline__head span:first-child,
+.route-timeline__head span:last-child {
+  text-align: right;
+}
+
+.route-timeline__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route-timeline__stop {
+  display: grid;
+  grid-template-columns: var(--route-columns);
+  align-items: start;
+  column-gap: var(--space-3);
+}
+
+.route-timeline__time {
+  padding-top: 1px;
+  font: var(--type-data);
+  font-variant-numeric: tabular-nums;
+  line-height: 22px;
+  text-align: right;
+  color: var(--ink-muted);
+}
+
+/* The route line runs through every stop; it starts at the origin node and ends at the destination node */
+.route-timeline__rail {
+  position: relative;
+  display: flex;
+  align-self: stretch;
+  justify-content: center;
+}
+
+.route-timeline__rail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--route);
+  border-radius: 2px;
+}
+
+.route-timeline__stop:first-child .route-timeline__rail::before {
+  top: 12px;
+}
+
+.route-timeline__stop:last-child .route-timeline__rail::before {
+  bottom: calc(100% - 12px);
+}
+
+.route-timeline__stop:only-child .route-timeline__rail::before {
+  display: none;
+}
+
+.route-timeline__node {
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-top: 4px;
+  background: var(--surface-raised);
+  border: 3px solid var(--route);
+  border-radius: var(--radius-pill);
+}
+
+.route-timeline__node .icon {
+  stroke-width: 3;
+}
+
+.route-timeline__stop:first-child .route-timeline__node {
+  background: var(--origin);
+  border-color: var(--origin);
+}
+
+.route-timeline__stop:last-child .route-timeline__node {
+  background: var(--destination);
+  border-color: var(--destination);
+}
+
+.route-timeline__stop--realizada .route-timeline__node {
+  color: var(--surface-raised);
+  background: var(--ok);
+  border-color: var(--ok);
+}
+
+.route-timeline__stop--abandonada .route-timeline__node {
+  color: var(--bad);
+  background: var(--surface-raised);
+  border-color: var(--bad);
+}
+
+.route-timeline__stop--now .route-timeline__node {
+  box-shadow: 0 0 0 4px var(--route-soft);
+}
+
+.route-timeline__body {
+  min-width: 0;
+  padding-bottom: var(--space-5);
+}
+
+.route-timeline__stop--now .route-timeline__body {
+  margin: -4px 0 var(--space-4);
+  padding: var(--space-3);
+  background: var(--route-soft);
+  border-radius: var(--radius-md);
+}
+
+.route-timeline__now {
+  display: inline-block;
+  margin-bottom: 2px;
+  font: var(--type-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--route);
+}
+
+.route-timeline__name {
+  font: var(--type-body-strong);
+  color: var(--ink);
+}
+
+.route-timeline__stop--abandonada .route-timeline__name {
+  color: var(--ink-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.route-timeline__place {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
+
+.route-timeline__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 6px;
+}
+
+.route-timeline__duration {
+  font: var(--type-data);
+  color: var(--ink-muted);
+}
+
+.route-timeline__visit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.route-timeline__sum {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-1);
+  padding-top: 2px;
+}
+
+.route-timeline__sum-value {
+  font: var(--type-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.route-timeline__sum-track {
+  width: 64px;
+  height: 4px;
+  overflow: hidden;
+  background: var(--surface-sunken);
+  border-radius: 2px;
+}
+
+.route-timeline__sum-fill {
+  display: block;
+  height: 100%;
+  background: var(--ink-muted);
+  border-radius: 2px;
+}
+
+.route-timeline__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .route-timeline,
+  .route-timeline--no-sum {
+    --route-columns: 40px 20px minmax(0, 1fr);
+  }
+
+  .route-timeline__head,
+  .route-timeline__stop {
+    column-gap: var(--space-2);
+  }
+
+  .route-timeline__head span:last-child,
+  .route-timeline__sum {
+    display: none;
+  }
+}
