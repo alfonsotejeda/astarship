@@ -7,7 +7,7 @@ type FieldElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 type FieldProps = Omit<InputHTMLAttributes<FieldElement>, "id" | "onChange"> & {
   id: string;
-  label?: string;
+  label?: ReactNode;
   hint?: string;
   error?: string;
   options?: FieldOption[];
