@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useParams } from "react-router";
 import { useTheme } from "@/app/providers/theme/ThemeContext";
 import { Button } from "@/components/Button/Button";
 import { PillNav } from "@/components/PillNav/PillNav";
+import { ActivityRowPreview } from "./previews/ActivityRowPreview";
 import { AlertPreview } from "./previews/AlertPreview";
 import { AppShellPreview } from "./previews/AppShellPreview";
 import { BadgePreview } from "./previews/BadgePreview";
@@ -51,6 +52,7 @@ const PREVIEWS: Record<string, ReactNode> = {
   DataTable: <DataTablePreview />,
   ChartPanel: <ChartPanelPreview />,
   RouteTimeline: <RouteTimelinePreview />,
+  ActivityRow: <ActivityRowPreview />,
   AppShell: <AppShellPreview />,
 };
 
