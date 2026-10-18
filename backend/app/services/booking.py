@@ -57,3 +57,23 @@ def delete_booking(db: Session, booking: Booking) -> None:
     """Delete a booking."""
     db.delete(booking)
     db.commit()
+
+
+def get_users_for_package(db: Session, package_id: int) -> list[User]:
+    """Return all users booked into a package."""
+    statement = (
+        select(User)
+        .join(Booking, User.id == Booking.user_id)
+        .where(Booking.package_id == package_id)
+    )
+    return list(db.scalars(statement))
+
+
+def get_packages_for_user(db: Session, user_id: int) -> list[Package]:
+    """Return all packages a user is booked into."""
+    statement = (
+        select(Package)
+        .join(Booking, Package.id == Booking.package_id)
+        .where(Booking.user_id == user_id)
+    )
+    return list(db.scalars(statement))

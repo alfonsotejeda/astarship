@@ -160,3 +160,51 @@ def test_booking_disappears_when_package_deleted(db_session):
     package_service.delete_package(db_session, package)
 
     assert booking_service.get_booking(db_session, user.id, package.id) is None
+
+
+def test_get_users_for_package_returns_booked_users(db_session):
+    user_a = _create_user(db_session, email="a@example.com")
+    user_b = _create_user(db_session, email="b@example.com")
+    _create_user(db_session, email="c@example.com")  # sin bookings
+    package = _create_package(db_session)
+
+    booking_service.create_booking(
+        db_session, BookingCreate(user_id=user_a.id, package_id=package.id)
+    )
+    booking_service.create_booking(
+        db_session, BookingCreate(user_id=user_b.id, package_id=package.id)
+    )
+
+    users = booking_service.get_users_for_package(db_session, package.id)
+
+    assert {u.id for u in users} == {user_a.id, user_b.id}
+
+
+def test_get_users_for_package_empty_when_no_bookings(db_session):
+    package = _create_package(db_session)
+
+    assert booking_service.get_users_for_package(db_session, package.id) == []
+
+
+def test_get_packages_for_user_returns_booked_packages(db_session):
+    user = _create_user(db_session)
+    package_a = _create_package(db_session, name="A", destination="Roma")
+    package_b = _create_package(db_session, name="B", destination="Lisboa")
+    _create_package(db_session, name="C", destination="París")  # sin booking
+
+    booking_service.create_booking(
+        db_session, BookingCreate(user_id=user.id, package_id=package_a.id)
+    )
+    booking_service.create_booking(
+        db_session, BookingCreate(user_id=user.id, package_id=package_b.id)
+    )
+
+    packages = booking_service.get_packages_for_user(db_session, user.id)
+
+    assert {p.id for p in packages} == {package_a.id, package_b.id}
+
+
+def test_get_packages_for_user_empty_when_no_bookings(db_session):
+    user = _create_user(db_session)
+
+    assert booking_service.get_packages_for_user(db_session, user.id) == []
