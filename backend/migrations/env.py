@@ -16,6 +16,7 @@ from app.models import (  # noqa: F401
     permission,
     travel_group,
     user,
+    permission_itinerary,
 )
 
 config = context.config
