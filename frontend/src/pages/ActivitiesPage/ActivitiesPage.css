@@ -1,0 +1,174 @@
+.activities-page {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/* Table and side panel share the row; the panel drops below the table when there is no room */
+.activities-page__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.activities-page__table {
+  flex: 999 1 560px;
+  min-width: 0;
+}
+
+.activities-page__name {
+  display: grid;
+}
+
+.activities-page__name-main {
+  font-weight: 600;
+}
+
+.activities-page__name-sub,
+.activities-page__readonly {
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
+
+.activities-page__toast {
+  position: fixed;
+  inset-inline: var(--space-4);
+  bottom: var(--space-5);
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.activities-page__toast > * {
+  pointer-events: auto;
+}
+
+.activities-page__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- "Nueva actividad" side panel ---------- */
+
+.activity-form {
+  flex: 1 1 380px;
+  max-width: 460px;
+  min-width: 0;
+}
+
+.activity-form > .panel {
+  box-shadow: var(--shadow-overlay);
+}
+
+.activity-form .panel__body {
+  gap: var(--space-4);
+}
+
+.activity-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.activity-form__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* ---------- Duplicates tab ---------- */
+
+.duplicates {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.duplicates__intro {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--ink-muted);
+}
+
+.duplicates__scroll {
+  overflow-x: auto;
+}
+
+.duplicates__table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font: var(--type-body);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.duplicates__table th,
+.duplicates__table td {
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+
+.duplicates__table thead th {
+  font-weight: 650;
+  background: var(--surface-sunken);
+}
+
+.duplicates__table thead th:first-child,
+.duplicates__table tbody th {
+  width: 140px;
+}
+
+.duplicates__table tbody th {
+  font: var(--type-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* Fields that differ between A and B */
+.duplicates__cell--diff {
+  background: var(--warn-soft);
+}
+
+.duplicates__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.duplicates__keep,
+.duplicates__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.duplicates__buttons {
+  gap: var(--space-2);
+}
+
+.duplicates__keep-label {
+  font: var(--type-body-strong);
+  font-size: 13px;
+}
+
+.duplicates__note {
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
