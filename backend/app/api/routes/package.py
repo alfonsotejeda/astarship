@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.status import ReviewStatus
 from app.schemas.package import PackageCreate, PackageRead, PackageUpdate
+from app.schemas.user import UserRead
+from app.services import booking as booking_service
 from app.services import package as package_service
 
 router = APIRouter(prefix="/packages", tags=["packages"])
@@ -38,6 +40,13 @@ def list_packages(
 ) -> list[PackageRead]:
     """List all packages, optionally filtered by status."""
     return package_service.list_packages(db, status)
+
+
+@router.get("/{package_id}/users", response_model=list[UserRead])
+def get_package_users(package_id: int, db: Session = Depends(get_db)) -> list[UserRead]:
+    """List all users booked into a package."""
+    package = _get_package_or_404(db, package_id)
+    return booking_service.get_users_for_package(db, package.id)
 
 
 @router.get("/{package_id}", response_model=PackageRead)

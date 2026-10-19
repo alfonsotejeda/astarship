@@ -140,6 +140,45 @@ def test_delete_package_removes_it(client):
     assert client.get(f"/api/packages/{created['id']}").status_code == 404
 
 
+def _create_user(client, email="ada@example.com"):
+    return client.post(
+        "/api/users",
+        json={"name": "Ada", "role": "tourist", "email": email, "password": "s3cret"},
+    ).json()
+
+
+def _create_booking(client, user_id, package_id):
+    return client.post(
+        "/api/bookings", json={"user_id": user_id, "package_id": package_id}
+    )
+
+
+def test_get_package_users_returns_booked_users(client):
+    user = _create_user(client, email="pkguser@example.com")
+    package = _create_package(client)
+    _create_booking(client, user["id"], package["id"])
+
+    response = client.get(f"/api/packages/{package['id']}/users")
+
+    assert response.status_code == 200
+    assert any(u["email"] == "pkguser@example.com" for u in response.json())
+
+
+def test_get_package_users_returns_404_when_package_missing(client):
+    response = client.get("/api/packages/999999/users")
+
+    assert response.status_code == 404
+
+
+def test_get_package_users_empty_when_no_bookings(client):
+    package = _create_package(client)
+
+    response = client.get(f"/api/packages/{package['id']}/users")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
 def test_create_package_conflict_leaves_session_usable(client, db_session, monkeypatch):
     """A 409 from a real IntegrityError must not poison the shared session."""
     from app.models.package import Package
