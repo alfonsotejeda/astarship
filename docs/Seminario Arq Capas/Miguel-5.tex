@@ -1,0 +1,147 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\usepackage[round,authoryear]{natbib}
+\usepackage[hidelinks]{hyperref}
+
+\pagestyle{empty}
+
+\title{Pregunta 5: El \textit{Kitty Problem} y el Principio de Abierto/Cerrado}
+\author{Miguel Cazorla Zamora}
+\date{}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\section{Descripción del problema}
+
+El \textit{Kitty Problem} parte de un sistema agregador de taxis dividido en
+servicios: \texttt{TaxiUI} (atiende al cliente), \texttt{TaxiFinder} (busca taxis
+disponibles), \texttt{TaxiSelector} (elige el más adecuado según coste, tiempo o
+lujo), \texttt{TaxiDispatcher} (ordena el servicio) y \texttt{TaxiSupervisor}
+(controla el viaje) \citep{martin2017}. Los servicios se despliegan por separado
+y parecen desacoplados.
+
+Un día se pide un requisito nuevo: la entrega de gatitos a domicilio. Hay
+conductores alérgicos a los gatos que deben excluirse, vehículos no aptos e
+instrucciones de recogida y devolución propias. El resultado es que \emph{todos}
+los servicios deben modificarse, y esos cambios deben coordinarse y desplegarse
+juntos. Los servicios estaban desacoplados en ejecución, pero no frente al
+cambio \citep{martin2017}.
+
+\section{¿Por qué la división por verbos provocó el problema?}
+
+Los servicios \texttt{TaxiFinder} o \texttt{TaxiSelector} representan
+\emph{pasos del algoritmo} de reserva, no conceptos de negocio. Es una
+descomposición funcional: el concepto ``tipo de viaje'' queda repartido entre
+todos los servicios, de modo que cuando ese concepto cambia (aparecen los
+gatitos), el cambio se propaga a todos ellos. \citet{richards2020} lo describen
+como una partición técnica frente a una partición por dominio: en la primera, un
+cambio de dominio atraviesa todas las particiones; en la segunda, queda
+confinado a una sola. Además, todos los servicios comparten la misma
+representación del viaje, por lo que siguen acoplados a través de los datos.
+
+\section{Diseño basado en DDD y Onion/Clean}
+
+DDD propone dividir el sistema según los conceptos del dominio y sus ejes de
+cambio. Aquí la observación clave es que la entrega de gatitos \emph{es un tipo
+de viaje}: comparte el flujo general (buscar, seleccionar, despachar,
+supervisar) pero varía en reglas concretas. Por tanto se separan:
+
+\begin{itemize}[nosep]
+  \item \textbf{\texttt{Rides}}: núcleo con la lógica estable del viaje y los
+        puntos de extensión (clases abstractas e interfaces como \texttt{Ride} o
+        \texttt{DriverEligibility}).
+  \item \textbf{\texttt{Kittens}}: plugin que implementa esas abstracciones con
+        las reglas propias de los gatitos (p.\,ej.\ excluir conductores
+        alérgicos).
+\end{itemize}
+
+Siguiendo la Regla de Dependencia \citep{martin2017} y la Arquitectura Onion
+\citep{palermo2008}, \texttt{Rides} ocupa el centro y \texttt{Kittens} depende
+de él, nunca al revés (Figura~\ref{fig:plugins}). Cada servicio puede mantener
+su despliegue, pero internamente opera sobre las abstracciones de
+\texttt{Rides} mediante polimorfismo (\textit{Template Method} o
+\textit{Strategy}), sin conocer el tipo concreto de viaje \citep{martin2017}.
+Así, añadir gatitos solo afecta a un componente: \texttt{Kittens}.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+    font=\small,
+    box/.style={draw, rounded corners=2pt, minimum width=3.3cm, minimum height=0.8cm, align=center},
+    impl/.style={-{Triangle[open,length=2.4mm]}, thick, dashed},
+  ]
+  \node[box, fill=blue!8] (ride) {\texttt{Ride}\\\footnotesize(abstracta)};
+  \node[box, fill=blue!8, right=0.8cm of ride] (crit) {\texttt{DriverEligibility}\\\footnotesize(interfaz)};
+  \node[box, fill=orange!12, below=1.6cm of ride] (kride) {\texttt{KittenRide}};
+  \node[box, fill=orange!12, below=1.6cm of crit] (kelig) {\texttt{NoCatAllergy}\\\texttt{Eligibility}};
+  \begin{scope}[on background layer]
+    \node[draw, thick, rounded corners, fill=blue!3, inner sep=8pt, fit=(ride)(crit),
+          label={[font=\bfseries\small]west:\texttt{Rides}}] {};
+    \node[draw, thick, rounded corners, fill=orange!4, inner sep=8pt, fit=(kride)(kelig),
+          label={[font=\bfseries\small]west:\texttt{Kittens}}] {};
+  \end{scope}
+  \draw[impl] (kride) -- (ride);
+  \draw[impl] (kelig) -- (crit);
+\end{tikzpicture}
+\caption{El plugin \texttt{Kittens} implementa las abstracciones del núcleo
+\texttt{Rides}. Las dependencias apuntan hacia el núcleo.}
+\label{fig:plugins}
+\end{figure}
+
+\section{Principio de Abierto/Cerrado y papel de los Adaptadores}
+
+El OCP establece que un artefacto debe estar abierto a la extensión y cerrado a
+la modificación \citep{martin2017}. En el diseño original, añadir gatitos
+exigía modificar cinco servicios. En el diseño propuesto, el núcleo
+\texttt{Rides} y los servicios existentes no se tocan (cerrados a la
+modificación) y el nuevo comportamiento se añade creando el componente
+\texttt{Kittens} (abierto a la extensión).
+
+Los Adaptadores hacen posible esta extensión. En términos de la Arquitectura
+Hexagonal \citep{cockburn2005}, las abstracciones de \texttt{Rides} son
+\emph{puertos} y \texttt{Kittens} es un \emph{adaptador} que traduce las reglas
+de los gatitos al contrato que entiende el núcleo, que nunca conoce el concepto
+``gatito''. Si los gatitos provinieran de un sistema externo, un adaptador de
+servicio encapsularía esa integración tras un puerto del dominio
+\citep{delatorre2010}. Finalmente, el componente \textit{Main} conecta el plugin
+mediante factorías o inyección de dependencias \citep{martin2017}, por lo que
+incorporar un nuevo tipo de viaje se reduce a registrar un nuevo adaptador.
+
+\begin{thebibliography}{9}
+
+\bibitem[Cockburn(2005)]{cockburn2005}
+Cockburn, A. (2005). \textit{Hexagonal Architecture (Ports and Adapters)}.
+\url{https://alistair.cockburn.us/hexagonal-architecture/}
+
+\bibitem[De la Torre et~al.(2010)]{delatorre2010}
+De la Torre Llorente, C., Zorrilla Castro, U., Ramos Barroso, M.~A., \&
+Calvarro Nelson, J. (2010). \textit{Guía de Arquitectura N-Capas orientada al
+Dominio con .NET 4.0} (Borrador). Microsoft Ibérica.
+
+\bibitem[Martin(2017)]{martin2017}
+Martin, R.~C. (2017). \textit{Clean Architecture: A Craftsman's Guide to
+Software Structure and Design}. Prentice Hall.
+
+\bibitem[Palermo(2008)]{palermo2008}
+Palermo, J. (2008). \textit{The Onion Architecture}.
+\url{https://jeffreypalermo.com/2008/07/the-onion-architecture-part-1/}
+
+\bibitem[Richards y Ford(2020)]{richards2020}
+Richards, M., \& Ford, N. (2020). \textit{Fundamentals of Software Architecture:
+An Engineering Approach}. O'Reilly Media.
+
+\end{thebibliography}
+
+\end{document}

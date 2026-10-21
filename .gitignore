@@ -42,3 +42,18 @@ Thumbs.db
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# --- LaTeX (solo se versionan .tex y .pdf) ---
+*.aux
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
