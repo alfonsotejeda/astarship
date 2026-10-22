@@ -1,5 +1,6 @@
 """Tests for the activity service."""
 
+from app.models.status import ReviewStatus
 from app.schemas.activity import ActivityCreate, ActivityUpdate
 from app.services import activity as activity_service
 
@@ -11,6 +12,8 @@ def test_create_activity_persists_it(db_session):
 
     assert activity.id is not None
     assert activity.name == "Hiking"
+    assert activity.status is ReviewStatus.PENDING
+    assert activity.creation_date is not None
 
 
 def test_get_activity_returns_none_when_missing(db_session):

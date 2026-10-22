@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.models.status import ReviewStatus
 from app.schemas.activity import ActivityCreate, ActivityRead, ActivityUpdate
 from app.services import activity as activity_service
 
@@ -19,9 +20,11 @@ def _get_activity_or_404(db: Session, activity_id: int):
 
 
 @router.get("", response_model=list[ActivityRead])
-def list_activities(db: Session = Depends(get_db)) -> list[ActivityRead]:
-    """List all activities."""
-    return activity_service.list_activities(db)
+def list_activities(
+    status: ReviewStatus | None = None, db: Session = Depends(get_db)
+) -> list[ActivityRead]:
+    """List all activities, optionally filtered by status."""
+    return activity_service.list_activities(db, status)
 
 
 @router.get("/{activity_id}", response_model=ActivityRead)

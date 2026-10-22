@@ -12,7 +12,7 @@ def test_table_name():
 def test_expected_columns():
     columns = {c.name for c in Package.__table__.columns}
 
-    assert columns == {"id", "name", "destination", "validated"}
+    assert columns == {"id", "name", "destination", "status", "creation_date"}
 
 
 def test_name_and_destination_are_unique_together():

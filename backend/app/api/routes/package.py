@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.models.status import ReviewStatus
 from app.schemas.package import PackageCreate, PackageRead, PackageUpdate
 from app.services import package as package_service
 
@@ -32,9 +33,11 @@ def _raise_conflict(db: Session, exc: Exception) -> None:
 
 
 @router.get("", response_model=list[PackageRead])
-def list_packages(db: Session = Depends(get_db)) -> list[PackageRead]:
-    """List all packages."""
-    return package_service.list_packages(db)
+def list_packages(
+    status: ReviewStatus | None = None, db: Session = Depends(get_db)
+) -> list[PackageRead]:
+    """List all packages, optionally filtered by status."""
+    return package_service.list_packages(db, status)
 
 
 @router.get("/{package_id}", response_model=PackageRead)
