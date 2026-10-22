@@ -1,5 +1,196 @@
 \section{Pregunta 3: Aplicación de DDD y Bounded Context en un dominio complejo}
 
-% Responsable: [Integrante 3]
+% Responsable: Alfonso Tejeda (@alfonsotejeda)
 
-[Redactar respuesta]
+\subsection*{El síntoma: un término, cuatro modelos}
+
+El escenario planteado describe un sistema en el que el término \emph{póliza} designa cuatro
+realidades distintas según quién lo pronuncie: para el actuario es un contrato con cláusulas y
+coberturas; para el departamento de siniestros, el expediente contra el que se presenta una
+reclamación; para facturación, una fuente de ingresos recurrentes; y para el ajustador que evalúa
+los daños en el lugar del accidente, apenas un número de referencia.
+
+Conviene empezar por reconocer de qué clase de problema se trata. No es una imprecisión
+terminológica que pueda resolverse acordando una definición común entre departamentos, sino una
+propiedad del dominio: cada área necesita de la póliza precisamente aquello que le permite ejecutar
+su trabajo, y las reglas de negocio que debe hacer cumplir sobre ella difieren entre sí.
+\textcite{evans2003} sostiene que el intento de construir un modelo único que unifique un dominio
+extenso conduce a uno de dos resultados, ambos indeseables: un modelo tan genérico que deja de
+expresar las reglas del negocio, o un modelo que acumula las preocupaciones de todas las áreas y
+que, en consecuencia, nadie puede modificar sin afectar a las demás. La alternativa que propone no
+consiste en unificar mejor, sino en renunciar deliberadamente a la unificación total y delimitar de
+forma explícita el ámbito de validez de cada modelo.
+
+\subsection*{División en contextos delimitados}
+
+Un \emph{Bounded Context} o contexto delimitado es la frontera explícita dentro de la cual un
+modelo de dominio concreto está definido y resulta aplicable, y dentro de la cual su terminología
+---el \emph{Lenguaje Ubicuo}--- es consistente y carece de ambigüedad \parencite{evans2003}. La
+frontera es simultáneamente lingüística, organizativa y técnica: delimita un vocabulario, el equipo
+que lo emplea y el código y el esquema de datos que lo materializan.
+\textcite{richardsford2020} destacan además su papel como criterio para decidir qué elementos
+pertenecen juntos al establecer la granularidad de los componentes de un sistema.
+
+El propio enunciado proporciona el criterio de división: allí donde un mismo término sostiene
+significados incompatibles, pasa una frontera. Se proponen por tanto cuatro contextos delimitados.
+
+\begin{center}
+\begin{tabular}{p{3.1cm}p{4.4cm}p{5.4cm}}
+\hline
+\textbf{Contexto} & \textbf{Qué es la póliza} & \textbf{Reglas que hace cumplir} \\
+\hline
+Suscripción & Contrato con cláusulas, coberturas y vigencia & Tarificación, evaluación del riesgo, condiciones de emisión y renovación \\
+\hline
+Siniestros & Expediente contra el que se reclama & Cobertura del hecho declarado, estados de la reclamación, plazos \\
+\hline
+Facturación de primas & Fuente de ingresos recurrentes & Cuotas, recibos, vencimientos, tratamiento del impago \\
+\hline
+Peritaje en campo & Número de referencia de una inspección & Valoración de daños, evidencia fotográfica, cierre del informe \\
+\hline
+\end{tabular}
+\end{center}
+
+Cada contexto mantiene su propio modelo de póliza, con los atributos y el comportamiento que sus
+reglas requieren y sin ninguno de los que no requieren. Lo que comparten no es una entidad, sino
+una \emph{identidad}: el identificador de la póliza, que permite correlacionar la información de los
+cuatro modelos sin que ninguno dependa de la estructura interna de los otros.
+
+Cabe precisar que un contexto delimitado no es un módulo, una capa ni un microservicio. Es una
+frontera semántica y, aunque puede coincidir con una unidad de despliegue, se trata de decisiones de
+distinto nivel: la primera responde a la coherencia del modelo; la segunda, a requisitos de
+escalabilidad, autonomía de los equipos y operación. Identificar ambas de forma automática es uno de
+los errores que \textcite{richardsford2020} advierten al discutir la granularidad de los servicios.
+
+\subsection*{Protección del modelo de Póliza}
+
+Delimitar los contextos no basta: hace falta un mecanismo que impida que los detalles de un contexto
+se filtren hacia el modelo de otro. Ese mecanismo descansa sobre dos piezas que operan de forma
+conjunta.
+
+La primera es la ya mencionada ausencia de una entidad compartida. En el contexto de Suscripción,
+\texttt{Póliza} es una \emph{raíz de agregado} \parencite{evans2003}: sus entidades y objetos de
+valor internos ---cláusulas, coberturas, condiciones particulares--- solo son alcanzables a través
+de la raíz, que es la responsable de hacer cumplir las invariantes del contrato. Ningún componente
+externo al agregado conserva una referencia directa a una cláusula suelta. Facturación no manipula
+esa estructura: mantiene su propia \texttt{CuentaDePrima}, que referencia la póliza únicamente por
+su identificador. Siniestros hace lo mismo con su \texttt{Expediente}, y Peritaje con su
+\texttt{OrdenDeInspección}.
+
+La segunda es el Lenguaje Ubicuo de cada contexto, que actúa como criterio de admisión: un atributo
+solo entra en un modelo si el vocabulario de ese contexto lo reclama. Preguntas como
+\enquote{¿cuánto se debe de esta póliza?} o \enquote{¿qué fotografías tomó el ajustador?} no
+pertenecen al Lenguaje Ubicuo de Suscripción y, por tanto, no justifican atributos en su modelo.
+
+El valor de estas dos restricciones se aprecia mejor por contraste. Supóngase el modelo unificado que
+se obtiene al ignorarlas, con una única clase que reúna cláusulas, coberturas, recibos pendientes,
+saldo deudor, siniestros abiertos, fotografías de los daños y la ubicación del ajustador. Las
+consecuencias son tres, en orden creciente de gravedad. Primera, un cambio en las reglas de
+facturación obliga a modificar y redesplegar el componente que sostiene la suscripción, pese a que
+las reglas actuariales no han cambiado. Segunda, las invariantes de las distintas áreas entran en
+conflicto dentro de una misma clase: para facturación una póliza con recibos impagados sigue
+existiendo y debe seguir generando cuotas, mientras que para suscripción puede haber quedado sin
+vigencia, y una sola clase no puede sostener ambas reglas a la vez sin recurrir a condicionales que
+dependen de quién la invoca. Tercera, y decisiva, la expresión \enquote{póliza activa} deja de tener
+un significado único en el código, que es exactamente la pérdida del Lenguaje Ubicuo que la
+delimitación de contextos venía a evitar.
+
+Por la misma razón debe descartarse resolver la integración mediante una base de datos compartida
+sobre la que los cuatro contextos leen y escriben. Una tabla común de pólizas reintroduce el modelo
+unificado por la puerta del esquema relacional: las cuatro áreas vuelven a quedar acopladas a una
+misma estructura, y cualquier columna añadida para satisfacer a una de ellas pasa a formar parte del
+modelo de las demás. \textcite{evans2003} contempla el patrón \emph{Shared Kernel} para compartir
+de forma deliberada un subconjunto reducido del modelo, pero con un coste de coordinación permanente
+entre los equipos implicados; en un escenario de cuatro áreas con vocabularios divergentes, ese
+coste no se justifica.
+
+\subsection*{Comunicación desacoplada entre los contextos}
+
+Los contextos permanecen separados pero no aislados: la emisión de una póliza debe producir cuotas,
+y la declaración de un siniestro debe originar una inspección. \textcite{evans2003} propone
+documentar esas relaciones de forma explícita en un \emph{Context Map}, acompañado de un catálogo de
+patrones de integración. Tres de ellos resultan pertinentes aquí.
+
+\begin{itemize}
+  \item \textbf{Capa de Anticorrupción} (\emph{Anticorruption Layer}). Es el patrón indicado para
+  consumir un modelo ajeno que no se controla, como un sistema de facturación de primas preexistente.
+  La capa traduce el modelo externo al propio en la frontera, de modo que el vocabulario y las
+  decisiones de diseño del sistema ajeno no penetren en el modelo de dominio.
+
+  \item \textbf{Open Host Service} con \textbf{Published Language}. Suscripción atiende a varios
+  consumidores, por lo que en lugar de exponer su modelo interno publica un contrato estable y
+  versionado, expresado en un lenguaje de intercambio acordado. Así puede evolucionar su modelo
+  interno sin romper a sus consumidores, siempre que respete el contrato publicado.
+
+  \item \textbf{Customer/Supplier}. Describe la relación entre Siniestros y Peritaje en campo: el
+  segundo provee al primero y ambos pertenecen a la misma organización, de modo que las necesidades
+  del consumidor pueden negociarse y planificarse en lugar de simplemente padecerse.
+\end{itemize}
+
+Resta justificar por qué la comunicación debe ser predominantemente asíncrona, y el argumento no es
+de oportunidad tecnológica sino una consecuencia del modelo. La regla de consistencia de los
+agregados establece que una transacción modifica un solo agregado \parencite{evans2003}; en
+consecuencia, en el momento en que una operación de negocio atraviesa la frontera de un contexto, la
+consistencia transaccional deja de estar disponible por construcción. Lo que queda es la
+publicación de hechos del dominio ---\emph{póliza emitida}, \emph{siniestro declarado},
+\emph{prima impagada}--- mediante mensajería, y la reacción autónoma de cada contexto, que mantiene
+su propia proyección de aquello que necesita saber del resto.
+
+El compromiso correspondiente debe declararse con honestidad. La integración asíncrona aporta
+autonomía operativa y tolerancia a la indisponibilidad temporal de un contexto, pero a cambio
+introduce consistencia eventual: existen ventanas durante las cuales Facturación aún no conoce una
+póliza ya emitida. Sostener ese diseño exige razonar sobre el orden y la posible duplicación de los
+mensajes, y aceptar que ciertas preguntas solo admiten respuesta aproximada hasta que el sistema
+converge; se trata de uno de los compromisos característicos de la integración distribuida que
+analizan \textcite{richardsford2020}.
+
+\subsection*{Arquitectura orientada al dominio y Adaptador de Servicio}
+
+La solución anterior describe \emph{dónde} están las fronteras, pero no \emph{cómo} se sostienen
+dentro de cada contexto. Esa es la aportación de las arquitecturas orientadas al dominio.
+La Arquitectura Cebolla organiza el sistema en capas concéntricas con el Modelo de Dominio en el
+centro, de manera que todas las dependencias apuntan hacia adentro y las capas externas implementan
+interfaces definidas en las internas \parencite{palermo2008}. La Arquitectura Limpia formula el
+mismo compromiso como \emph{Regla de Dependencia}: las dependencias del código fuente solo pueden
+apuntar hacia adentro, hacia las políticas de mayor nivel \parencite{martin2017}.
+
+La relación entre ambos cuerpos de ideas es de complementariedad y opera en niveles distintos: DDD
+determina \emph{qué} ocupa el centro ---el modelo de dominio de ese contexto, con su Lenguaje
+Ubicuo--- mientras que la arquitectura determina \emph{cómo} se lo protege, fijando la dirección de
+las dependencias. De ahí se sigue una decisión concreta de diseño: no existe una única cebolla para
+todo el sistema, sino que cada contexto delimitado recibe su propia instancia de la arquitectura,
+con su propio modelo de dominio en el centro y su propia infraestructura en el exterior.
+
+Queda por ubicar la traducción entre contextos. La Guía de Arquitectura N-Capas orientada al Dominio
+sitúa en la capa de Infraestructura unos componentes denominados \emph{Adaptadores de Servicio}, cuya
+responsabilidad es encapsular la invocación de servicios externos y traducir los datos que estos
+devuelven al modelo propio, de modo que ni el protocolo ni el vocabulario ajenos asciendan hacia las
+capas de dominio y aplicación \parencite{delatorre2010}.
+
+Esto permite cerrar el razonamiento: el Adaptador de Servicio es el lugar donde se materializa la
+Capa de Anticorrupción. El núcleo de dominio declara la interfaz que necesita ---por ejemplo, un
+\texttt{ServicioDeFacturación} expresado en los términos de su propio Lenguaje Ubicuo--- y el
+adaptador, residente en la capa de infraestructura, la implementa contra el protocolo concreto del
+sistema de primas y efectúa la traducción entre ambos modelos. La interfaz pertenece a la capa
+interna y la implementación a la externa, con lo que la dependencia del código fuente apunta hacia
+adentro y la Regla de Dependencia queda satisfecha. Es la misma construcción que
+\textcite{cockburn2005} describe como puertos y adaptadores, con el puerto en poder del interior.
+
+Dos consecuencias prácticas se desprenden de esta disposición. La primera es la testabilidad: al
+depender el dominio de una abstracción propia y no del cliente concreto del sistema externo, su
+lógica puede ejercitarse con una implementación sustituta de la interfaz, sin invocar el servicio de
+primas ni la biblioteca de comunicación que lo consume. La segunda es la capacidad de evolución:
+sustituir el sistema de facturación, o su protocolo, afecta a un único adaptador en la
+infraestructura y deja intacto el modelo de dominio, que es la porción del sistema cuya estabilidad
+interesa preservar.
+
+\subsection*{Síntesis}
+
+La solución propuesta se articula en tres niveles que responden a preguntas distintas y que deben
+sostenerse simultáneamente. En el nivel estratégico, DDD determina dónde situar las fronteras:
+cuatro contextos delimitados, deducidos de los significados incompatibles que el dominio asigna al
+término póliza, cada uno con su Lenguaje Ubicuo y su propio modelo. En el nivel estructural, las
+arquitecturas Cebolla y Limpia fijan la dirección de las dependencias dentro de cada contexto y
+mantienen el modelo de dominio libre de detalles de infraestructura. En el nivel de implementación,
+el Adaptador de Servicio concreta la traducción en la frontera y da forma a la Capa de
+Anticorrupción, de manera que el modelo protegido en los dos niveles anteriores sobreviva al
+contacto con sistemas que la organización no controla.
