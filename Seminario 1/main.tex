@@ -1,12 +1,19 @@
 \documentclass[12pt,a4paper]{article}
 
+% ------------------------------------------------------------
+% PAQUETES
+% ------------------------------------------------------------
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[spanish,es-noquoting]{babel}
 \usepackage{csquotes}
 \usepackage{graphicx}
 \usepackage{geometry}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{listings}
+\usepackage{microtype}
 \usepackage{hyperref}
+\usepackage{xurl}
 \geometry{margin=2.5cm}
 
 % Bibliografía: estilo autor-año (APA)
@@ -16,6 +23,68 @@
 
 \graphicspath{{figures/}}
 
+% ------------------------------------------------------------
+% ESTILO DE CÓDIGO
+% ------------------------------------------------------------
+% Paleta tipo editor claro (ESTAS DEFINICIONES FALTABAN)
+\definecolor{codebg}{RGB}{246,248,250}
+\definecolor{codeframe}{RGB}{208,215,222}
+\definecolor{codekw}{RGB}{207,34,46}
+\definecolor{codetype}{RGB}{5,80,174}
+\definecolor{codecomment}{RGB}{106,115,125}
+\definecolor{codestring}{RGB}{10,48,105}
+\definecolor{codenum}{RGB}{140,149,159}
+
+\lstdefinelanguage{CSharp}{
+  morekeywords={abstract,as,async,await,base,bool,break,case,catch,class,const,
+    continue,decimal,default,do,double,else,enum,false,finally,for,foreach,if,
+    in,int,interface,internal,is,namespace,new,null,override,private,protected,
+    public,readonly,record,return,sealed,static,string,struct,switch,this,throw,
+    true,try,using,var,virtual,void,while},
+  morekeywords=[2]{IProductoRepository,Producto,RegistrarEntradaDeStock,
+    SqlServerProductoRepository,MongoProductoRepository,
+    ProductoRepositoryEnMemoria},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  sensitive=true
+}
+
+\lstdefinestyle{codigo}{
+  language=CSharp,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{codekw}\bfseries,
+  keywordstyle=[2]\color{codetype},
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestring},
+  numbers=left,
+  numberstyle=\tiny\color{codenum},
+  numbersep=8pt,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  framesep=6pt,
+  xleftmargin=18pt,
+  framexleftmargin=18pt,
+  aboveskip=1em,
+  belowskip=1em,
+  breaklines=true,
+  breakatwhitespace=true,
+  postbreak=\mbox{\textcolor{codekw}{\textbackslash}\space},
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=4,
+  captionpos=b,
+  extendedchars=true,
+  literate=
+    {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+    {ñ}{{\~n}}1 {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+}
+\lstset{style=codigo}
+\renewcommand{\lstlistingname}{Código}
+
+% ------------------------------------------------------------
 \begin{document}
 
 % ------------------------------------------------------------
