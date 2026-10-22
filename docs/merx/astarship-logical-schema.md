@@ -11,12 +11,12 @@
 | Activity     | <u>ID</u>, Name, EffortLevel, Duration, Status, CreationDate |
 | Attraction   | <u>ID</u>, Name, Address, Latitude, Longitude                |
 
-| Especialización | Supertipo | Subtipo           | Atributos |
-| --------------- | --------- | ----------------- | --------- |
-| Role            | User      | Admin             | —         |
-| Role            | User      | Guide             | Specialty |
-| Role            | User      | OperationsManager | —         |
-| Role            | User      | Tourist           | Age       |
+| Supertipo | Subtipo           | Atributos | Tipo de especialización     |
+| --------- | ----------------- | --------- | --------------------------- |
+| User      | Admin             | —         | Total, disjunta (partición) |
+| User      | Guide             | Specialty | Total, disjunta (partición) |
+| User      | OperationsManager | —         | Total, disjunta (partición) |
+| User      | Tourist           | Age       | Total, disjunta (partición) |
 
 ## 2. Interrelaciones
 
@@ -55,18 +55,17 @@
 
 ### Entidades:
 
-**User**(<u>ID</u>, Name, Email, Role, Specialty, Age, ID_TravelGroup)
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_TravelGroup REFERENCES TravelGroup(ID)*
+**User**(<u>ID</u>, Name, Email)
 
 **TravelGroup**(<u>ID</u>, Name, ID_Guide)
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES Guide(ID)*
 
 **Package**(<u>ID</u>, Name, Destination, Status, CreationDate, ID_Admin)
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Admin REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Admin REFERENCES Admin(ID)*
 
 **Itinerary**(<u>ID</u>, CreationDate, Status, ActivityCount, ID_Package, ID_Guide)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Package REFERENCES Package(ID)*
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES Guide(ID)*
 
 **ActivityType**(<u>Code</u>, Name)
 
@@ -77,8 +76,23 @@
 **Activity**(<u>ID</u>, Name, EffortLevel, Duration, Status, CreationDate, Code_Type, ID_Category, ID_Guide, ID_Attraction)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: Code_Type REFERENCES ActivityType(Code)*
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Category REFERENCES Category(ID)*
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES Guide(ID)*
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Attraction REFERENCES Attraction(ID)*
+
+### Especializaciones:
+
+**Admin**(<u>ID</u>)
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID REFERENCES User(ID)*
+
+**Guide**(<u>ID</u>, Specialty)
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID REFERENCES User(ID)*
+
+**OperationsManager**(<u>ID</u>)
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID REFERENCES User(ID)*
+
+**Tourist**(<u>ID</u>, Age, ID_TravelGroup)
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_TravelGroup REFERENCES TravelGroup(ID)*
 
 ### Interrelaciones:
 
@@ -96,30 +110,30 @@
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Itinerary REFERENCES Itinerary(ID)*
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Category REFERENCES Category(ID)*
 
-**ItineraryValidation**(<u>ID_Itinerary</u>, <u>ID_Guide</u>, ValidationDate, Result, Observations)
+**ItineraryValidation**(<u>ID_Itinerary</u>, <u>ID_Guide</u>, <u>ValidationDate</u>, Result, Observations)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Itinerary REFERENCES Itinerary(ID)*
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES Guide(ID)*
 
-**ItineraryApproval**(<u>ID_Itinerary</u>, <u>ID_Manager</u>, ApprovalDate, Result, Observations)
+**ItineraryApproval**(<u>ID_Itinerary</u>, <u>ID_Manager</u>, <u>ApprovalDate</u>, Result, Observations)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Itinerary REFERENCES Itinerary(ID)*
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Manager REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Manager REFERENCES OperationsManager(ID)*
 
-**PackageValidation**(<u>ID_Package</u>, <u>ID_Manager</u>, ValidationDate, Result, Observations)
+**PackageValidation**(<u>ID_Package</u>, <u>ID_Manager</u>, <u>ValidationDate</u>, Result, Observations)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Package REFERENCES Package(ID)*
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Manager REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Manager REFERENCES OperationsManager(ID)*
 
-**ActivityValidation**(<u>ID_Activity</u>, <u>ID_Admin</u>, ValidationDate, Result, Observations)
+**ActivityValidation**(<u>ID_Activity</u>, <u>ID_Admin</u>, <u>ValidationDate</u>, Result, Observations)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Activity REFERENCES Activity(ID)*
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Admin REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Admin REFERENCES Admin(ID)*
 
 **Assignment**(<u>ID_Itinerary</u>, <u>ID_Tourist</u>, AssignmentDate, Status, ID_Admin)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Itinerary REFERENCES Itinerary(ID)*
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Tourist REFERENCES User(ID)*
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Admin REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Tourist REFERENCES Tourist(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Admin REFERENCES Admin(ID)*
 
 **ModificationRequest**(<u>ID_Itinerary</u>, <u>ID_Tourist</u>, <u>ID_Guide</u>, <u>RequestDate</u>, Description, Status, Result)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: (ID_Itinerary, ID_Tourist) REFERENCES Assignment(ID_Itinerary, ID_Tourist)*
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES Guide(ID)*
 
 **ItineraryComposition**(<u>ID_Itinerary</u>, <u>ID_Activity</u>, Order, Day, StartTime)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Itinerary REFERENCES Itinerary(ID)*
@@ -130,9 +144,9 @@
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: (ID_Itinerary, ID_Activity) REFERENCES ItineraryComposition(ID_Itinerary, ID_Activity)*
 
 **Authorization**(<u>ID_Guide</u>, <u>ID_Package</u>, CanGenerate, CanValidate)
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES Guide(ID)*
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Package REFERENCES Package(ID)*
 
 **Booking**(<u>ID_Tourist</u>, <u>ID_Package</u>, BookingDate)
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Tourist REFERENCES User(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Tourist REFERENCES Tourist(ID)*
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Package REFERENCES Package(ID)*
