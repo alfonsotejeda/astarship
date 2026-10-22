@@ -1,19 +1,21 @@
 import type { HTMLAttributes } from "react";
 import "./StatusPill.css";
 
-export type ItineraryStatus = "generado" | "revision" | "aprobado" | "rehacer" | "asignado";
+export type ReviewStatus = "pendiente" | "validado" | "aprobado" | "rechazado";
+export type AssignmentStatus = "asignado" | "en_curso" | "finalizado";
 export type RequestStatus = "solicitada" | "atendiendo" | "resuelta" | "denegada";
 export type VisitStatus = "pendiente" | "realizada" | "abandonada";
-export type Status = ItineraryStatus | RequestStatus | VisitStatus;
+export type Status = ReviewStatus | AssignmentStatus | RequestStatus | VisitStatus;
 
 type StatusTone = "info" | "warn" | "ok" | "bad" | "neutral";
 
 const STATUSES: Record<Status, { label: string; tone: StatusTone }> = {
-  generado: { label: "Generado", tone: "info" },
-  revision: { label: "En revisión", tone: "warn" },
+  validado: { label: "Validado", tone: "info" },
   aprobado: { label: "Aprobado", tone: "ok" },
-  rehacer: { label: "Rehacer", tone: "bad" },
+  rechazado: { label: "Rechazado", tone: "bad" },
   asignado: { label: "Asignado", tone: "info" },
+  en_curso: { label: "En curso", tone: "warn" },
+  finalizado: { label: "Finalizado", tone: "ok" },
   solicitada: { label: "Solicitada", tone: "warn" },
   atendiendo: { label: "En atención", tone: "info" },
   resuelta: { label: "Resuelta", tone: "ok" },

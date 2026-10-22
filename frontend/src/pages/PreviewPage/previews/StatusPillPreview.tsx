@@ -4,13 +4,21 @@ export function StatusPillPreview() {
   return (
     <>
       <section className="preview-section">
-        <h2>Itinerario</h2>
+        <h2>Itinerario, paquete y actividad</h2>
         <div className="preview-row">
-          <StatusPill status="generado" />
-          <StatusPill status="revision" />
+          <StatusPill status="pendiente" />
+          <StatusPill status="validado" />
           <StatusPill status="aprobado" />
-          <StatusPill status="rehacer" />
+          <StatusPill status="rechazado" />
+        </div>
+      </section>
+
+      <section className="preview-section">
+        <h2>Asignación</h2>
+        <div className="preview-row">
           <StatusPill status="asignado" />
+          <StatusPill status="en_curso" />
+          <StatusPill status="finalizado" />
         </div>
       </section>
 
@@ -36,7 +44,7 @@ export function StatusPillPreview() {
       <section className="preview-section">
         <h2>Etiqueta propia</h2>
         <div className="preview-row">
-          <StatusPill status="revision">Revisión 2/3</StatusPill>
+          <StatusPill status="pendiente">Revisión 2/3</StatusPill>
           <StatusPill status="aprobado" tabIndex={0}>
             Enfocable
           </StatusPill>
