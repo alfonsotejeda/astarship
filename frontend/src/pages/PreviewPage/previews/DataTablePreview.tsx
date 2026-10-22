@@ -2,7 +2,7 @@ import { useState } from "react";
 import { DataTable } from "@/components/DataTable/DataTable";
 import type { Column } from "@/components/DataTable/DataTable";
 import { StatusPill } from "@/components/StatusPill/StatusPill";
-import type { ItineraryStatus } from "@/components/StatusPill/StatusPill";
+import type { ReviewStatus } from "@/components/StatusPill/StatusPill";
 import { formatDate } from "@/lib/format";
 
 type ItineraryRow = {
@@ -12,31 +12,29 @@ type ItineraryRow = {
   total: number;
   ratio: string;
   coverage: number;
-  status: ItineraryStatus;
+  status: ReviewStatus;
 };
 
-const STATUS_ORDER: Record<ItineraryStatus, number> = {
-  generado: 1,
-  revision: 2,
-  rehacer: 3,
+const STATUS_ORDER: Record<ReviewStatus, number> = {
+  pendiente: 1,
+  validado: 2,
+  rechazado: 3,
   aprobado: 4,
-  asignado: 5,
 };
 
-const STATUS_LABEL: Record<ItineraryStatus, string> = {
-  generado: "Generado",
-  revision: "En revisión",
-  rehacer: "Rehacer",
+const STATUS_LABEL: Record<ReviewStatus, string> = {
+  pendiente: "Pendiente",
+  validado: "Validado",
+  rechazado: "Rechazado",
   aprobado: "Aprobado",
-  asignado: "Asignado",
 };
 
 const ROWS: ItineraryRow[] = [
   { id: "IT-0142", creator: "Laura Pérez", date: "2026-10-08", total: 12, ratio: "5 / 4 / 3", coverage: 100, status: "aprobado" },
-  { id: "IT-0139", creator: "Ernesto Díaz", date: "2026-10-05", total: 10, ratio: "6 / 2 / 2", coverage: 80, status: "rehacer" },
-  { id: "IT-0151", creator: "Laura Pérez", date: "2026-10-10", total: 14, ratio: "6 / 5 / 3", coverage: 100, status: "revision" },
-  { id: "IT-0128", creator: "Yanet Rodríguez", date: "2026-09-27", total: 8, ratio: "4 / 2 / 2", coverage: 60, status: "asignado" },
-  { id: "IT-0155", creator: "Ernesto Díaz", date: "2026-10-11", total: 12, ratio: "4 / 4 / 4", coverage: 100, status: "generado" },
+  { id: "IT-0139", creator: "Ernesto Díaz", date: "2026-10-05", total: 10, ratio: "6 / 2 / 2", coverage: 80, status: "rechazado" },
+  { id: "IT-0151", creator: "Laura Pérez", date: "2026-10-10", total: 14, ratio: "6 / 5 / 3", coverage: 100, status: "validado" },
+  { id: "IT-0128", creator: "Yanet Rodríguez", date: "2026-09-27", total: 8, ratio: "4 / 2 / 2", coverage: 60, status: "aprobado" },
+  { id: "IT-0155", creator: "Ernesto Díaz", date: "2026-10-11", total: 12, ratio: "4 / 4 / 4", coverage: 100, status: "pendiente" },
 ];
 
 const COLUMNS: Column<ItineraryRow>[] = [
