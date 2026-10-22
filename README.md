@@ -48,3 +48,4 @@ Proyecto de Bases de Datos II e Ingeniería de Software, curso 2026–2027, Facu
 | Eric Reyes Milián | [@EricReyesMilian](https://github.com/EricReyesMilian) |
 | Kamila Reinoso Asín | [@KamAlien](https://github.com/KamAlien) |
 | Miguel Andrés Cazorla Zamora | [@andr-migue](https://github.com/andr-migue) |
+|Reynaldo Guillermo Capdevila Reyes | [@kaizenrg](https://GitHub.com/kaizenrg) |
