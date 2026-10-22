@@ -1,5 +1,13 @@
 \section{Pregunta 6: N-Capas frente a requisitos de atributos de calidad}
 
-% Responsable: [Integrante 6]
+% Responsable: [Reynaldo Guillermo Capdevila Reyes]
 
-[Redactar respuesta]
+\textbf{Análisis de la afirmación:} La Arquitectura N-Capas es criticada por su bajo rendimiento en "Agilidad general", "Facilidad de despliegue" y "Escalabilidad". El uso de capas abiertas (open layers) y técnicas como el "fast-lane reader" buscan mitigar esto permitiendo que las peticiones salten capas intermedias.
+
+\textbf{Impacto en el Aislamiento de Capas y la Mantenibilidad:} La introducción de capas abiertas rompe el principio de aislamiento. Al permitir que una capa superior se salte capas inferiores, se genera un alto acoplamiento. A largo plazo, esto destruye la mantenibilidad: cualquier cambio en una capa inferior (como la base de datos) puede romper múltiples capas superiores que dependían directamente de ella, haciendo que el sistema sea una maraña frágil y difícil de rastrear.
+
+\textbf{El anti-patrón "Sinkhole":} La solución de capas abiertas puede derivar en un "sinkhole anti-pattern" (agujero de sumidero). Este ocurre cuando una petición pasa por múltiples capas (Controlador -Servicio - Repositorio) sin que ninguna realice procesamiento lógico real; simplemente pasan los datos de largo. Usar capas abiertas para acelerar este tránsito es admitir que las capas intermedias son inútiles para ese flujo, agregando complejidad y consumo de recursos innecesarios.
+
+\textbf{La regla del 80/20:} Esta regla establece que en la mayoría de los sistemas el 80\% de las peticiones son simples (solo pasan datos) y el 20\% requieren lógica compleja. Si se usan capas abiertas para acelerar ese 80\%, se está rompiendo la arquitectura por un beneficio marginal. Lo ideal es usar una arquitectura que no requiera capas intermedias para operaciones simples, evitando el "sinkhole".
+
+\textbf{Idoneidad de Arquitecturas Hexagonal o Limpia:} Para sistemas con altos requisitos de escalabilidad y agilidad, las arquitecturas Hexagonal o Limpia son inherentemente más adecuadas. Se basan en el principio de Inversión de Dependencias (DDD), donde el núcleo del dominio no depende de la infraestructura, sino al revés. Esto permite cambiar bases de datos o frameworks sin tocar la lógica de negocio, facilita las pruebas unitarias (testear el dominio sin la base de datos) y permite escalar módulos de forma independiente. En N-Capas, el dominio depende de la base de datos, lo que ata la arquitectura y limita la agilidad.
