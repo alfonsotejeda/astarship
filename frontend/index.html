@@ -5,6 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Astarship</title>
+    <script>
+      (() => {
+        let stored = null
+        try {
+          stored = localStorage.getItem('astarship:theme')
+        } catch {
+          stored = null
+        }
+        document.documentElement.dataset.theme =
+          stored === 'light' || stored === 'dark'
+            ? stored
+            : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
