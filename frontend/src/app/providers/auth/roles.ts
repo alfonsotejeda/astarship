@@ -1,8 +1,15 @@
 export type Role = "guide" | "manager" | "tourist" | "admin";
 
+export interface PackageAuthorization {
+  packageId: number;
+  canGenerate: boolean;
+  canValidate: boolean;
+}
+
 export interface User {
   name: string;
   role: Role;
+  authorizations?: PackageAuthorization[];
 }
 
 export const ROLE_LABEL: Record<Role, string> = {
