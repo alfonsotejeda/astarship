@@ -1,0 +1,84 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{csquotes}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+\geometry{margin=2.5cm}
+
+% Bibliografía: estilo autor-año (APA)
+\usepackage[backend=biber,style=apa]{biblatex}
+\DeclareLanguageMapping{spanish}{spanish-apa}
+\addbibresource{references.bib}
+
+\graphicspath{{figures/}}
+
+\begin{document}
+
+% ------------------------------------------------------------
+% PORTADA
+% ------------------------------------------------------------
+\begin{titlepage}
+  \centering
+  {\Large \textbf{Seminario de Arquitecturas de Software:\\
+  Un Análisis Comparativo de Estilos Basados en Capas y Dominio}\par}
+  \vspace{1.5cm}
+  {\large Ingeniería de Software\par}
+  \vspace{1cm}
+  {\large \textbf{Equipo:} [NombreEquipo]\par}
+  \vspace{1.5cm}
+
+  \begin{tabular}{p{7cm}p{6cm}}
+    \hline
+    \textbf{Integrante} & \textbf{Pregunta(s)} \\
+    \hline
+    [Nombre completo 1] & Pregunta 1 \\
+    [Nombre completo 2] & Pregunta 2 \\
+    [Nombre completo 3] & Pregunta 3 \\
+    [Nombre completo 4] & Pregunta 4 \\
+    [Nombre completo 5] & Pregunta 5 \\
+    [Nombre completo 6] & Pregunta 6 \\
+    \hline
+  \end{tabular}
+
+  \vspace{1.5cm}
+  \textbf{Repositorio:} \url{https://github.com/[usuario]/[repositorio]}
+
+  \vfill
+  {\large \today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ------------------------------------------------------------
+% PREGUNTAS (una por archivo)
+% ------------------------------------------------------------
+\input{secciones/p1}
+\input{secciones/p2}
+\input{secciones/p3}
+\input{secciones/p4}
+\input{secciones/p5}
+\input{secciones/p6}
+
+% ------------------------------------------------------------
+% BIBLIOGRAFÍA
+% ------------------------------------------------------------
+\newpage
+\printbibliography[title={Referencias}]
+
+% ------------------------------------------------------------
+% DECLARACIÓN DE USO DE IA (al final, después de la bibliografía)
+% ------------------------------------------------------------
+\section*{Declaración de Uso de la Inteligencia Artificial}
+
+% Completar: herramienta y versión, propósito, y forma de integración
+% del resultado en el documento. Indicar qué integrantes la usaron.
+% Si ningún integrante usó IA, confirmarlo con el equipo.
+
+[Completar]
+
+\end{document}
