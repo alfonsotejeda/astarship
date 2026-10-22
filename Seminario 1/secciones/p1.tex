@@ -1,6 +1,137 @@
 \section[Pregunta 1: Análisis de trade-offs]{Pregunta 1: Análisis de trade-offs\\(N-Capas vs. Clean/Onion/Hexagonal)}
 
 % Responsable: [Integrante 1]
-% Ejemplo de cita: \parencite{martin2017}, \textcite{cockburn2005}
+% Ejemplos de cita: \parencite{martin2017}, \textcite{cockburn2005}
+%1. Análisis de Trade-offs (Arquitectura N-Capas vs. Clean/Onion/Hexagonal): Un
+%equipo de desarrollo está construyendo un sistema de gestión de inventario. Inicialmente,
+%eligen una Arquitectura N-Capas tradicional por su simplicidad y familiaridad. Después de
+%un año, el sistema se ha vuelto un monolito difícil de mantener, donde los cambios en la
+%base de datos afectan la lógica de negocio y la interfaz de usuario, y las pruebas unitarias
+%son lentas y frágiles.
+%Con base en los principios de la Arquitectura Limpia y la Arquitectura Hexagonal, expli-
+%que detalladamente qué error fundamental de acoplamiento se está cometiendo y cómo la
+%introducción de la Regla de Dependencia (Martin) o el uso de Puertos y Adapta-
+%dores (Cockburn) resolverían estructuralmente este problema. Cuál sería el impacto en
+%la testabilidad y la capacidad de cambiar la base de datos de SQL Server a MongoDB sin
+%afectar la lógica de negocio?
 
-[Redactar respuesta]
+El caso del sistema de inventario es común: la arquitectura N-Capas tradicional puede funcionar bien al principio y, con el tiempo, el sistema volverse difícil de modificar. Los síntomas descritos —cambios en la base de datos que se propagan hasta la lógica de negocio y la interfaz, junto con pruebas unitarias lentas y frágiles— pueden tener una causa común: un acoplamiento excesivo entre las reglas del negocio y los detalles de infraestructura. A continuación, analizamos por qué ocurre y cómo puede corregirse.
+
+\subsection{El error fundamental: el negocio depende de un detalle}
+
+El problema no está en utilizar capas, sino en la dirección de sus dependencias. En una arquitectura N-Capas tradicional, la Presentación depende de la capa de Negocio y esta, a su vez, depende de la capa de Acceso a Datos, que interactúa con la base de datos \parencite{richards2015}. Cuando la lógica de negocio utiliza directamente componentes, modelos o contratos específicos de la persistencia, la parte más estable y valiosa del sistema queda acoplada a un detalle tecnológico que puede cambiar con mayor frecuencia.
+
+Esto entra en conflicto con el Principio de Inversión de Dependencias: los módulos de alto nivel no deberían depender directamente de los módulos de bajo nivel; ambos deberían depender de abstracciones \parencite{martin2017}. En el sistema de inventario, este acoplamiento puede producir tres consecuencias:
+
+\begin{itemize}
+    \item \textbf{Propagación de cambios.} Si las entidades del ORM, las consultas o los contratos de persistencia se utilizan directamente desde la lógica de negocio o la presentación, un cambio en el esquema de la base de datos puede obligar a modificar varias capas. Esto no ocurre necesariamente en toda arquitectura N-Capas, sino cuando los límites entre ellas no aíslan adecuadamente los detalles de persistencia.
+
+    \item \textbf{Un dominio moldeado por la tecnología.} Las entidades del negocio pueden terminar reflejando la estructura de las tablas o las clases generadas por el ORM, en lugar de representar los conceptos y reglas propios del inventario. De este modo, las decisiones de persistencia influyen innecesariamente en el modelo de dominio.
+
+    \item \textbf{Pruebas acopladas a la infraestructura.} Cuando un caso de uso depende directamente de una implementación concreta de acceso a datos, probar una regla de negocio puede exigir una base de datos real o simulaciones complejas. Las pruebas pueden entonces depender de la red, de datos precargados y del estado del esquema, volviéndose más lentas y frágiles. Esto no es inevitable en N-Capas, pero sí un riesgo cuando no se separan las abstracciones de sus implementaciones.
+\end{itemize}
+
+Conviene aclarar que la descripción anterior se refiere a una implementación tradicional en la que la lógica de negocio depende de detalles de persistencia. La guía de Microsoft sobre arquitectura N-Capas orientada al dominio muestra una variante que sitúa las interfaces de los repositorios en una capa interna, lo que permite desacoplar el dominio de las implementaciones concretas de acceso a datos \parencite{delatorre2010}. Por tanto, no todas las arquitecturas por capas presentan necesariamente el mismo problema: el resultado depende de cómo se definan y respeten sus límites.
+
+\subsection{Cómo lo resuelve la Regla de Dependencia}
+
+La Arquitectura Limpia propone que las dependencias del código fuente apunten hacia adentro, en dirección a las políticas de más alto nivel \parencite{martin2017}. En su representación habitual, las entidades se sitúan en el centro; después aparecen los casos de uso; y, hacia el exterior, los adaptadores de interfaz y los frameworks y drivers, donde suelen encontrarse la interfaz de usuario, la base de datos y otras tecnologías. Los componentes internos no deben depender de clases, funciones o formatos definidos exclusivamente en los círculos externos.
+
+En el sistema de inventario, un caso de uso como \texttt{RegistrarEntradaDeStock} necesita recuperar y guardar un producto, pero no debería conocer SQL Server ni MongoDB. Para lograrlo, el núcleo define la interfaz que necesita y la infraestructura proporciona una implementación concreta. En tiempo de ejecución, el caso de uso puede invocar esa implementación a través de la interfaz; sin embargo, la dependencia del código fuente apunta desde la implementación concreta hacia la abstracción definida en el núcleo.
+
+\begin{lstlisting}[caption={Inversión de dependencias en el sistema de inventario}, label={lst:repo}]
+// Nucleo de la aplicacion: no depende de un motor de base de datos.
+public interface IProductoRepository
+{
+    Producto ObtenerPorSku(string sku);
+    void Guardar(Producto producto);
+}
+
+// Caso de uso: depende de la abstraccion del repositorio.
+public class RegistrarEntradaDeStock
+{
+    private readonly IProductoRepository _repo;
+
+    public RegistrarEntradaDeStock(IProductoRepository repo)
+    {
+        _repo = repo;
+    }
+
+    public void Ejecutar(string sku, int cantidad)
+    {
+        var producto = _repo.ObtenerPorSku(sku);
+        producto.AgregarStock(cantidad); // Regla de negocio
+        _repo.Guardar(producto);
+    }
+}
+
+// Infraestructura: implementa el puerto definido por el nucleo.
+public class SqlServerProductoRepository : IProductoRepository
+{
+    public Producto ObtenerPorSku(string sku)
+    {
+        // Implementacion concreta mediante EF Core o ADO.NET.
+        throw new NotImplementedException();
+    }
+
+    public void Guardar(Producto producto)
+    {
+        // Implementacion concreta mediante EF Core o ADO.NET.
+        throw new NotImplementedException();
+    }
+}
+\end{lstlisting}
+
+El fragmento es ilustrativo: presupone que la clase \texttt{Producto} y sus reglas están definidas en el núcleo, y que los métodos del repositorio se implementan utilizando la tecnología seleccionada. En una aplicación real también habría que definir cómo se gestionan los casos en que el producto no existe o la cantidad recibida no es válida.
+
+La implementación concreta se proporciona al caso de uso desde la raíz de composición, es decir, el punto de arranque donde se registran y conectan las dependencias. Ese es el lugar que conoce tanto la abstracción del núcleo como la implementación concreta de infraestructura.
+
+\subsection{La misma idea vista como Puertos y Adaptadores}
+
+\textcite{cockburn2005} plantea una estructura equivalente a partir de otro objetivo: que la aplicación pueda utilizarse desde distintos entornos —por una persona, otro programa, una prueba automatizada o un script— y que pueda desarrollarse y probarse sin depender de dispositivos o bases de datos reales. Para ello distingue dos conceptos:
+
+\begin{itemize}
+    \item El \textbf{puerto} es una interfaz que representa una operación o necesidad de la aplicación, como guardar un producto o registrar una entrada de stock. Debe expresar una intención del negocio o de la aplicación, no una tecnología concreta.
+
+    \item El \textbf{adaptador} es un componente externo que conecta el puerto con una tecnología o mecanismo específico, como SQL Server, MongoDB, una API REST o una implementación de prueba.
+\end{itemize}
+
+En el ejemplo, \texttt{IProductoRepository} funciona como un puerto de salida y \texttt{SqlServer\-Producto\-Repository} como su adaptador concreto. Un controlador HTTP, por su parte, puede actuar como adaptador de entrada al traducir una petición externa en una llamada a un caso de uso.
+
+La Arquitectura Onion de \textcite{palermo2008} sigue una idea relacionada mediante capas concéntricas: el modelo de dominio ocupa el centro, las abstracciones necesarias se definen en capas internas y la infraestructura las implementa desde el exterior. Aunque las metáforas y la organización visual difieren, Clean, Onion y Hexagonal buscan proteger el núcleo frente a los detalles externos y permitir que estos se sustituyan sin modificar innecesariamente las reglas de negocio.
+
+\subsection{Impacto en la testabilidad}
+
+Cuando los casos de uso dependen de abstracciones, las pruebas del núcleo no necesitan utilizar obligatoriamente la base de datos real. Se puede crear un adaptador de prueba en memoria, por ejemplo, una clase \texttt{Producto\-Repository\-EnMemoria} respaldada por un diccionario. Esto aporta varias ventajas:
+
+\begin{itemize}
+    \item Las pruebas de reglas de negocio y de casos de uso pueden ejecutarse sin acceder a la red ni al disco, por lo que normalmente son más rápidas.
+
+    \item Las pruebas pueden ser más deterministas, ya que se reduce su dependencia del estado de una base de datos, de la configuración de la infraestructura y de los datos compartidos. Aun así, el determinismo también depende de que las propias pruebas estén correctamente diseñadas.
+
+    \item La integración con la base de datos real se verifica mediante un conjunto específico de pruebas de integración o de contrato, que comprueba que el adaptador implementa correctamente el puerto definido por la aplicación.
+\end{itemize}
+
+Así se favorece una pirámide de pruebas equilibrada: muchas pruebas rápidas para la lógica del núcleo y un conjunto más reducido de pruebas de integración para verificar los adaptadores y la infraestructura. Estas últimas siguen siendo necesarias, porque las pruebas unitarias con repositorios en memoria no demuestran por sí solas que las consultas, transacciones o configuraciones de la base de datos real funcionen correctamente.
+
+\subsection{Impacto al cambiar de SQL Server a MongoDB}
+
+Con esta estructura, desde la perspectiva del código de aplicación, la sustitución del motor se concentra principalmente en dos pasos: implementar un adaptador \texttt{Mongo\-Producto\-Repository} que satisfaga el contrato de \texttt{IProductoRepository} y actualizar el registro de dependencias en la raíz de composición. Las entidades del dominio, los casos de uso y sus pruebas unitarias pueden permanecer sin cambios, siempre que la nueva implementación respete el contrato y que dicho contrato no exponga particularidades de SQL Server.
+
+No obstante, la migración completa no es gratuita ni se limita a cambiar una clase. Hay que reescribir y probar el adaptador, migrar los datos existentes y tratar las diferencias entre ambos sistemas, como las garantías transaccionales, la representación de relaciones, los índices y las formas de consulta. La inversión de dependencias acota el impacto en el código de aplicación, pero no elimina el trabajo de migración ni las decisiones de diseño asociadas.
+
+Para que el desacoplamiento sea efectivo, conviene tener en cuenta tres aspectos:
+
+\begin{itemize}
+    \item \textbf{El puerto debe hablar el lenguaje del dominio.} Si la interfaz expone detalles específicos de una tecnología, como \texttt{IQueryable}, consultas SQL o identificadores autoincrementales, esos detalles pueden filtrarse hacia el núcleo y reducir la independencia que se pretendía conseguir.
+
+    \item \textbf{El costo se concentra, pero no desaparece.} Es necesario desarrollar y probar el nuevo adaptador, adaptar la persistencia y verificar que se conservan las reglas y garantías que necesita la aplicación.
+
+    \item \textbf{Los agregados de DDD orientan, pero no determinan, el almacenamiento.} Las fronteras de los agregados ayudan a identificar qué información debe mantener su consistencia conjuntamente. Sin embargo, no implican que cada agregado deba almacenarse como un único documento en MongoDB. Por ejemplo, en el inventario puede ser conveniente guardar el producto y su stock actual en un documento y almacenar los movimientos históricos por separado, según el volumen de datos, los patrones de consulta y los requisitos de consistencia.
+\end{itemize}
+
+\subsection{Conclusión}
+
+El error del equipo no fue elegir una arquitectura por capas, sino permitir que el núcleo del negocio dependiera directamente de detalles de persistencia. Invertir esa dependencia, mediante la Regla de Dependencia de Martin o mediante los Puertos y Adaptadores de Cockburn, permite que las reglas de negocio permanezcan aisladas y que la base de datos se trate como un detalle reemplazable.
+
+Esta decisión tiene un costo: puede introducir más interfaces, indirección y disciplina de diseño desde las primeras etapas. En una aplicación CRUD pequeña y sencilla, ese nivel de abstracción podría no compensar. Sin embargo, en un sistema de inventario que ya ha demostrado ser difícil de mantener, separar el núcleo de la infraestructura puede mejorar la mantenibilidad, acelerar las pruebas de la lógica de negocio y reducir el alcance de los cambios tecnológicos. El beneficio real depende de que las interfaces representen necesidades de la aplicación y de que las capas respeten las direcciones de dependencia establecidas.
