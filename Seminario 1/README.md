@@ -7,16 +7,16 @@ Estudio comparativo de cinco estilos arquitectónicos: N-Capas, Hexagonal (Puert
 
 ## Equipo
 
-**Nombre del equipo:** _[NombreEquipo]_
+**Nombre del equipo:** _HAVING FE_
 
-| Integrante | Usuario de GitHub | Pregunta |
-|---|---|---|
-| _[Nombre completo 1]_ | @usuario1 | Pregunta 1 |
-| _[Nombre completo 2]_ | @usuario2 | Pregunta 2 |
-| _[Nombre completo 3]_ | @usuario3 | Pregunta 3 |
-| _[Nombre completo 4]_ | @usuario4 | Pregunta 4 |
-| _[Nombre completo 5]_ | @usuario5 | Pregunta 5 |
-| _[Nombre completo 6]_ | @usuario6 | Pregunta 6 |
+| Nombre | Grupo | GitHub | Pregunta |
+| ------ | ----- | ------ | -------- |
+
+| Eric Reyes Milián | C312 | [@EricReyesMilian](https://github.com/EricReyesMilian) | Pregunta 1 |
+| Adrián Estévez Álvarez | C312 | [@Chikiak](https://github.com/Chikiak) | Pregunta 2 |
+| Alfonso Tejeda Rodríguez | C312 | [@alfonsotejeda](https://github.com/alfonsotejeda) | Pregunta 3 |
+| Kamila Reinoso Asín | C311 | [@KamAlien](https://github.com/KamAlien) | Pregunta 4 |
+| Miguel Andrés Cazorla Zamora | C312 | [@andr-migue](https://github.com/andr-migue) | Pregunta 5|
 
 ## Estructura del repositorio
 
