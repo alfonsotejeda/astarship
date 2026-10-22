@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { StatusPill } from "@/components/StatusPill/StatusPill";
-import type { ItineraryStatus } from "@/components/StatusPill/StatusPill";
+import type { AssignmentStatus, ReviewStatus } from "@/components/StatusPill/StatusPill";
 import { EffortSplit } from "./EffortSplit";
 import type { EffortCount } from "./EffortSplit";
 import "./ItineraryCard.css";
@@ -8,7 +8,7 @@ import "./ItineraryCard.css";
 export type ItinerarySummary = {
   id: string;
   package: string;
-  status?: ItineraryStatus;
+  status?: ReviewStatus | AssignmentStatus;
   creator?: string;
   date?: string;
   days?: number;
