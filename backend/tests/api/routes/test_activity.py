@@ -1,5 +1,7 @@
 """Tests for the activity routes."""
 
+from datetime import date
+
 
 def test_create_activity_returns_201(client):
     response = client.post(
@@ -11,6 +13,8 @@ def test_create_activity_returns_201(client):
     body = response.json()
     assert body["name"] == "Hiking"
     assert body["category_id"] is None
+    assert body["status"] == "pending"
+    assert body["creation_date"] == date.today().isoformat()
 
 
 def test_list_activities_includes_created_activity(client):
@@ -48,3 +52,23 @@ def test_delete_activity_removes_it(client):
 
     assert response.status_code == 204
     assert client.get(f"/api/activities/{created['id']}").status_code == 404
+
+
+def test_update_activity_changes_status(client):
+    created = client.post("/api/activities", json={"name": "Hiking", "effort_level": 3}).json()
+
+    response = client.patch(f"/api/activities/{created['id']}", json={"status": "rejected"})
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "rejected"
+
+
+def test_list_activities_filters_by_status(client):
+    approved = client.post("/api/activities", json={"name": "A", "effort_level": 1}).json()
+    client.post("/api/activities", json={"name": "B", "effort_level": 1})
+    client.patch(f"/api/activities/{approved['id']}", json={"status": "approved"})
+
+    response = client.get("/api/activities", params={"status": "approved"})
+
+    assert response.status_code == 200
+    assert [a["id"] for a in response.json()] == [approved["id"]]
