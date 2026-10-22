@@ -1,0 +1,206 @@
+.login {
+  display: flex;
+  flex-wrap: wrap;
+  min-height: 100dvh;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+/* Brand panel: always dark, like the design */
+.login__brand {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  box-sizing: border-box;
+  flex: 1 1 520px;
+  min-width: 0;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-7);
+  padding: var(--space-7);
+  background: #0b1020;
+  color: #eef0f7;
+}
+
+/* Particles fill the panel behind its content; the component listens on window, so hover/click still work */
+.login__particles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.login__particles > * {
+  width: 100%;
+  height: 100%;
+}
+
+.login__particles canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.login__logo,
+.login__pitch,
+.login__credits {
+  position: relative;
+  z-index: 1;
+}
+
+.login__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.login__logo img {
+  display: block;
+  border-radius: 9px;
+}
+
+.login__pitch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 520px;
+}
+
+.login__route {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.login__headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 50px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  color: #eef0f7;
+}
+
+.login__lead {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 17px;
+  line-height: 26px;
+  color: #a6acc2;
+}
+
+.login__credits {
+  font: var(--type-small);
+  color: #a6acc2;
+}
+
+/* Form panel */
+.login__panel {
+  box-sizing: border-box;
+  flex: 1 1 480px;
+  min-width: 0;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-7) var(--space-5);
+  background-color: #ffffff;
+}
+
+.login__form {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 500;
+}
+
+.login__subtitle {
+  font: var(--type-body);
+  color: var(--ink-muted);
+}
+
+.login__options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.login__link {
+  font: var(--type-small);
+  color: var(--route);
+}
+
+.login__link:hover {
+  color: var(--ink);
+}
+
+.login__link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Demo accesses */
+.login__demo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.login__demo-title {
+  font: var(--type-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.login__demo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+/* Let long role names ("Jefe de operaciones") wrap instead of overflowing the cell */
+.login__demo-grid .button {
+  height: auto;
+  min-height: 38px;
+  min-width: 0;
+  padding-block: var(--space-2);
+  justify-content: flex-start;
+  white-space: normal;
+  text-align: left;
+}
+
+.login__demo > .button {
+  align-self: flex-start;
+}

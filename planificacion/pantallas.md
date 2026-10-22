@@ -106,10 +106,13 @@ Ya decidido (requisitos §7): React 19 + TypeScript + Vite.
 
 ```
 src/
-├── app/          App.tsx, router, layout por rol (AppShell)
+├── main.tsx      monta <App />
+├── app/          App.tsx (providers + RouterProvider)
+│   ├── providers/  auth/ y theme/: contexto + hook, provider y sus datos
+│   └── router/     rutas y navegación por rol
 ├── components/   un componente del Design System por carpeta (Button/, DataTable/…)
-├── pages/        una carpeta por página (§5.1): ActividadesPage/, ItinerariosPage/, ViajePage/…
-├── providers/    AuthProvider (usuario y rol), ThemeProvider (claro/oscuro)
+├── pages/        una carpeta por página (§5.1): ActivitiesPage/, ItinerariesPage/, TripPage/…
+├── hooks/        hooks compartidos (useMediaQuery…)
 ├── lib/          cliente de la API, hooks de react-query, exportar PDF, formato de fechas y números
 └── styles/       tokens.css (copiado del Design System), index.css
 ```
@@ -117,6 +120,7 @@ src/
 **Convenciones:**
 - Los colores, espacios y radios **siempre** con las variables de `tokens.css`, nunca un hex suelto.
 - Cada componente replica las props de `index.d.ts` del Design System y su comportamiento de `bundle.js`.
+- El código va en inglés: nombres, comentarios, roles (`guide`, `manager`, `tourist`, `admin`) y claves. Los textos que ve el usuario y las URLs, en español.
 - Textos en español y tuteando, con los términos exactos del enunciado (ver el README del Design System).
 - Comentarios JSDoc en cada componente y función exportada (IS-5).
 
@@ -205,16 +209,16 @@ pantalla. Las rutas no llevan prefijo de rol: el rol sale de la sesión.
 | Página | Ruta | Pantallas | Roles | Navegación interna | Issue |
 |---|---|---|---|---|---|
 | LoginPage | `/login` | P-01 | — | — | #95 |
-| ActividadesPage | `/actividades` | P-02 · P-21 | guía, admin | pestaña «Duplicados» para el admin; panel lateral de alta | #96 |
-| GeneradorPage | `/itinerarios/nuevo` | P-03 | guía | parámetros → candidatas → resultado | #97 |
-| ItinerariosPage | `/itinerarios` · `/itinerarios/:id` | P-04 · P-08 · P-10 · P-05 · P-09 | guía, jefe | pestañas «Por revisar / Todos / Míos / De otros»; el detalle muestra ReviewPanel solo al jefe | #98 |
-| PaquetesPage | `/paquetes` | P-17 · P-28 · P-29 | admin, guía, jefe | panel lateral; acciones según permisos | #99 |
-| SolicitudesPage | `/solicitudes` | P-06 · P-15 | guía, turista | el guía atiende y registra el resultado; el turista crea y sigue | #100 |
-| ValoracionesPage | `/valoraciones` | P-07 · P-16 | guía, turista | el guía ve sus actividades; el turista, las suyas por paquete | #101 |
-| ViajePage | `/viaje/hoy` · `/viaje/itinerarios` · `/viaje/itinerarios/:id/valorar` | P-12 · P-13 · P-14 | turista | subrutas | #102 |
-| PersonasPage | `/personas` | P-18 · P-19 | admin | pestañas «Guías y permisos / Turistas y grupos» | #103 |
-| AsignacionesPage | `/asignaciones` | P-20 | admin | — | #104 |
-| ReportesPage | `/reportes/:rc` | P-22–P-27 · P-11 | todos | pestañas RC-1 a RC-6 | #105 (+ #106–#111) |
+| ActivitiesPage | `/actividades` | P-02 · P-21 | guía, admin | pestaña «Duplicados» para el admin; panel lateral de alta | #96 |
+| GeneratorPage | `/itinerarios/nuevo` | P-03 | guía | parámetros → candidatas → resultado | #97 |
+| ItinerariesPage | `/itinerarios` · `/itinerarios/:id` | P-04 · P-08 · P-10 · P-05 · P-09 | guía, jefe | pestañas «Por revisar / Todos / Míos / De otros»; el detalle muestra ReviewPanel solo al jefe | #98 |
+| PackagesPage | `/paquetes` | P-17 · P-28 · P-29 | admin, guía, jefe | panel lateral; acciones según permisos | #99 |
+| RequestsPage | `/solicitudes` | P-06 · P-15 | guía, turista | el guía atiende y registra el resultado; el turista crea y sigue | #100 |
+| RatingsPage | `/valoraciones` | P-07 · P-16 | guía, turista | el guía ve sus actividades; el turista, las suyas por paquete | #101 |
+| TripPage | `/viaje/hoy` · `/viaje/itinerarios` · `/viaje/itinerarios/:id/valorar` | P-12 · P-13 · P-14 | turista | subrutas | #102 |
+| PeoplePage | `/personas` | P-18 · P-19 | admin | pestañas «Guías y permisos / Turistas y grupos» | #103 |
+| AssignmentsPage | `/asignaciones` | P-20 | admin | — | #104 |
+| ReportsPage | `/reportes/:rc` | P-22–P-27 · P-11 | todos | pestañas RC-1 a RC-6 | #105 (+ #106–#111) |
 
 Página inicial de cada rol: guía `/actividades`, jefe `/itinerarios`, turista `/viaje/hoy`,
 admin `/paquetes`.
@@ -240,51 +244,51 @@ La columna *Artboard* es el título en el canvas (página del canvas → artboar
 
 | ID | Pantalla | Página · ruta | Artboard | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-02 | Banco de actividades | ActividadesPage · `/actividades` | 2 · Guía → P-02 | Listado | FilterBar, DataTable, Field, Alert (duplicado) | RF-01–07, RN-01, RN-03 |
-| P-03 | Generar itinerario | GeneradorPage · `/itinerarios/nuevo` | 2 · Guía → P-03 | propia | ProportionInput, ChipSelect, ActivityRow, RouteTimeline, CriteriaCheck | RF-13–17 |
-| P-04 | Itinerarios del paquete | ItinerariosPage · `/itinerarios` | 2 · Guía → P-04 | Listado | Tabs (míos / de otros), DataTable, EffortSplit | RF-18 |
-| P-05 | Detalle de itinerario | ItinerariosPage · `/itinerarios/:id` | (= P-09 sin ReviewPanel) | Detalle | Tabs, RouteTimeline, ChartPanel, CriteriaCheck | RF-16, RF-21 |
-| P-28 | Paquetes | PaquetesPage · `/paquetes` | 2 · Guía → P-28 | Listado | DataTable con «Tus permisos», panel de edición o solo lectura | RF-08, §2.1 |
-| P-06 | Solicitudes de modificación | SolicitudesPage · `/solicitudes` | 2 · Guía → P-06 | propia | Tabs, RequestCard, Field, Checkbox | RF-30, RF-31, RN-08 |
-| P-07 | Valoraciones | ValoracionesPage · `/valoraciones` | 2 · Guía → P-07 | Listado | StatTile, DataTable, Rating | RF-27 |
+| P-02 | Banco de actividades | ActivitiesPage · `/actividades` | 2 · Guía → P-02 | Listado | FilterBar, DataTable, Field, Alert (duplicado) | RF-01–07, RN-01, RN-03 |
+| P-03 | Generar itinerario | GeneratorPage · `/itinerarios/nuevo` | 2 · Guía → P-03 | propia | ProportionInput, ChipSelect, ActivityRow, RouteTimeline, CriteriaCheck | RF-13–17 |
+| P-04 | Itinerarios del paquete | ItinerariesPage · `/itinerarios` | 2 · Guía → P-04 | Listado | Tabs (míos / de otros), DataTable, EffortSplit | RF-18 |
+| P-05 | Detalle de itinerario | ItinerariesPage · `/itinerarios/:id` | (= P-09 sin ReviewPanel) | Detalle | Tabs, RouteTimeline, ChartPanel, CriteriaCheck | RF-16, RF-21 |
+| P-28 | Paquetes | PackagesPage · `/paquetes` | 2 · Guía → P-28 | Listado | DataTable con «Tus permisos», panel de edición o solo lectura | RF-08, §2.1 |
+| P-06 | Solicitudes de modificación | RequestsPage · `/solicitudes` | 2 · Guía → P-06 | propia | Tabs, RequestCard, Field, Checkbox | RF-30, RF-31, RN-08 |
+| P-07 | Valoraciones | RatingsPage · `/valoraciones` | 2 · Guía → P-07 | Listado | StatTile, DataTable, Rating | RF-27 |
 
 #### Jefe de operaciones
 
 | ID | Pantalla | Página · ruta | Artboard | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-08 | Por revisar | ItinerariosPage · `/itinerarios` (pestaña «Por revisar») | 3 · Jefe → P-08 | propia | ItineraryCard, DataTable | RF-19 |
-| P-09 | Revisar itinerario | ItinerariosPage · `/itinerarios/:id` | 3 · Jefe → P-09 | Detalle | RouteTimeline, ChartPanel, CriteriaCheck, ReviewPanel | RF-19–21, RN-07 |
-| P-10 | Itinerarios | ItinerariosPage · `/itinerarios` (pestaña «Todos») | (= P-04 sin «Míos») | Listado | DataTable | RF-19 |
-| P-29 | Paquetes por validar | PaquetesPage · `/paquetes` | 3 · Jefe → P-29 | Listado | DataTable, lista de comprobación, «Validar paquete» / «Devolver» | §2.1, RN-09 |
-| P-11 | Mis validaciones | ReportesPage · `/reportes/rc3` (filtrado por el usuario) | (= RC-3) | Reporte | ver RC-3 | RC-3 |
+| P-08 | Por revisar | ItinerariesPage · `/itinerarios` (pestaña «Por revisar») | 3 · Jefe → P-08 | propia | ItineraryCard, DataTable | RF-19 |
+| P-09 | Revisar itinerario | ItinerariesPage · `/itinerarios/:id` | 3 · Jefe → P-09 | Detalle | RouteTimeline, ChartPanel, CriteriaCheck, ReviewPanel | RF-19–21, RN-07 |
+| P-10 | Itinerarios | ItinerariesPage · `/itinerarios` (pestaña «Todos») | (= P-04 sin «Míos») | Listado | DataTable | RF-19 |
+| P-29 | Paquetes por validar | PackagesPage · `/paquetes` | 3 · Jefe → P-29 | Listado | DataTable, lista de comprobación, «Validar paquete» / «Devolver» | §2.1, RN-09 |
+| P-11 | Mis validaciones | ReportsPage · `/reportes/rc3` (filtrado por el usuario) | (= RC-3) | Reporte | ver RC-3 | RC-3 |
 
 #### Turista
 
 | ID | Pantalla | Página · ruta | Artboard (ordenador · móvil) | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-12 | Hoy | ViajePage · `/viaje/hoy` | 4 · Turista → P-12 · P-12 móvil · P-12 móvil oscuro | propia | RouteTimeline (modo turista), Skeleton, Alert, Toast, EffortSplit | RF-24, RF-25, RF-33, RNF-01 |
-| P-13 | Mis itinerarios | ViajePage · `/viaje/itinerarios` | 4 · Turista → P-13 · P-13 móvil | propia | ItineraryCard, Rating | RF-24 |
-| P-14 | Valorar el viaje | ViajePage · `/viaje/itinerarios/:id/valorar` | 4 · Turista → P-14 · P-14 móvil | propia | Rating, Field, EffortMeter | RF-26 |
-| P-15 | Pedir modificación | SolicitudesPage · `/solicitudes` | 4 · Turista → P-15 · P-15 móvil | propia | Field, ChipSelect, Checkbox, RequestCard | RF-29, RF-30 |
-| P-16 | Mis valoraciones | ValoracionesPage · `/valoraciones` | 4 · Turista → P-16 · P-16 móvil | Listado | StatTile, DataTable por paquete, Rating | RF-27, RF-28 |
+| P-12 | Hoy | TripPage · `/viaje/hoy` | 4 · Turista → P-12 · P-12 móvil · P-12 móvil oscuro | propia | RouteTimeline (modo turista), Skeleton, Alert, Toast, EffortSplit | RF-24, RF-25, RF-33, RNF-01 |
+| P-13 | Mis itinerarios | TripPage · `/viaje/itinerarios` | 4 · Turista → P-13 · P-13 móvil | propia | ItineraryCard, Rating | RF-24 |
+| P-14 | Valorar el viaje | TripPage · `/viaje/itinerarios/:id/valorar` | 4 · Turista → P-14 · P-14 móvil | propia | Rating, Field, EffortMeter | RF-26 |
+| P-15 | Pedir modificación | RequestsPage · `/solicitudes` | 4 · Turista → P-15 · P-15 móvil | propia | Field, ChipSelect, Checkbox, RequestCard | RF-29, RF-30 |
+| P-16 | Mis valoraciones | RatingsPage · `/valoraciones` | 4 · Turista → P-16 · P-16 móvil | Listado | StatTile, DataTable por paquete, Rating | RF-27, RF-28 |
 
 #### Administrador
 
 | ID | Pantalla | Página · ruta | Artboard | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-17 | Paquetes turísticos | PaquetesPage · `/paquetes` | 5 · Administrador → P-17 | Listado | DataTable, ChipSelect, estado de validación y quién validó | RF-08 |
-| P-18 | Guías y permisos | PersonasPage · `/personas` (pestaña) | 5 · Administrador → P-18 | propia | matriz persona × paquete con 4 casillas (itinerarios: genera/valida; paquete: edita/valida) y «Crea paquetes» | RF-09, RF-11, RN-02, RN-10 |
-| P-19 | Turistas y grupos | PersonasPage · `/personas` (pestaña) | 5 · Administrador → P-19 | Listado | lista de grupos, DataTable | RF-10, RF-12 |
-| P-20 | Asignaciones | AsignacionesPage · `/asignaciones` | 5 · Administrador → P-20 | propia | Field, Checkbox, Alert, Dialog, ItineraryCard | RF-22, RF-23, RN-04 |
-| P-21 | Actividades duplicadas | ActividadesPage · `/actividades` (pestaña «Duplicados») | 5 · Administrador → P-21 | propia | Tabs, comparación lado a lado, Button danger | RF-06, RN-03 |
+| P-17 | Paquetes turísticos | PackagesPage · `/paquetes` | 5 · Administrador → P-17 | Listado | DataTable, ChipSelect, estado de validación y quién validó | RF-08 |
+| P-18 | Guías y permisos | PeoplePage · `/personas` (pestaña) | 5 · Administrador → P-18 | propia | matriz persona × paquete con 4 casillas (itinerarios: genera/valida; paquete: edita/valida) y «Crea paquetes» | RF-09, RF-11, RN-02, RN-10 |
+| P-19 | Turistas y grupos | PeoplePage · `/personas` (pestaña) | 5 · Administrador → P-19 | Listado | lista de grupos, DataTable | RF-10, RF-12 |
+| P-20 | Asignaciones | AssignmentsPage · `/asignaciones` | 5 · Administrador → P-20 | propia | Field, Checkbox, Alert, Dialog, ItineraryCard | RF-22, RF-23, RN-04 |
+| P-21 | Actividades duplicadas | ActivitiesPage · `/actividades` (pestaña «Duplicados») | 5 · Administrador → P-21 | propia | Tabs, comparación lado a lado, Button danger | RF-06, RN-03 |
 
-P-17, P-28 y P-29 son la misma PaquetesPage: el admin ve todos los paquetes; el guía y el
+P-17, P-28 y P-29 son la misma PackagesPage: el admin ve todos los paquetes; el guía y el
 jefe, solo aquellos en los que tienen algún permiso, y las acciones dependen de esos
 permisos. En el canvas es `AdminPaquetes.dc.html` con `role`.
 
 #### Reportes (todos los roles)
 
-ReportesPage `/reportes/:rc` con pestañas; cada reporte es una configuración de la
+ReportsPage `/reportes/:rc` con pestañas; cada reporte es una configuración de la
 plantilla Reporte. En el canvas, RC-1 a RC-5 comparten `Reportes.dc.html` y RC-6 tiene
 artboard propio.
 
@@ -372,22 +376,22 @@ Cada issue incluye la tabla «artboard → estado de la página» para calcar el
 
 | Issue | Página | Pantallas | Reparto sugerido |
 |---|---|---|---|
-| #97 | GeneradorPage | P-03 | 1 |
-| #98 | ItinerariosPage | P-04 · P-05 · P-08 · P-09 · P-10 | 1 |
-| #102 | ViajePage | P-12 · P-13 · P-14 | 2 |
-| #100 | SolicitudesPage | P-06 · P-15 | 2 |
-| #101 | ValoracionesPage | P-07 · P-16 | 2 |
-| #96 | ActividadesPage | P-02 · P-21 | 3 |
-| #99 | PaquetesPage | P-17 · P-28 · P-29 | 3 |
-| #103 | PersonasPage | P-18 · P-19 | 4 |
-| #104 | AsignacionesPage | P-20 | 4 |
+| #97 | GeneratorPage | P-03 | 1 |
+| #98 | ItinerariesPage | P-04 · P-05 · P-08 · P-09 · P-10 | 1 |
+| #102 | TripPage | P-12 · P-13 · P-14 | 2 |
+| #100 | RequestsPage | P-06 · P-15 | 2 |
+| #101 | RatingsPage | P-07 · P-16 | 2 |
+| #96 | ActivitiesPage | P-02 · P-21 | 3 |
+| #99 | PackagesPage | P-17 · P-28 · P-29 | 3 |
+| #103 | PeoplePage | P-18 · P-19 | 4 |
+| #104 | AssignmentsPage | P-20 | 4 |
 | #95 | LoginPage | P-01 | 4 |
 
 ### Fase 3 · `front-3-reportes`
 
 | Issue | Qué | Reparto sugerido |
 |---|---|---|
-| #105 | ReportesPage con pestañas y la plantilla Reporte | 5 |
+| #105 | ReportsPage con pestañas y la plantilla Reporte | 5 |
 | #106 · #107 · #108 | RC-1 · RC-2 · RC-3 (también P-11) | 5 |
 | #109 · #110 · #111 | RC-4 · RC-5 · RC-6 | 5 |
 

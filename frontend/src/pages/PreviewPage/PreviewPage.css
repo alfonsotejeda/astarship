@@ -1,0 +1,133 @@
+.preview {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+.preview__sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100dvh;
+  padding: var(--space-5) var(--space-3);
+  background: var(--surface-raised);
+  border-right: 1px solid var(--line);
+}
+
+.preview__sidebar h1 {
+  margin: 0;
+  padding: 0 var(--space-3);
+  font: var(--type-label);
+  letter-spacing: var(--tracking-label);
+  color: var(--ink-muted);
+  text-transform: uppercase;
+}
+
+/* Only the list scrolls, so the theme and login buttons below it are always visible */
+.preview__nav {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: 2px;
+  min-height: 0;
+  margin: 0 calc(-1 * var(--space-1));
+  padding: 2px var(--space-1);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.preview__link {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--ink-muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.preview__link:not(.active):hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+.preview__link.active {
+  color: var(--route);
+  font-weight: 600;
+}
+
+.preview__main {
+  display: grid;
+  align-content: start;
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+.preview__main > h1 {
+  margin: 0;
+  font: var(--type-title);
+  letter-spacing: var(--tracking-title);
+}
+
+.preview-section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.preview-section h2 {
+  margin: 0;
+  font: var(--type-heading);
+}
+
+.preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-2);
+}
+
+.preview-tile {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.preview-tile code {
+  font: var(--type-data);
+  color: var(--ink-muted);
+}
+
+.preview-narrow {
+  max-width: 360px;
+}
+
+.preview-frame {
+  height: 480px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.preview-frame--phone {
+  width: 400px;
+  height: 640px;
+}
+
+.preview-frame .app-shell {
+  min-height: 100%;
+}
+
+.preview-frame .app-shell__sidebar {
+  height: 100%;
+}

@@ -1,0 +1,225 @@
+.app-shell {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100dvh;
+  background: var(--surface);
+}
+
+.app-shell__sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100dvh;
+  padding: var(--space-5) var(--space-3);
+  background: var(--surface-raised);
+  border-right: 1px solid var(--line);
+}
+
+.app-shell__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.app-shell__brand img {
+  display: block;
+  border-radius: 7px;
+}
+
+.app-shell__nav {
+  display: grid;
+  gap: 2px;
+}
+
+.app-shell__nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--ink-muted);
+  font: var(--type-body);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.app-shell__nav-item:not(.active):hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+.app-shell__nav-item:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.app-shell__nav-item.active {
+  color: var(--route);
+  font-weight: 600;
+}
+
+.app-shell__nav-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-shell__count {
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--route);
+  color: var(--on-route);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.app-shell__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding: var(--space-3) var(--space-2) 0;
+  border-top: 1px solid var(--line);
+}
+
+.app-shell__avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.app-shell__user-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-shell__user-name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.app-shell__user-role {
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.app-shell__main {
+  display: grid;
+  align-content: start;
+  gap: var(--space-5);
+  min-width: 0;
+  max-width: 1200px;
+  padding: var(--space-6) var(--space-6) var(--space-7);
+}
+
+.app-shell--mobile {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+}
+
+.app-shell__topbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--line);
+}
+
+.app-shell__topbar-end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.app-shell--mobile .app-shell__main {
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-4) var(--space-6);
+}
+
+.app-shell__tabbar {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  padding: 6px var(--space-2) calc(6px + env(safe-area-inset-bottom, 0px));
+  background: var(--surface-raised);
+  border-top: 1px solid var(--line);
+}
+
+.app-shell__tabbar .app-shell__nav-item {
+  position: relative;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 4px;
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.app-shell__tabbar .pill-nav__pill {
+  display: none;
+}
+
+.app-shell__tabbar .app-shell__count {
+  position: absolute;
+  transform: translate(12px, -4px);
+  font-size: 10px;
+  line-height: 15px;
+}
+
+@media (max-width: 760px) {
+  .app-shell:not(.app-shell--mobile) {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell:not(.app-shell--mobile) .app-shell__sidebar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    height: auto;
+    padding: var(--space-3) var(--space-4);
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .app-shell:not(.app-shell--mobile) .app-shell__nav {
+    grid-auto-flow: column;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .app-shell:not(.app-shell--mobile) .app-shell__user {
+    display: none;
+  }
+
+  .app-shell__main {
+    padding: var(--space-4);
+  }
+}

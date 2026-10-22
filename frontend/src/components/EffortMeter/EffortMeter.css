@@ -1,0 +1,52 @@
+.effort-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-small);
+  color: var(--ink);
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+}
+
+.effort-meter:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* The level reads from the number of bars, not only the color (grayscale, PDF) */
+.effort-meter__bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+
+.effort-meter__bar {
+  width: 5px;
+  background: var(--line);
+  border-radius: 1.5px;
+}
+
+.effort-meter__bar:nth-child(1) {
+  height: 6px;
+}
+
+.effort-meter__bar:nth-child(2) {
+  height: 10px;
+}
+
+.effort-meter__bar:nth-child(3) {
+  height: 14px;
+}
+
+.effort-meter--bajo .effort-meter__bar--on {
+  background: var(--effort-low);
+}
+
+.effort-meter--medio .effort-meter__bar--on {
+  background: var(--effort-medium);
+}
+
+.effort-meter--alto .effort-meter__bar--on {
+  background: var(--effort-high);
+}

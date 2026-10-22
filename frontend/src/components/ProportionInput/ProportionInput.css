@@ -1,0 +1,78 @@
+.proportion-input {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.proportion-input__legend {
+  padding: 0;
+  margin-bottom: var(--space-3);
+  font: var(--type-small);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.proportion-input__bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  overflow: hidden;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-pill);
+}
+
+.proportion-input__bar span {
+  display: block;
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proportion-input__bar span {
+    transition: none;
+  }
+}
+
+.proportion-input__fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.proportion-input__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.proportion-input__swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.proportion-input__sum {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: var(--type-small);
+  font-weight: 600;
+}
+
+.proportion-input__sum--ok {
+  color: var(--ok);
+}
+
+.proportion-input__sum--bad {
+  color: var(--bad);
+}
+
+@media (max-width: 480px) {
+  .proportion-input__fields {
+    grid-template-columns: 1fr;
+  }
+}

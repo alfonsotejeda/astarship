@@ -1,0 +1,62 @@
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px 2px var(--space-2);
+  font: var(--type-small);
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: var(--radius-pill);
+}
+
+.status-pill:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.status-pill__dot {
+  flex: none;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  background: currentColor;
+  border-radius: var(--radius-pill);
+}
+
+/* Each tone also changes the dot's shape, so the state never depends on color alone */
+.status-pill--warn .status-pill__dot,
+.status-pill--neutral .status-pill__dot {
+  width: 9px;
+  height: 9px;
+  background: transparent;
+  border: 2px solid currentColor;
+}
+
+.status-pill--bad .status-pill__dot {
+  border-radius: 2px;
+}
+
+.status-pill--info {
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+.status-pill--warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.status-pill--ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.status-pill--bad {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+
+.status-pill--neutral {
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}

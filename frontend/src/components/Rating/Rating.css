@@ -1,0 +1,53 @@
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.rating--lg {
+  gap: 6px;
+}
+
+.rating__star {
+  position: relative;
+  display: inline-flex;
+  color: var(--line-strong);
+}
+
+.rating__star[data-fill="full"] {
+  color: var(--route);
+}
+
+.rating__star[data-fill="full"] svg,
+.rating__half svg {
+  fill: currentColor;
+}
+
+/* A filled star clipped to its left half, over the empty one */
+.rating__half {
+  position: absolute;
+  inset: 0 50% 0 0;
+  overflow: hidden;
+  color: var(--route);
+}
+
+.rating__button {
+  display: inline-flex;
+  padding: 2px;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.rating__button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.rating__value {
+  margin-left: 6px;
+  font: var(--type-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
