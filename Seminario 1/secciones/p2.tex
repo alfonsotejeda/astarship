@@ -1,5 +1,9 @@
 \section{Pregunta 2: La simetría del hexágono vs. la jerarquía de las capas}
 
-% Responsable: [Integrante 2]
+% Responsable: Adrian Estevez Alvarez 
 
-[Redactar respuesta]
+El problema de la representación de la arquitectura por capas es que solo presenta dos lados de distinta naturaleza, la UI arriba y la base de datos abajo, y nada obliga a cumplir las reglas, por lo que puede terminar habiendo lógica filtrada entre capas. Mientras tanto, en la arquitectura hexagonal no hay un ``arriba'' o ``abajo'', sino un adentro y un afuera. Toda la lógica está dentro, en el núcleo, mientras que todo lo externo, como la UI, la base de datos y los tests, está afuera y se maneja por igual mediante puertos y adaptadores.
+
+En la arquitectura Onion, la interfaz definida en el núcleo hace el papel de puerto, y el adaptador sería la clase de la capa externa que la implementa. No usan los mismos nombres, pero cumplen con la idea de externalizar la infraestructura mediante adaptadores. La interfaz está en el núcleo y este es estable, ya que se expresa en términos del dominio. La implementación depende de tecnologías concretas y puede cambiar sin afectar nada. Así se logra la inversión de dependencias, para que el núcleo no dependa de nada externo.
+
+El hexágono no tiene seis lados por razón numérica, sino para dar espacio a insertar puertos y adaptadores sin quedar atrapado en capas. Tampoco elimina la asimetría izquierda-derecha: la deja de lado un momento para destacar la asimetría de ``adentro'' y ``afuera'', y trata todo lo externo de la misma manera. Después la retoma al distinguir los actores primarios, que conducen la aplicación, de los secundarios, que ella conduce.
