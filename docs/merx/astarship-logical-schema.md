@@ -22,7 +22,7 @@
 
 | Interrelación | Participantes           | Cardinalidad | (min,max)                            |
 | ------------- | ----------------------- | ------------ | ------------------------------------ |
-| Belongs       | Tourist — TravelGroup   | N:1          | Tourist (1,1) — TravelGroup (1,\*)   |
+| Belongs       | Tourist — TravelGroup   | N:M          | Tourist (0,\*) — TravelGroup (0,\*)  |
 | Classifies    | Activity — Category     | N:1          | Activity (1,1) — Category (0,\*)     |
 | Is of Type    | Activity — ActivityType | N:1          | Activity (1,1) — ActivityType (0,\*) |
 | Coverage      | Category — Package      | N:M          | Category (0,\*) — Package (1,\*)     |
@@ -90,15 +90,18 @@
 **OperationsManager**(<u>ID</u>)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID REFERENCES User(ID)*
 
-**Tourist**(<u>ID</u>, Age, ID_TravelGroup)
+**Tourist**(<u>ID</u>, Age)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID REFERENCES User(ID)*
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_TravelGroup REFERENCES TravelGroup(ID)*
 
 ### Interrelaciones:
 
 **Coverage**(<u>ID_Package</u>, <u>ID_Category</u>)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Package REFERENCES Package(ID)*
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Category REFERENCES Category(ID)*
+
+**Membership**(<u>ID_Tourist</u>, <u>ID_TravelGroup</u>)
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Tourist REFERENCES Tourist(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_TravelGroup REFERENCES TravelGroup(ID)*
 
 ### Agregaciones:
 

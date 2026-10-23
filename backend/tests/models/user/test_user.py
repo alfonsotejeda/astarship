@@ -1,6 +1,6 @@
 """Tests for the User model."""
 
-from app.models.user import User
+from app.models.user.user import User
 
 
 def test_table_name():
@@ -10,4 +10,4 @@ def test_table_name():
 def test_expected_columns():
     columns = {c.name for c in User.__table__.columns}
 
-    assert columns == {"id", "name", "role", "email", "password_hash"}
+    assert columns == {"id", "name", "email", "password_hash"}

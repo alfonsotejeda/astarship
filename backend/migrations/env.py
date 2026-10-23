@@ -12,9 +12,16 @@ from app.models import (  # noqa: F401
     activity_type,
     category,
     itinerary,
+    membership,
     package,
     permission,
     travel_group,
+)
+from app.models.user import (  # noqa: F401
+    admin,
+    guide,
+    operations_manager,
+    tourist,
     user,
 )
 
