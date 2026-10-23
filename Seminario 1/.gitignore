@@ -12,6 +12,4 @@
 *.synctex.gz
 *.xdv
 
-# El PDF final se sube de forma explícita
-# (quitar esta línea si quieren versionar todos los PDF)
 main.pdf

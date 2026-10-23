@@ -1,329 +1,274 @@
-\section{Pregunta 4: Evaluaci\'on de la Inversi\'on de Dependencias en la pr\'actica}
+\section{Pregunta 4: Evaluación de la Inversión de Dependencias en la práctica}
 
-% Responsable: [Integrante 4]
+% Responsable: Kamila Reinoso Asín
 
-\subsection*{Introducci\'on}
+Para juzgar la calidad de diseño de la clase \texttt{OrderProcessor} es necesario definir el marco normativo que rige la construcción de software orientado a objetos y la estructuración de arquitecturas limpias. A partir de él se responden, en orden, los tres incisos del enunciado: la violación de los principios (inciso a), el rediseño de la interacción (inciso b) y las pruebas aisladas y la mantenibilidad (inciso c).
 
-Para juzgar la calidad de dise\~{n}o de la clase OrderProcessor,
-es necesario definir el marco normativo que rige la construcci\'on de software orientado 
-a objetos y a la estructuraci\'on de arquitecturas limpias.
+\subsection{Marco normativo: DIP y Regla de Dependencia}
 
-\textbf{Principio de Inversi\'on de Dependencias (DIP - Dependency Inversion Principle) }
+\subsubsection*{Principio de Inversión de Dependencias (DIP)}
 
-Formulado por Robert C. Martin, el DIP es el \'ultimo de los cinco principios SOLID. Establece que las estructuras de 
-software m\'as flexibles y mantenibles son aquellas donde las dependencias del c\'odigo fuente y se refieren exclusivamente a abstracciones y nunca a clases concretas
-El principio se desglosa formalmente en 2 reglas :
+Formulado por Robert C. Martin, el DIP es el último de los cinco principios SOLID \parencite{martin2017}. Establece que las estructuras de software más flexibles y mantenibles son aquellas donde las dependencias del código fuente se refieren exclusivamente a abstracciones y nunca a clases concretas \parencite{martin2017}. El principio se desglosa formalmente en dos reglas:
 
-\begin{itemize}
-    \item  Los m\'odulos de alto nivel no deben depender de m\'odulos de bajo nivel, ambos deben de depender de abstracciones.
-    \item  Las abstracciones no deben depender de los detalles, los detalles deben de depender de las abstracciones.
-\end{itemize}
+\begin{enumerate}
+    \item Los módulos de alto nivel no deben depender de módulos de bajo nivel; ambos deben depender de abstracciones.
+    \item Las abstracciones no deben depender de los detalles; los detalles deben depender de las abstracciones.
+\end{enumerate}
 
+\subsubsection*{La Regla de Dependencia (\emph{The Dependency Rule})}
 
-\textbf{La Regla de Dependencia (The Dependency Rule)}
-En la literatura de Clean Architecture, Robert C. Martin extiende el DIP al nivel de componentes
-organizados en capas conc\'entricas.
-    Las dependencias del c\'odigo fuente solo pueden apuntar hacia adentro, en direcci\'on hacia las pol\'iticas de mayor
-nivel y el n\'ucleo de dominio. Nada declarado en un c\'irculo o capa interna (entidades, casos de uso, interfaces) debe conocer, mencionar o importar
-elemento alguno perteneciente a un c\'irculo externo.
+En la literatura de Clean Architecture, Robert C. Martin extiende el DIP al nivel de componentes organizados en capas concéntricas \parencite{martin2017}. Las dependencias del código fuente solo pueden apuntar hacia adentro, en dirección hacia las políticas de mayor nivel y el núcleo de dominio. Nada declarado en un círculo o capa interna (entidades, casos de uso, interfaces) debe conocer, mencionar o importar elemento alguno perteneciente a un círculo externo \parencite{martin2017}.
 
+\subsection{Inciso a): Violación de los principios arquitectónicos}
 
-\subsection*{An\'alisis por estilo arquitect\'onico} 
-% -----------------------------------------------------------------
-% CASO 1: ARQUITECTURA HEXAGONAL 
-% ----------------------------------------------------------------- 
-\noindent\textbf{\large Caso 1: Arquitectura Hexagonal (Puertos y Adaptadores - Alistair Cockburn)} 
-\subsubsection*{Principios Fundamentales}
+En la implementación descrita en el ejercicio, \texttt{OrderProcessor} instancia y llama directamente a la clase \texttt{AddressValidatorService}. Esta instanciación es lo que constituye la dependencia directa y genera un acoplamiento rígido con la librería HTTP subyacente. A continuación se analiza esa violación frente a cada uno de los tres estilos.
 
-    Propuesta por Alistair Cockburn, la Arquitectura Hexagonal nace para evitar que 
-los detalles tecnol\'ogicos contaminen la l\'ogica dentral de la aplicaci\'on. Sus pilares esenciales son:
-    
-\begin{description}
-    \item[Distinci\'on Dentro / Fuera (\textit{Inside vs. Outside}):] Elimina la visi\'on apilada tradicional ("arriba y abajo") y establece que solo existe una frontera
-relevante: el interior del hex\'agono (la l\'ogica de la aplicaci\'on) contra el exterior del hex\'agono (actores, interfaces de usuario, base de datos y servicios externos).
+\subsubsection*{Arquitectura Hexagonal (Puertos y Adaptadores)}
 
-    \item[Simetr\'ia de actores exteriores:] Desde la perspectiva del n\'ucleo de la aplicaci\'on, una llamada proveniente de una interfaz de usuario, una prueba unitaria automatizada en memoria o una
-petici\'on recibida por una red HTTP son sim\'etricas: eventos externos que intentan interactuar con el sistema.
+\paragraph{Principios fundamentales.} Propuesta por Alistair Cockburn \parencite{cockburn2005}, la Arquitectura Hexagonal nace para evitar que los detalles tecnológicos contaminen la lógica central de la aplicación. Sus pilares esenciales son:
 
-    \item[Puertos (\textit{Ports}):] Un puerto es una interfaz abstracta declarada y poseida por el n\'ucleo. Define un contrato de comunicaci\'on agnostico a la tecnolog\'ia:
-    
-        \begin{itemize} 
-            \item \textbf{Puertos Primarios / Conductores (\textit{Driving}):} Ubicados en la entreda, por donde los actores externos invocan las funcionalidades de la aplicaci\'on.
+\begin{description}[itemsep=0.4em]
+    \item[Distinción dentro/fuera (\emph{inside} vs. \emph{outside}):] Elimina la visión apilada tradicional (\enquote{arriba y abajo}) y establece que solo existe una frontera relevante: el interior del hexágono (la lógica de la aplicación) contra el exterior del hexágono (actores, interfaces de usuario, base de datos y servicios externos) \parencite{cockburn2005}.
 
-            \item \textbf{Puertos Secundarios / Conducidos (\textit{Driven})}: Ubicados en la salida, por donde la aplciaci\'on consulta o envia mensajes hacia la infraestructura externa.
+    \item[Simetría de actores exteriores:] Desde la perspectiva del núcleo de la aplicación, una llamada proveniente de una interfaz de usuario, una prueba unitaria automatizada en memoria o una petición recibida por una red HTTP son simétricas: eventos externos que intentan interactuar con el sistema \parencite{cockburn2005}.
+
+    \item[Puertos (\emph{ports}):] Un puerto es una interfaz abstracta declarada y poseída por el núcleo. Define un contrato de comunicación agnóstico a la tecnología \parencite{cockburn2005}:
+        \begin{itemize}
+            \item \textbf{Puertos primarios o conductores (\emph{driving}):} ubicados en la entrada, por donde los actores externos invocan las funcionalidades de la aplicación.
+            \item \textbf{Puertos secundarios o conducidos (\emph{driven}):} ubicados en la salida, por donde la aplicación consulta o envía mensajes hacia la infraestructura externa.
         \end{itemize}
 
-    \item [Adaptadores (\textit{Adapters}):] Un adaptador es un componente de infraestructura concreto que rodea a un puerto, actuando como puente de traducci\'on entre el mundo exterior y los contraros del n\'ucleo.
+    \item[Adaptadores (\emph{adapters}):] Un adaptador es un componente de infraestructura concreto que rodea a un puerto, actuando como puente de traducción entre el mundo exterior y los contratos del núcleo \parencite{cockburn2005}.
 
-    \item [Ejecuci\'on Aislada  (\textit{Headless Mode}):] El n\'ucleo debe ser capaz de ejecutarse y probarse al 100\% en modo "desacoplado", usando mocks o adaptadores de prueba en lugar de componentes t\'ecnicos reales.
-
+    \item[Ejecución aislada (\emph{headless mode}):] El núcleo debe ser capaz de ejecutarse y probarse al 100\,\% en modo \enquote{desacoplado}, usando \emph{mocks} o adaptadores de prueba en lugar de componentes técnicos reales \parencite{cockburn2005}.
 \end{description}
 
-\subsubsection*{An\'alisis de la Violaci\'on en el C\'odigo de OrderProcessor}
-
-En la implementaci\'on descrita en el ejercicio OrderProcessor instancia y llama directamente a la clase AddressValidatorService. Esta instancia
-es lo que constituye la dependencia directa y genera el acoplamiento r\'igido con la librer\'ia HTTP subyacente.
-
+\paragraph{Violación en \texttt{OrderProcessor}.}
 \begin{itemize}
-    \item \textbf{Invocaci\'on Directa sin Puerto Secundario:} OrderProcessor (el inside del hex\'agono) invoca directamente la clase t\'ecnica AddressValidatorSerice (outside del hex\'agono) sin interponer una interfaz o 
-Puerto Secundario en la frontera del n\'ucleo.
-
-    \item \textbf{Infiltraci\'on de Adaptadores de Salida en el N\'ucleo:} El principio de Cockburn exige que el c\'odigo externo no invada el interior del hex\'agono. Al instanciar directamente el adaptador t\'ecnico de salida, las dependencias de la librer\'ia HTTP
-invaden la clase del negocio.
-    \item \textbf{Ruptura de Modo Desacoplado:}  Al estar soldado a la liber\'ia HTTP real, es imposible ejecutar OrderProcessor en un entorno de pruebas sin contar con conexi\'on a red y un servidor HTTP activo,
-destruyendo la testeabilidad de la arquitectura.
+    \item \textbf{Invocación directa sin puerto secundario:} \texttt{OrderProcessor} (el \emph{inside} del hexágono) invoca directamente la clase técnica \texttt{AddressValidatorService} (\emph{outside} del hexágono) sin interponer una interfaz o puerto secundario en la frontera del núcleo.
+    \item \textbf{Infiltración de adaptadores de salida en el núcleo:} El principio de Cockburn exige que el código externo no invada el interior del hexágono \parencite{cockburn2005}. Al instanciar directamente el adaptador técnico de salida, las dependencias de la librería HTTP invaden la clase del negocio.
+    \item \textbf{Ruptura del modo desacoplado:} Al estar soldado a la librería HTTP real, es imposible ejecutar \texttt{OrderProcessor} en un entorno de pruebas sin contar con conexión a red y un servidor HTTP activo, lo que destruye la testeabilidad de la arquitectura.
 \end{itemize}
 
-\noindent\textbf{\large Caso 2: Arquitectura Cebolla/Onion} 
-\subsubsection*{Principios Fundamentales}
-Propuesta por Jeffrey Palermo, la Aquitectura Cebolla esta diseñada para aplicaci\'ones empresariales de larga
-vida, estructurandose en capas conc\'entricas. Sus cuatro principios claves son:
+\subsubsection*{Arquitectura Cebolla (\emph{Onion})}
 
-    \begin{itemize}
-        \item \textbf{Construcci\'on alrededor de un Modelo de Objetos Independientes:} El centro absoluto de la cebolla es le
-modelo de dominio (Domain Model), el cual contiene el estado y comportamento esencial del negocio y solo esta acoplado a si mismo
-
-        \item \textbf{Las Capas Internas Definen las Interfaces, las capas externas la implementan:} La capa central no guarda el c\'odigo de acceso a datos ni
-clientes HTTP, \'unicamente contiene los contratos o interfaces. La implementaci\'on concreta de esas interfaces se empuja hacia los bordes exteriores.
-
-        \item \textbf{Direcci\'on de Acoplamiento Estrictamente hacia el Centro:} Todo el c\'odigo de las capas exteriores puede depender de las capas internas, pero el c\'odigo de las capas internas jam\'as puede depender de capas mas externas.
-    
-        \item \textbf{Compilaci\'on y Ejecuci\'on Independiente del N\'ucleo:} Todo el Application Core debe poder compilarse y ejecutarse de manera completamente aislada de la infraestructura.
-    \end{itemize}
-
-\subsubsection*{An\'alisis de la Violaci\'on en el C\'odigo de \texttt{OrderProcessor}}
-    \begin{itemize}
-        \item \textbf{Contaminaci\'on del Centro por la Infraestrutura:} En lugar de empujar la tecnolog\'ia HTTP hacia el borde exterior del a cebolla, la implementaci\'on de Order Processor trae la llamada HTTP al coraz\'on de la aplicaci\'on.
-        
-        \item \textbf{Inversi\'on Negativa del Acoplamiento:} El acoplamiento viaja desde el centro (Application Core) hacia afuera( infrastructure),
-        violando directamente la norma de que "toda acoplamiento es hacia el centro".
-
-        \item \textbf{Acoplamiento a Tecnolog\'ias Cambiantes:} Palermo enfatiza que la infraestructura es lo que cambia con mayor frecuencia en la industria. Al tener a OrderProcessor acoplado a
-        AddressValidatorService y a su liber\'ia HTTP, cualquier actualizaci\'on o descontinuaci\'on de la librer\'ia obligar\'a a modificar el c\'odigo fuente de la l\'ogica de procesamiento de pedidos.
-    \end{itemize}
-
-\noindent\textbf{\large Caso 3: Arquitectura Limpia/Clean Architecture} 
-\subsubsection*{Principios Fundamentales}
-Robert C. Martin sintetiza las ideas de Hexagonal y Onion definiendo cuatro c\'irculos conc\'entricos principales
+\paragraph{Principios fundamentales.} Propuesta por Jeffrey Palermo \parencite{palermo2008}, la Arquitectura Cebolla está diseñada para aplicaciones empresariales de larga vida y se estructura en capas concéntricas. Sus cuatro principios clave son \parencite{palermo2008}:
 
 \begin{itemize}
-    \item \textbf{Entidades  (\textit{Entities}):} Reglas de negocio cr\'iticas y globales
-    \item \textbf{Casos de Uso  (\textit{Use Cases/ Interactors}):} Pol\'iticas espec\'ificas de la aplicaci\'on que coordinan el flujo de datos
-    \item \textbf{Adapatadores de Interfaz  (\textit{Interface Adapters}):} Presentadores, controladores y gateways que convierten datos.
-    \item \textbf{Frameworks y Drivers:} Herramientas externas, bases de datos, UI y clientes HTTP.
+    \item \textbf{Construcción alrededor de un modelo de objetos independiente:} El centro absoluto de la cebolla es el modelo de dominio (\emph{Domain Model}), que contiene el estado y el comportamiento esenciales del negocio y solo está acoplado a sí mismo.
+    \item \textbf{Las capas internas definen las interfaces y las externas las implementan:} La capa central no guarda el código de acceso a datos ni clientes HTTP; únicamente contiene los contratos o interfaces. La implementación concreta de esas interfaces se empuja hacia los bordes exteriores.
+    \item \textbf{Dirección de acoplamiento estrictamente hacia el centro:} Todo el código de las capas exteriores puede depender de las capas internas, pero el código de las capas internas jamás puede depender de capas más externas.
+    \item \textbf{Compilación y ejecución independiente del núcleo:} Todo el \emph{Application Core} debe poder compilarse y ejecutarse de manera completamente aislada de la infraestructura.
 \end{itemize}
 
-Sus principios rectores son: 
+\paragraph{Violación en \texttt{OrderProcessor}.}
 \begin{itemize}
-    \item \textbf{N\'ucleo como la Pol\'itica de Mayor Nivel:} Las reglas de negocio ocupan la posici\'on mas privilegiada de la jerarqu\'ia y deben de ser protegidas de cualquier cambio en las capas externas
-    \item \textbf{La Infraestructura como un Plugin:} Las bases de datos, la interfaz web o las librer\'ias HTTP deben comportarse como meros complementos intercambiables (plugins) que se conectan al sistema sin alterar el n\'ucleo.
-    \item \textbf{Cruce de Fronteras mediante Polimorfismo:}  Para que el flujo de control ejecute c\'odigo en la infreaestructura sin violar la Regla de Dependencias, see utiliza el DIP: el Caso de Uso llama a un puerto/interfaz interno, y la infraestructura lo implementa.
+    \item \textbf{Contaminación del centro por la infraestructura:} En lugar de empujar la tecnología HTTP hacia el borde exterior de la cebolla, la implementación de \texttt{OrderProcessor} trae la llamada HTTP al corazón de la aplicación.
+    \item \textbf{Inversión negativa del acoplamiento:} El acoplamiento viaja desde el centro (\emph{Application Core}) hacia afuera (infraestructura), violando directamente la norma de que \enquote{todo acoplamiento es hacia el centro} \parencite{palermo2008}.
+    \item \textbf{Acoplamiento a tecnologías cambiantes:} Palermo enfatiza que la infraestructura es lo que cambia con mayor frecuencia en la industria \parencite{palermo2008}. Al tener a \texttt{OrderProcessor} acoplado a \texttt{AddressValidatorService} y a su librería HTTP, cualquier actualización o descontinuación de la librería obligará a modificar el código fuente de la lógica de procesamiento de pedidos.
 \end{itemize}
 
-\subsubsection*{An\'alisis de la Violaci\'on en el C\'odigo de OrderProcessor}
+\subsubsection*{Arquitectura Limpia (\emph{Clean Architecture})}
+
+\paragraph{Principios fundamentales.} Robert C. Martin sintetiza las ideas de Hexagonal y Onion definiendo cuatro círculos concéntricos principales \parencite{martin2017}:
+
 \begin{itemize}
-    \item \textbf{Violaci\'on de la Direcci\'on de la Regla de Dependencia:} OrderProcessor reside en la capa de Casos de Uso (pol\'itica de alto nivel), AddressValidatorService reside junto a la librer\'ia HTTP en la capa de Frameworks y Drivers
-    (mecanismos de bajo nivel). La flecha de dependencia apunta directamente hacia afuera, rompiendo el principio arquitect\'onico fundamental.
-    \item \textbf{Destrucci\'on del Concepto de Plugin:} Debido a que la clase OrderProcessor utiliza la instanciaci\'on directa, el servicio de validaci\'on de direcci\'ones no es un plugin reemplazable, sino una pieza "soldada" dentro del m\'odulo central de la aplicaci\'on.
+    \item \textbf{Entidades (\emph{Entities}):} reglas de negocio críticas y globales.
+    \item \textbf{Casos de uso (\emph{Use Cases/Interactors}):} políticas específicas de la aplicación que coordinan el flujo de datos.
+    \item \textbf{Adaptadores de interfaz (\emph{Interface Adapters}):} presentadores, controladores y \emph{gateways} que convierten datos.
+    \item \textbf{Frameworks y Drivers:} herramientas externas, bases de datos, UI y clientes HTTP.
 \end{itemize}
-\subsubsection*{¿Qu\'e direcci\'on deber\'ian de tener las dependencias del c\'odigo fuente?:}
-    Las dependencias del c\'odigo fuente deben apuntar estrictamente de afuera hacia dentro. El c\'odigo de alto nivel (dominio/casos de uso) jam\'as debe de mencionar, importar o instancias clases pertenecientes a m\'odulos de bajo nivel (bases de datos, clientes HTTP, UI)
 
-    
-\subsection*{¿Por qu\'e la implementaci\'on actual no cumple?: }
-    \begin{itemize}
-        \item   Porque la flecha de dependencia apunta en \textbf{direcci\'on contraria (de adentro hacia afuera)}.
-        \item La clase de alto nivel \texttt{OrderProcessor} (n\'ucleo de negocio) conoce, depende e instancia directamente a la clase t\'ecnica de bajo nivel \texttt{AddressValidatorService}
-    (infraestructura), quedando atada a su librer\'ia HTTP subyacente.
+Sus principios rectores son \parencite{martin2017}:
 
-    \end{itemize}
+\begin{itemize}
+    \item \textbf{Núcleo como la política de mayor nivel:} Las reglas de negocio ocupan la posición más privilegiada de la jerarquía y deben protegerse de cualquier cambio en las capas externas.
+    \item \textbf{La infraestructura como un \emph{plugin}:} Las bases de datos, la interfaz web o las librerías HTTP deben comportarse como meros complementos intercambiables que se conectan al sistema sin alterar el núcleo.
+    \item \textbf{Cruce de fronteras mediante polimorfismo:} Para que el flujo de control ejecute código en la infraestructura sin violar la Regla de Dependencia, se utiliza el DIP: el caso de uso llama a un puerto o interfaz interno, y la infraestructura lo implementa.
+\end{itemize}
 
+\paragraph{Violación en \texttt{OrderProcessor}.}
+\begin{itemize}
+    \item \textbf{Violación de la dirección de la Regla de Dependencia:} \texttt{OrderProcessor} reside en la capa de casos de uso (política de alto nivel), mientras que \texttt{AddressValidatorService} reside junto a la librería HTTP en la capa de Frameworks y Drivers (mecanismos de bajo nivel). La flecha de dependencia apunta directamente hacia afuera, rompiendo el principio arquitectónico fundamental.
+    \item \textbf{Destrucción del concepto de \emph{plugin}:} Debido a que \texttt{OrderProcessor} utiliza la instanciación directa, el servicio de validación de direcciones no es un \emph{plugin} reemplazable, sino una pieza \enquote{soldada} dentro del módulo central de la aplicación.
+\end{itemize}
 
-\subsection*{ Redise\~{n}o Arquitect\'onico e Inversi\'on de Dependencias}
-Se aplica el Principio de Inversi\'on de Dependencias (DIP) junto con el patr\'on de interfaz separada.
+\subsubsection*{Dirección de las dependencias y por qué la implementación actual no la cumple}
 
-\begin{lstlisting}[language=CSharp, caption={Ejemplo de c\'odigo}]
-// Puerto / Interfaz declarada en el centro (propiedad del negocio)
+Las dependencias del código fuente deben apuntar estrictamente de afuera hacia adentro. El código de alto nivel (dominio y casos de uso) jamás debe mencionar, importar ni instanciar clases pertenecientes a módulos de bajo nivel (bases de datos, clientes HTTP, UI) \parencite{martin2017}. La implementación actual no lo cumple por dos razones:
+
+\begin{itemize}
+    \item La flecha de dependencia apunta en \textbf{dirección contraria (de adentro hacia afuera)}.
+    \item La clase de alto nivel \texttt{OrderProcessor} (núcleo de negocio) conoce, depende e instancia directamente a la clase técnica de bajo nivel \texttt{AddressValidatorService} (infraestructura), quedando atada a su librería HTTP subyacente.
+\end{itemize}
+
+\subsection{Inciso b): Rediseño arquitectónico}
+
+\subsubsection*{Inversión de dependencias mediante una interfaz}
+
+Se aplica el Principio de Inversión de Dependencias (DIP) \parencite{martin2017} junto con el patrón de interfaz separada. El Código~\ref{lst:p4-nucleo} muestra la interfaz y el caso de uso, que residen en el núcleo, y el Código~\ref{lst:p4-adaptador}, el adaptador que reside en la infraestructura.
+
+\begin{lstlisting}[caption={Interfaz \texttt{IAddressValidator} y clase \texttt{OrderProcessor} en el núcleo}, label=lst:p4-nucleo]
+// Puerto / interfaz declarada en el centro (propiedad del negocio)
 public interface IAddressValidator
 {
     bool ValidateAddress(Address address);
 }
 
-//Caso de Uso / l\'ogica de Negocio que depende \'unicamente de la abstraccion
+// Caso de uso / lógica de negocio que depende únicamente de la abstracción
 public class OrderProcessor
 {
     private readonly IAddressValidator _addressValidator;
 
-    // Inyecci\'on de Dependencias por Constructor
+    // Inyección de dependencias por constructor
     public OrderProcessor(IAddressValidator addressValidator)
     {
         _addressValidator = addressValidator
-        ?? throw new ArgumentNullException(nameof(addressValidator));
+            ?? throw new ArgumentNullException(nameof(addressValidator));
     }
-    public void ProcessOrder (Order order)
+
+    public void ProcessOrder(Order order)
     {
         // La regla de negocio invoca el contrato sin conocer detalles de red
         bool isValid = _addressValidator.ValidateAddress(order.ShippingAddress);
 
-        if(!isValid)
+        if (!isValid)
         {
-            throw new InvalidOperationException("La direcci\'on de envio no es valida");
+            throw new InvalidOperationException("La dirección de envío no es válida");
         }
-        // l\'ogica adicional para procesar el pedido.....
+        // lógica adicional para procesar el pedido...
     }
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=CSharp, caption={Ejemplo de c\'odigo}]
-//Adaptador concreto en la infraestructura que implementa la interfaz del n\'ucleo
-
-public class AddressValidatorService: IAddressValidator
+\begin{lstlisting}[caption={Adaptador \texttt{AddressValidatorService} en la infraestructura}, label=lst:p4-adaptador]
+// Adaptador concreto en la infraestructura que implementa la interfaz del núcleo
+public class AddressValidatorService : IAddressValidator
 {
-    private readonly HTTPClientLibary _httpClient;
+    private readonly HttpClientLibrary _httpClient;
 
     public AddressValidatorService(HttpClientLibrary httpClient)
     {
         _httpClient = httpClient;
     }
 
-    public bool ValidateAddress(Address addres)
+    public bool ValidateAddress(Address address)
     {
-        // Detalle t\'ecnico: traducci\'on de la llamada y comunicaci\'on HTTP
+        // Detalle técnico: traducción de la llamada y comunicación HTTP
         var response = _httpClient.Post("/api/address/validate", address);
-        return reponse.IsSuccess;
+        return response.IsSuccess;
     }
 }
 \end{lstlisting}
 
-\subsection*{An\'alisis por casos y ubicaci\'on de componentes}
+\subsubsection*{Ubicación de los componentes por estilo}
 
-
-
-\noindent\textbf{\large Caso 1: Arquitectura Hexagonal}
-
+\paragraph{Arquitectura Hexagonal.}
 \begin{itemize}
-    \item \textbf{N\'ucleo de la Aplicaci\'on (Interior del Hex\'agono /Inside):}
+    \item \textbf{Núcleo de la aplicación (interior del hexágono / \emph{inside}):}
     \begin{itemize}
-            \item IAddressValidator: Reside dentro del hex\'agono actuando como un Puerto Secundario / Conducido (Driven Port). Define la conversaci\'on abstracta necesaria sobre la frontera del negocio.
-
-            \item OrderProcessor: Reside dentro del hex\'agono como la l\'ogica central de la aplicaci\'on que utiliza el puerto secundario
+        \item \texttt{IAddressValidator}: reside dentro del hexágono actuando como un puerto secundario o conducido (\emph{driven port}) \parencite{cockburn2005}. Define la conversación abstracta necesaria sobre la frontera del negocio.
+        \item \texttt{OrderProcessor}: reside dentro del hexágono como la lógica central de la aplicación que utiliza el puerto secundario.
     \end{itemize}
-
-        \item \textbf{Capa de Infraestructura (Exterior del Hex\'agono / Outside):}
+    \item \textbf{Capa de infraestructura (exterior del hexágono / \emph{outside}):}
     \begin{itemize}
-            \item AddressValidatorSerice: Reside en el exterior del hex\'agono como un adaptador Secundario / Conducido (Driven Adapter). Implementa el puerto e interactua directamente con el dipositivo o servicio HTTP externo
+        \item \texttt{AddressValidatorService}: reside en el exterior del hexágono como un adaptador secundario o conducido (\emph{driven adapter}) \parencite{cockburn2005}. Implementa el puerto e interactúa directamente con el dispositivo o servicio HTTP externo.
     \end{itemize}
 \end{itemize}
 
-\noindent\textbf{\large Caso 2: Arquitectua Cebolla / Onion}
+\paragraph{Arquitectura Cebolla.}
 \begin{itemize}
-    \item \textbf{N\'ucleo de la Aplicaci\'on (Application Core / Anillos Internos)}: 
+    \item \textbf{Núcleo de la aplicación (\emph{Application Core} / anillos internos):}
     \begin{itemize}
-        \item IAddressValidator: Reside en las capas internas el n\'ucleo de aplicaci\'on (Application Core) Palermo establece expresamente que las
-        "las capas internas definen las interfaces"
-
-        \item OrderProcessor: Reside en los servicios del n\'ucleo de aplicaci\'on,
-        acoplado \'unicamente a la interfaz y al modelo de objetos independientes
+        \item \texttt{IAddressValidator}: reside en las capas internas del núcleo de aplicación. Palermo establece expresamente que \enquote{las capas internas definen las interfaces} \parencite{palermo2008}.
+        \item \texttt{OrderProcessor}: reside en los servicios del núcleo de aplicación, acoplado únicamente a la interfaz y al modelo de objetos independiente.
     \end{itemize}
-
-    \item \textbf{Capa de Infraestructura (Anillo Exterior / Infraestructure):}:
+    \item \textbf{Capa de infraestructura (anillo exterior):}
     \begin{itemize}
-        \item AddressValidatorService: Reside en el borde mas externo de infraestructura. Implementa la interfaz del n\'ucleo e integra la librer\'ia HTTP
-        concreta.
-
-        \item En tiempo de ejecuci\'on, un contenedor de Inversi\'on de Control (IoC) resuelve la clase t\'ecnica del a infraestructura e inyecta su instancia en 
-        el constructor de OrderProcessor
+        \item \texttt{AddressValidatorService}: reside en el borde más externo, en la infraestructura. Implementa la interfaz del núcleo e integra la librería HTTP concreta.
+        \item En tiempo de ejecución, un contenedor de Inversión de Control (IoC) resuelve la clase técnica de la infraestructura e inyecta su instancia en el constructor de \texttt{OrderProcessor}.
     \end{itemize}
 \end{itemize}
 
-\noindent\textbf{\large Caso 3: Arquitectua Limpia/ Clean Architecture}
+\paragraph{Arquitectura Limpia.}
 \begin{itemize}
-    \item \textbf{N\'ucleo de Dominio y Casos de Uso (C\'irculos conc\'entricos internos):}
+    \item \textbf{Núcleo de dominio y casos de uso (círculos concéntricos internos):}
     \begin{itemize}
-        \item IAddressValidator: Reside en la capa de Casos de Uso actuando como una interfaz de l\'imite de salida.
-        \item OrderProcessor: Reside en la capa de Casos de Uso, coordinando el flujo de datos y aplicando las reglas de negocio.
+        \item \texttt{IAddressValidator}: reside en la capa de casos de uso actuando como una interfaz de límite de salida \parencite{martin2017}.
+        \item \texttt{OrderProcessor}: reside en la capa de casos de uso, coordinando el flujo de datos y aplicando las reglas de negocio.
     \end{itemize}
-
-    \item \textbf{Capa de Infraestructura y Drivers (C\'irculos Conc\'entricos Externos):}
+    \item \textbf{Capa de infraestructura y \emph{drivers} (círculos concéntricos externos):}
     \begin{itemize}
-        \item AddressValidatorService: Reside en el c\'irculo exterior de Adaptadores de Interfaz / Frameworks and Drivers. Implementa el puerto
-        de salida del caso de uso mediante polimorfismo din\'amico.
+        \item \texttt{AddressValidatorService}: reside en el círculo exterior de Adaptadores de Interfaz y Frameworks y Drivers. Implementa el puerto de salida del caso de uso mediante polimorfismo dinámico.
     \end{itemize}
 \end{itemize}
 
-La restructuraci\'on realizada se justifica mediante la segunda regla del Principio de Inversi\'on de Dependencias (DIP), la cual establece que las abstracciones 
-no deben depender de los detalles , sino que los detalles deben depender de las abstracciones. 
+\subsubsection*{Justificación del diseño}
+
+La reestructuración realizada se justifica mediante la segunda regla del Principio de Inversión de Dependencias (DIP) \parencite{martin2017}, la cual establece que las abstracciones no deben depender de los detalles, sino que los detalles deben depender de las abstracciones.
 
 \begin{itemize}
-    \item \textbf{Inversi\'on de la Flecha de Compilaci\'on:} En la implementaci\'on original defectuosa, OrderProcessor (negocio) conoc\'ia y depend\'ia de AddressValidatorService
-    (detalle t\'ecnico). En el redise\~{n}o, la clase t\'ecnica AddressValidatorService debe de importar e implementar la interfaz IAddressValidator. Por lo cual el detalle t\'ecnico de la infraestructura ahora
-    depende explicitamente de la abstracci\'on definida por el negocio.
-
-    \item \textbf{Aislamiento de la Volatilidad de los Detalles:} Los clientes o librer\'ias HTTP son detalles vol\'atiles que cambian frecuentemente por actualizaci\'ones tecnol\'ogicas. 
-    Al hacer que la infraestructura depende de la interfaz abstracta IAddressValidator, los cambios t\'ecnicos en la llamada HTTP quedan totalmente contenidos en la capa eterna y no provocan ning\'un impacto ni recompilaci\'on en el n\'ucleo de la aplicaci\'on.
-
-    \item \textbf{Inyecci\'on de Dependencias por Constructor (DI):} La clase OrderProcessor ya no utiliza instanciaci\'on directa. Mediante la Inyecci\'on de Dependencias por contructor, el negocio declara que abstracci\'on necesita para operar, delegando la provisi\'on de la implementaci\'on concreta a un contenedor IoC en el incio del a aplicaci\'on.
+    \item \textbf{Inversión de la flecha de compilación:} En la implementación original defectuosa, \texttt{OrderProcessor} (negocio) conocía y dependía de \texttt{AddressValidatorService} (detalle técnico). En el rediseño, la clase técnica \texttt{AddressValidatorService} debe importar e implementar la interfaz \texttt{IAddressValidator}, por lo que el detalle técnico de la infraestructura ahora depende explícitamente de la abstracción definida por el negocio.
+    \item \textbf{Aislamiento de la volatilidad de los detalles:} Los clientes o librerías HTTP son detalles volátiles que cambian con frecuencia por actualizaciones tecnológicas. Al hacer que la infraestructura dependa de la interfaz abstracta \texttt{IAddressValidator}, los cambios técnicos en la llamada HTTP quedan totalmente contenidos en la capa externa y no provocan ningún impacto ni recompilación en el núcleo de la aplicación.
+    \item \textbf{Inyección de dependencias por constructor (DI):} \texttt{OrderProcessor} ya no utiliza instanciación directa. Mediante la inyección de dependencias por constructor, el negocio declara qué abstracción necesita para operar, delegando la provisión de la implementación concreta a un contenedor IoC al inicio de la aplicación.
 \end{itemize}
 
+\subsection{Inciso c): Pruebas aisladas y mantenibilidad}
 
-\subsection*{Pruebas Aisladas y Mantenibilidad del Software}
-\noindent\textbf{\large Impacto en las Pruebas Aisladas}
-El redise\~{n}o mediante la Inversi\'on de Dependencias (DIP) y la Inyecci\'on de Dependenciaas por Constructor (DI) resuelve de manera definitiva
-los problemas de testeabilidad de la clase OrderProcessor:
+\subsubsection*{Impacto en las pruebas aisladas}
+
+El rediseño mediante la Inversión de Dependencias (DIP) y la Inyección de Dependencias por constructor (DI) resuelve de manera definitiva los problemas de testeabilidad de la clase \texttt{OrderProcessor}. En particular, elimina la dependencia de la red y de servidores externos:
 
 \begin{itemize}
-    \item \textbf{Eliminaci\'on de la Dependencia de Red y Servidores Externos}
-    \begin{itemize}
-        \item \textbf{Dise\~{n}o Original:} Para probar la l\'ogica de OrderProcessor, el entono de pruebas estaba obligado a realizar peticiones 
-        HTTP reales a un servidor externo. Si el servidor ca\'ia, la red fallaba o la API externa cambiaba, las pruebas unitarias fallaban aunque el c\'odigo de negocio estuviera correcto
-        \item \textbf{Dise\~{n}o Rediseñado:} Al depender de la interfaz IAddressValidator, OrderProcessor se vuelve completamente independiente al mecanismo de validaci\'on real y al a red.
-    \end{itemize}
+    \item \textbf{Diseño original:} Para probar la lógica de \texttt{OrderProcessor}, el entorno de pruebas estaba obligado a realizar peticiones HTTP reales a un servidor externo. Si el servidor caía, la red fallaba o la API externa cambiaba, las pruebas unitarias fallaban aunque el código de negocio estuviera correcto.
+    \item \textbf{Diseño rediseñado:} Al depender de la interfaz \texttt{IAddressValidator}, \texttt{OrderProcessor} se vuelve completamente independiente del mecanismo de validación real y de la red.
 \end{itemize}
 
-\subsection*{Uso de Objetos Simulados (Mocks/ Stubs)}
-En el arn\'es de pruebas unitarias, se crea un objeto Mock que implementa la interfaz IAddressValidator y se inyecta directamente en el constructor de OrderProcessor. Esto permite simular escenarios de prueba en memoria sin realizar llamadas de red:
+\subsubsection*{Uso de objetos simulados (\emph{mocks} y \emph{stubs})}
 
-\begin{lstlisting}[language=CSharp, caption={Ejemplo de c\'odigo}]
+En el arnés de pruebas unitarias se crea un objeto \emph{mock} que implementa la interfaz \texttt{IAddressValidator} y se inyecta directamente en el constructor de \texttt{OrderProcessor}. Esto permite simular escenarios de prueba en memoria sin realizar llamadas de red (Código~\ref{lst:p4-prueba}).
+
+\begin{lstlisting}[caption={Prueba unitaria de \texttt{OrderProcessor} con un objeto simulado}, label=lst:p4-prueba]
 [Fact]
 public void ProcessOrder_DireccionInvalida()
 {
     var mockValidator = new Mock<IAddressValidator>();
 
-    mockValidator.Setup(v => .ValidateAddress(It.IsAny<Address>())).Returns(false);
+    mockValidator
+        .Setup(v => v.ValidateAddress(It.IsAny<Address>()))
+        .Returns(false);
 
-    var processor = new OrderProcess(mockValidator.Object);
+    var processor = new OrderProcessor(mockValidator.Object);
     var order = new Order();
 
-    Assert.Throws<InvalidOperationException>(() => processor.ProcessorOrder(order));
+    Assert.Throws<InvalidOperationException>(() => processor.ProcessOrder(order));
 }
-
 \end{lstlisting}
-\subsection*{Cumplimiento de las Propiedades de Pruebas Unitarias de Calidad (FIRST)}
-\begin{itemize}
-    \item \textbf{Velocidad (Fast):} Las pruebas se ejecutan en milisegundos en memoria, al no depender del tiempo de respuesta I/O de la red.
-    \item \textbf{Aislamento (Isolated):} Se prueba exclusivamente la l\'ogica de procesamiento del pedido sin interferencia de componentes de infraestructura.
-    \item \textbf{Repetibilidad (Repeatable):} Las pruebas producen exactamente el mismo resultado en cualquier entorno (m\'aquina de desarrollador, servidor de integraci\'on continua CI/CD) sin requerir conexi\'on a Internet
-\end{itemize}
 
-\subsection*{Impacto en la Mantenibilidad del Software}
-La mantenibilidad mide la facilidad con la que el software puede modificarse para corregir errores, adaptarse a nuevos requisitos o evolucionar tecnol\'ogicamente. El redise\~{n}o optimiza este atributo de calidad a traves de dos principios fundamentales de SOLID:
+\subsubsection*{Propiedades de calidad de las pruebas unitarias (FIRST)}
 
 \begin{itemize}
-    \item \textbf{Principio de \'Unica responsabilidad (SRP):}
-    \begin{itemize}
-        \item OrderProcessor adquiere una sola raz\'on para cambiar: modificaciones en las reglas de negocio relativas al procesamiento de pedidos.
-        \item Si el servicio externo de validaci\'on de direcci\'ones cambia en sus endpoints, actualiza su formato JSON o migra de librer\'ia HTTP, la clase OrderProcessor no sufre ning\'un cambio ni requiere recompilaci\'on. El impacto
-        del cambio queda 100\% contenido dentro de la clase AddressValidatorService en la capa de infraestructura.
-    \end{itemize}
-
-    \item \textbf{Principio Abierto/Cerrado (OCP)}
-    El sistema queda abierto a la extensi\'on pero cerrado a la modificaci\'on:
-
-    \begin{itemize}
-        \item Si en el futuro la empresa decide cambiar el proveedor de validaci\'on de direcci\'ones o utilizar una base de datos local para la validaci\'on, no se modifica una sola linea de c\'odigo dentro de OrderProcessor.
-        \item Basta con crear una nueva clase en la infraestructura que implemente la interfaz IAddressValidator e inyectarla mediante el contenedor de Inversi\'on de Control (IoC) 
-    \end{itemize}
-
-    \item \textbf{Reducci\'on de la Deuda T\'ecnica}
-    Como enfatizan los autores de las arquitecturas Hexagonal, Cebolla y Limpia, proteger el n\'ucleo de aplicaci\'on de la volatidad de la infraestructura reduce drasticamente los costos de mantenimiento y extiende el tiempo de vida \'util del sistema.
+    \item \textbf{Velocidad (\emph{Fast}):} Las pruebas se ejecutan en milisegundos y en memoria, al no depender del tiempo de respuesta de E/S de la red.
+    \item \textbf{Aislamiento (\emph{Isolated}):} Se prueba exclusivamente la lógica de procesamiento del pedido, sin interferencia de componentes de infraestructura.
+    \item \textbf{Repetibilidad (\emph{Repeatable}):} Las pruebas producen exactamente el mismo resultado en cualquier entorno (máquina del desarrollador, servidor de integración continua CI/CD) sin requerir conexión a Internet.
 \end{itemize}
+
+\subsubsection*{Impacto en la mantenibilidad del software}
+
+La mantenibilidad mide la facilidad con la que el software puede modificarse para corregir errores, adaptarse a nuevos requisitos o evolucionar tecnológicamente. El rediseño optimiza este atributo de calidad a través de dos principios fundamentales de SOLID \parencite{martin2017}:
+
+\begin{itemize}
+    \item \textbf{Principio de Responsabilidad Única (SRP):}
+    \begin{itemize}
+        \item \texttt{OrderProcessor} adquiere una sola razón para cambiar: modificaciones en las reglas de negocio relativas al procesamiento de pedidos.
+        \item Si el servicio externo de validación de direcciones cambia sus \emph{endpoints}, actualiza su formato JSON o migra de librería HTTP, la clase \texttt{OrderProcessor} no sufre ningún cambio ni requiere recompilación. El impacto del cambio queda contenido dentro de la clase \texttt{AddressValidatorService}, en la capa de infraestructura.
+    \end{itemize}
+
+    \item \textbf{Principio Abierto/Cerrado (OCP):} El sistema queda abierto a la extensión pero cerrado a la modificación:
+    \begin{itemize}
+        \item Si en el futuro la empresa decide cambiar el proveedor de validación de direcciones o utilizar una base de datos local para la validación, no se modifica una sola línea de código dentro de \texttt{OrderProcessor}.
+        \item Basta con crear una nueva clase en la infraestructura que implemente la interfaz \texttt{IAddressValidator} e inyectarla mediante el contenedor de Inversión de Control (IoC).
+    \end{itemize}
+\end{itemize}
+
+\paragraph{Reducción de la deuda técnica.} Como enfatizan los autores de las arquitecturas Hexagonal, Cebolla y Limpia \parencite{cockburn2005, palermo2008, martin2017}, proteger el núcleo de la aplicación de la volatilidad de la infraestructura reduce los costos de mantenimiento y extiende el tiempo de vida útil del sistema.

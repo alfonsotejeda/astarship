@@ -112,7 +112,7 @@
     Alfonso Tejeda Rodríguez & Pregunta 3 \\
     Kamila Reinoso Asin  & Pregunta 4 \\
     Miguel Andrés Cazorla Zamora  & Pregunta 5 \\
-    Kaisen & Pregunta 6 \\
+    Reynaldo Guillermo Capdevila Reyes & Pregunta 6 \\
     \hline
   \end{tabular}
 
@@ -123,6 +123,52 @@
 \end{titlepage}
 
 \tableofcontents
+\newpage
+% ------------------------------------------------------------
+% ENUNCIADOS DE LAS PREGUNTAS
+% ------------------------------------------------------------
+\section*{Enunciados de las preguntas}
+\addcontentsline{toc}{section}{Enunciados de las preguntas}
+
+\begin{enumerate}[label=\textbf{\arabic*.}, leftmargin=*, itemsep=1.2em]
+
+  \item \textbf{Análisis de Trade-offs (Arquitectura N-Capas vs. Clean/Onion/Hexagonal):}
+  Un equipo de desarrollo está construyendo un sistema de gestión de inventario. Inicialmente, eligen una Arquitectura N-Capas tradicional por su simplicidad y familiaridad. Después de un año, el sistema se ha vuelto un monolito difícil de mantener, donde los cambios en la base de datos afectan la lógica de negocio y la interfaz de usuario, y las pruebas unitarias son lentas y frágiles.
+
+  Con base en los principios de la Arquitectura Limpia y la Arquitectura Hexagonal, explique detalladamente qué error fundamental de acoplamiento se está cometiendo y cómo la introducción de la Regla de Dependencia (Martin) o el uso de Puertos y Adaptadores (Cockburn) resolverían estructuralmente este problema. ¿Cuál sería el impacto en la testabilidad y la capacidad de cambiar la base de datos de SQL Server a MongoDB sin afectar la lógica de negocio?
+
+  \item \textbf{Comparación de Estilos: La Simetría del Hexágono vs. la Jerarquía de las Capas:}
+  La Arquitectura Hexagonal de Cockburn y la Arquitectura Onion de Palermo comparten el objetivo de aislar el núcleo de negocio, pero utilizan representaciones visuales y metáforas radicalmente diferentes (un hexágono simétrico frente a capas concéntricas).
+
+  Analice en profundidad qué problema conceptual resuelve la simetría de la representación hexagonal que una representación de capas apiladas (como la de Onion o la N-Capas tradicional) no logra transmitir de forma intuitiva. ¿Cómo se traduce el concepto de Puerto y Adaptador en la práctica de definir interfaces en las capas internas de la Arquitectura Onion? ¿Por qué Cockburn afirma que el hexágono no tiene seis lados por una razón numérica, sino para eliminar la asimetría izquierda-derecha o arriba-abajo?
+
+  \item \textbf{Aplicación de DDD y Bounded Context en un Dominio Complejo:}
+  Una empresa de seguros necesita desarrollar un sistema para gestionar pólizas de automóviles. El sistema debe interactuar con un departamento de siniestros, un sistema de facturación de primas y una aplicación para que los ajustadores de seguros evalúen daños en el lugar del accidente. Cada uno de estos subsistemas tiene su propia terminología y preocupaciones (ej: póliza para un actuario es un contrato con cláusulas, para facturación es una fuente de ingresos, y para un ajustador es un número de referencia).
+
+  Basado en los conceptos de Domain-Driven Design (Evans) y Bounded Context (Richards \& Ford), explique cómo dividiría este sistema en varios contextos delimitados. ¿Cómo evitaría que el modelo de Póliza se contamine con detalles de siniestros o facturación? ¿Cómo se comunicarían estos contextos de manera desacoplada? Relacione esta solución con la implementación de una Arquitectura Orientada al Dominio (como Onion o Clean) y la creación de un Adaptador de Servicio para la comunicación externa, tal como se describe en la Guía de Arquitectura N-Capas.
+
+  \item \textbf{Evaluación de la Inversión de Dependencias en la Práctica:}
+  Un equipo de desarrollo está trabajando en un sistema de gestión de pedidos. La lógica de negocio principal se encuentra en una clase \texttt{OrderProcessor} que, para completar su tarea, necesita comunicarse con un servicio externo de validación de direcciones. La implementación actual tiene una dependencia directa: \texttt{OrderProcessor} instancia y llama directamente a la clase \texttt{AddressValidatorService}, que a su vez depende de una librería HTTP específica para comunicarse con el servicio externo.
+
+  Con base en los principios de la Inversión de Dependencias (Martin) y la Regla de Dependencia (Martin), analice y responda:
+  \begin{enumerate}[label=\alph*), leftmargin=1.5em, itemsep=0.6em]
+    \item ¿Por qué esta dependencia directa viola los principios fundamentales de las arquitecturas Hexagonal, Limpia y Onion? Explique específicamente qué dirección deberían tener las dependencias del código fuente y por qué la implementación actual no la cumple.
+    \item Rediseñe la interacción entre \texttt{OrderProcessor} y \texttt{AddressValidatorService} para que se alinee con los principios de estas arquitecturas. Defina claramente qué componente (interfaz) debe residir en el núcleo de la aplicación y qué componente debe residir en la capa de infraestructura o en el exterior del hexágono. Justifique su diseño basándose en el principio de que los detalles deben depender de las abstracciones.
+    \item Explique cómo este nuevo diseño permite que la lógica de negocio (\texttt{OrderProcessor}) sea probada de forma aislada, sin necesidad de realizar llamadas HTTP reales al servicio externo, y sin depender de la librería HTTP subyacente. ¿Qué implicaciones tiene este diseño para la mantenibilidad y la capacidad de cambiar el proveedor de validación de direcciones en el futuro?
+  \end{enumerate}
+
+  \item \textbf{Análisis de un Problema Real: El Kitty Problem y el Principio de Abierto/Cerrado:}
+  En su libro \emph{Fundamentals of Software Architecture}, Richards y Ford presentan el \emph{Kitty Problem} para ilustrar un fallo común en el diseño de arquitecturas orientadas a servicios. Describa este problema: un requisito transversal (como la entrega de gatitos) afecta a múltiples servicios previamente existentes (TaxiUI, TaxiFinder, TaxiSelector, etc.), requiriendo cambios coordinados en todos ellos.
+
+  ¿Por qué la solución de dividir el sistema en servicios basados en verbos o entidades funcionales (como TaxiFinder o TaxiSelector) llevó a este problema? Basándose en los principios de DDD y la Arquitectura Onion/Clean, ¿cómo se podría haber diseñado el sistema para que un cambio de este tipo afectara a un solo componente o servicio? Proponga una solución utilizando componentes como Kittens y Rides que se añadan como plugins, explicando cómo esto respeta el Principio de Abierto/Cerrado (OCP) y qué papel juegan los Adaptadores en esta extensión.
+
+  \item \textbf{Evaluación de la Arquitectura N-Capas frente a Requisitos de Atributos de Calidad:}
+  La Arquitectura N-Capas es criticada por su bajo rendimiento en características como Agilidad general, Facilidad de despliegue y Escalabilidad (Richards, 2015). Un estudiante propone que, con el uso de capas abiertas (\emph{open layers}) y técnicas como el \emph{fast-lane reader}, se pueden mitigar estos problemas.
+
+  Analice esta afirmación. ¿Cómo afecta la introducción de capas abiertas al principio de Aislamiento de Capas y a la mantenibilidad a largo plazo? ¿Por qué la solución de capas abiertas puede llevar a un \emph{sinkhole anti-pattern} y qué dice la regla del 80/20 sobre esto? Finalmente, explique por qué, para un sistema con requisitos de alta escalabilidad y agilidad, una arquitectura como la Hexagonal o la Limpia, que se basan en los principios de DDD y desacoplamiento, son inherentemente más adecuadas que una Arquitectura N-Capas, incluso con optimizaciones.
+
+\end{enumerate}
+
 \newpage
 
 % ------------------------------------------------------------
@@ -146,10 +192,6 @@
 % ------------------------------------------------------------
 \section*{Declaración de Uso de la Inteligencia Artificial}
 
-% Completar: herramienta y versión, propósito, y forma de integración
-% del resultado en el documento. Indicar qué integrantes la usaron.
-% Si ningún integrante usó IA, confirmarlo con el equipo.
-
-[Completar]
+Para la elaboración de este seminario, el equipo utilizó dos herramientas de inteligencia artificial. Por un lado, Gemini (versión Gemini 3.5), con el propósito de traducir al español fragmentos de las obras de la bibliografía y de obtener explicaciones introductorias de algunos estilos arquitectónicos, como la arquitectura hexagonal. Por otro lado, Claude (versión Claude Sonnet 5.5), con el propósito de generar ejemplos de código, ayudar a formalizar la redacción de las respuestas, dar el formato correcto a los archivos \texttt{.tex} y elaborar los esquemas. Kamila Reinoso Asin usó Gemini y el resto del equipo usó Claude. Todo el contenido generado fue revisado, verificado y adaptado por el equipo, quien asume la responsabilidad final del documento.
 
 \end{document}

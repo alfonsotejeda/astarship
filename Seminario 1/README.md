@@ -9,14 +9,14 @@ Estudio comparativo de cinco estilos arquitectónicos: N-Capas, Hexagonal (Puert
 
 **Nombre del equipo:** _HAVING FE_
 
-| Nombre | Grupo | GitHub | Pregunta |
-| ------ | ----- | ------ | -------- |
-
-| Eric Reyes Milián | C312 | [@EricReyesMilian](https://github.com/EricReyesMilian) | Pregunta 1 |
-| Adrián Estévez Álvarez | C312 | [@Chikiak](https://github.com/Chikiak) | Pregunta 2 |
-| Alfonso Tejeda Rodríguez | C312 | [@alfonsotejeda](https://github.com/alfonsotejeda) | Pregunta 3 |
-| Kamila Reinoso Asín | C311 | [@KamAlien](https://github.com/KamAlien) | Pregunta 4 |
-| Miguel Andrés Cazorla Zamora | C312 | [@andr-migue](https://github.com/andr-migue) | Pregunta 5|
+| Nombre                             | Grupo | GitHub                                                 | Pregunta   |
+| ---------------------------------- | ----- | ------------------------------------------------------ | ---------- |
+| Eric Reyes Milián                  | C312  | [@EricReyesMilian](https://github.com/EricReyesMilian) | Pregunta 1 |
+| Adrián Estévez Álvarez             | C312  | [@Chikiak](https://github.com/Chikiak)                 | Pregunta 2 |
+| Alfonso Tejeda Rodríguez           | C312  | [@alfonsotejeda](https://github.com/alfonsotejeda)     | Pregunta 3 |
+| Kamila Reinoso Asín                | C311  | [@KamAlien](https://github.com/KamAlien)               | Pregunta 4 |
+| Miguel Andrés Cazorla Zamora       | C312  | [@andr-migue](https://github.com/andr-migue)           | Pregunta 5 |
+| Reynaldo Guillermo Capdevila Reyes | C312  | [@kaizenrg](https://GitHub.com/kaizenrg)               | Pregunta 6 |
 
 ## Estructura del repositorio
 
