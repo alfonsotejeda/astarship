@@ -1,9 +1,10 @@
 """Itinerary model."""
 from datetime import date
 
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.proportion_type import ProportionType
 
 
 class Itinerary(Base):
@@ -17,3 +18,5 @@ class Itinerary(Base):
     validated: Mapped[bool]
     package_id: Mapped[int | None]
     creator_id: Mapped[int | None]
+
+    proportion_types: Mapped[list[ProportionType]] = relationship(cascade="all, delete-orphan")
