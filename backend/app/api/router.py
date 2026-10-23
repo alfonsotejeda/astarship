@@ -12,6 +12,7 @@ from app.api.routes import (
     permission,
     travel_group,
     user,
+    category_package
 )
 
 api_router = APIRouter()
@@ -25,3 +26,4 @@ api_router.include_router(activity_type.router)
 api_router.include_router(permission.router)
 api_router.include_router(travel_group.router)
 api_router.include_router(itinerary.router)
+api_router.include_router(category_package.router)
