@@ -10,6 +10,7 @@ from app.api.routes import (
     itinerary,
     package,
     permission,
+    proportion_type,
     travel_group,
     user,
 )
@@ -25,3 +26,4 @@ api_router.include_router(activity_type.router)
 api_router.include_router(permission.router)
 api_router.include_router(travel_group.router)
 api_router.include_router(itinerary.router)
+api_router.include_router(proportion_type.router)
