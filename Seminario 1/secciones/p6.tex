@@ -1,5 +1,16 @@
 \section{Pregunta 6: N-Capas frente a requisitos de atributos de calidad}
 
-% Responsable: [Integrante 6]
+% Responsable: [Tu Nombre]
 
-[Redactar respuesta]
+\textbf{Análisis de la afirmación del estudiante:} El estudiante propone que el uso de capas abiertas (open layers) y el "fast-lane reader" mitigan los problemas de rendimiento de la Arquitectura N-Capas. Si bien estas técnicas mejoran el rendimiento puntual de las lecturas al evitar atravesar todas las capas, \textbf{no resuelven el problema de fondo} de los tres atributos de calidad mencionados:
+\begin{itemize}
+    \item \textbf{Despliegue:} Sigue siendo monolítico. Cualquier cambio, por pequeño que sea, obliga a redesplegar toda la aplicación.
+    \item \textbf{Escalabilidad:} Sigue siendo limitada. No se pueden escalar capas o módulos de forma independiente; hay que escalar el sistema completo.
+    \item \textbf{Agilidad:} Sigue siendo baja debido al alto acoplamiento entre las capas, lo que dificulta realizar cambios aislados sin afectar el resto del sistema.
+\end{itemize}
+
+\textbf{Impacto en el Aislamiento y la Mantenibilidad:} La introducción de capas abiertas rompe el principio de aislamiento. Al permitir que una capa salte a otra inferior, se genera un alto acoplamiento. A largo plazo, esto destruye la mantenibilidad: los cambios en capas inferiores pueden romper múltiples capas superiores.
+
+\textbf{El dilema del anti-patrón "Sinkhole" y la regla 80/20:} El "sinkhole" ocurre cuando las peticiones pasan por las capas sin procesamiento real. Según Richards, es normal y tolerable que alrededor del \textbf{20\%} de las peticiones sean sinkholes. El problema real (el anti-patrón) surge cuando esta proporción es del \textbf{80\%} o más, lo que indica que la arquitectura en capas es inadecuada para ese sistema. \textit{La relación entre capas abiertas y sinkhole es inversa a lo que se suele pensar:} las capas abiertas se introducen como una \textbf{respuesta} para evitar el sinkhole y mejorar el rendimiento. Sin embargo, hacer esto compra rendimiento a costa de perder el aislamiento y generar acoplamiento, un trade-off que solo se justifica de forma muy controlada.
+
+\textbf{Idoneidad de Arquitecturas Hexagonal y Limpia:} Para sistemas con altos requisitos de escalabilidad y agilidad, estas arquitecturas son superiores. A diferencia de N-Capas clásica (donde la capa de negocio depende de la de persistencia), Hexagonal y Limpia aplican el principio de Inversión de Dependencias (la 'D' de SOLID) y los conceptos de DDD (como Bounded Contexts). Esto desacopla el dominio de la infraestructura. No son escalables "por sí mismas" mágicamente, pero al usar puertos y adaptadores, \textbf{facilitan enormemente} la separación de módulos y la extracción de servicios independientes, permitiendo una verdadera agilidad y escalabilidad.
