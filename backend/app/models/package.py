@@ -1,9 +1,10 @@
 """Package model."""
 
 from sqlalchemy import Boolean, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.authorization import Authorization
 
 
 class Package(Base):
@@ -16,3 +17,4 @@ class Package(Base):
     name: Mapped[str] = mapped_column(String(255))
     destination: Mapped[str] = mapped_column(String(255))
     validated: Mapped[bool] = mapped_column(Boolean, default=False)
+    authorizations: Mapped[list[Authorization]] = relationship(cascade="all, delete-orphan")
