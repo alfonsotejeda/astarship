@@ -72,6 +72,26 @@ def test_list_authorizations_only_returns_the_package_ones(db_session):
     assert {a.guide_id for a in authorizations} == {first_guide.id, second_guide.id}
 
 
+def test_list_guide_authorizations_only_returns_the_guide_ones(db_session):
+    guide = _create_guide(db_session, "a@example.com")
+    other_guide = _create_guide(db_session, "b@example.com")
+    package = _create_package(db_session, "Andes")
+    other = _create_package(db_session, "Amazon")
+    authorization_service.create_authorization(
+        db_session, package.id, guide.id, AuthorizationUpsert()
+    )
+    authorization_service.create_authorization(
+        db_session, other.id, guide.id, AuthorizationUpsert()
+    )
+    authorization_service.create_authorization(
+        db_session, package.id, other_guide.id, AuthorizationUpsert()
+    )
+
+    authorizations = authorization_service.list_guide_authorizations(db_session, guide.id)
+
+    assert {a.package_id for a in authorizations} == {package.id, other.id}
+
+
 def test_get_authorization_returns_none_when_missing(db_session):
     assert authorization_service.get_authorization(db_session, 999, 999) is None
 

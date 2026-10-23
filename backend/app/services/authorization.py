@@ -19,6 +19,12 @@ def list_authorizations(db: Session, package_id: int) -> list[Authorization]:
     return list(db.scalars(statement))
 
 
+def list_guide_authorizations(db: Session, guide_id: int) -> list[Authorization]:
+    """Return all package authorizations of a guide."""
+    statement = select(Authorization).where(Authorization.guide_id == guide_id)
+    return list(db.scalars(statement))
+
+
 def get_authorization(db: Session, package_id: int, guide_id: int) -> Authorization | None:
     """Return the authorization of a guide on a package, or None if it doesn't exist."""
     return db.get(Authorization, (guide_id, package_id))
