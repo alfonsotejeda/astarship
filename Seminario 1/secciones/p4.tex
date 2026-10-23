@@ -14,10 +14,10 @@ Formulado por Robert C. Martin, el DIP es el \'ultimo de los cinco principios SO
 software m\'as flexibles y mantenibles son aquellas donde las dependencias del c\'odigo fuente y se refieren exclusivamente a abstracciones y nunca a clases concretas
 El principio se desglosa formalmente en 2 reglas :
 
-1 - Los m\'odulos de alto nivel no deben depender de m\'odulos de bajo nivel, ambos deben de depender de abstracciones.
-
-
-2 - Las abstracciones no deben depender de los detalles, los detalles deben de depender de las abstracciones.
+\begin{itemize}
+    \item  Los m\'odulos de alto nivel no deben depender de m\'odulos de bajo nivel, ambos deben de depender de abstracciones.
+    \item  Las abstracciones no deben depender de los detalles, los detalles deben de depender de las abstracciones.
+\end{itemize}
 
 
 \textbf{La Regla de Dependencia (The Dependency Rule)}
@@ -128,13 +128,18 @@ Sus principios rectores son:
 \end{itemize}
 \subsubsection*{¿Qu\'e direcci\'on deber\'ian de tener las dependencias del c\'odigo fuente?:}
     Las dependencias del c\'odigo fuente deben apuntar estrictamente de afuera hacia dentro. El c\'odigo de alto nivel (dominio/casos de uso) jam\'as debe de mencionar, importar o instancias clases pertenecientes a m\'odulos de bajo nivel (bases de datos, clientes HTTP, UI)
-\begin{itemize}
-    \item \textbf{¿Por qu\'e la implementaci\'on actual no cumple?: }
-    Porque la flecha de dependencia apunta en \textbf{direcci\'on contraria (de adentro hacia afuera)}. La clase de alto nivel \texttt{OrderProcessor} (n\'ucleo de negocio) conoce, depende e instancia directamente a la clase t\'ecnica de bajo nivel \texttt{AddressValidatorService}
-    (infraestructura), quedando atada a su librer\'ia HTTP subyacente.
-\end{itemize}
 
-\subsection*{b) Redise\~{n}o Arquitect\'onico e Inversi\'on de Dependencias}
+    
+\subsection*{¿Por qu\'e la implementaci\'on actual no cumple?: }
+    \begin{itemize}
+        \item   Porque la flecha de dependencia apunta en \textbf{direcci\'on contraria (de adentro hacia afuera)}.
+        \item La clase de alto nivel \texttt{OrderProcessor} (n\'ucleo de negocio) conoce, depende e instancia directamente a la clase t\'ecnica de bajo nivel \texttt{AddressValidatorService}
+    (infraestructura), quedando atada a su librer\'ia HTTP subyacente.
+
+    \end{itemize}
+
+
+\subsection*{ Redise\~{n}o Arquitect\'onico e Inversi\'on de Dependencias}
 Se aplica el Principio de Inversi\'on de Dependencias (DIP) junto con el patr\'on de interfaz separada.
 
 \begin{lstlisting}[language=CSharp, caption={Ejemplo de c\'odigo}]
@@ -322,4 +327,3 @@ La mantenibilidad mide la facilidad con la que el software puede modificarse par
     \item \textbf{Reducci\'on de la Deuda T\'ecnica}
     Como enfatizan los autores de las arquitecturas Hexagonal, Cebolla y Limpia, proteger el n\'ucleo de aplicaci\'on de la volatidad de la infraestructura reduce drasticamente los costos de mantenimiento y extiende el tiempo de vida \'util del sistema.
 \end{itemize}
-
