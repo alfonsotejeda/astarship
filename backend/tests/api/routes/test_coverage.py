@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.category import Category
 from app.models.package import Package
 
-BASE = "/api/categories_packages"  # quita "/api" si tus otras rutas no lo usan
+BASE = "/api/coverage"  # quita "/api" si tus otras rutas no lo usan
 
 
 @pytest.fixture

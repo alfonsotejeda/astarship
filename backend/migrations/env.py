@@ -11,12 +11,12 @@ from app.models import (  # noqa: F401
     activity,
     activity_type,
     category,
+    coverage,
     itinerary,
     package,
     permission,
     travel_group,
-    user,
-    category_package
+    user
 )
 
 config = context.config

@@ -1,20 +1,20 @@
 """Test de Coverage Schema"""
 import pytest
 from pydantic import ValidationError
-from app.schemas.category_package import (
-    CategoryPackageCreate,
-    CategoryPackageUpdate,
-    CategoryPackageRead,
+from app.schemas.coverage import (
+    CoverageCreate,
+    CoverageUpdate,
+    CoverageRead,
 )
 
 # ==========================================
-# TESTS PARA: CategoryPackageCreate
+# TESTS PARA: CoverageCreate
 # ==========================================
 
 def test_category_package_create_valid():
     """Verifica que se pueda crear el esquema con datos válidos."""
     data = {"category_id": 1, "package_id": 5}
-    schema = CategoryPackageCreate(**data)
+    schema = CoverageCreate(**data)
     
     assert schema.category_id == 1
     assert schema.package_id == 5
@@ -33,17 +33,17 @@ def test_category_package_create_valid():
 def test_category_package_create_invalid(invalid_data):
     """Verifica que Pydantic rechace datos incorrectos en la creación."""
     with pytest.raises(ValidationError):
-        CategoryPackageCreate(**invalid_data)
+        CoverageCreate(**invalid_data)
 
 
 # ==========================================
-# TESTS PARA: CategoryPackageUpdate
+# TESTS PARA: CoverageUpdate
 # ==========================================
 
 def test_category_package_update_valid():
     """Verifica el esquema de actualización con datos válidos."""
     data = {"category_id": 2, "package_id": 10}
-    schema = CategoryPackageUpdate(**data)
+    schema = CoverageUpdate(**data)
     
     assert schema.category_id == 2
     assert schema.package_id == 10
@@ -60,11 +60,11 @@ def test_category_package_update_valid():
 def test_category_package_update_invalid(invalid_data):
     """Verifica que Pydantic falle si faltan campos obligatorios o son del tipo incorrecto."""
     with pytest.raises(ValidationError):
-        CategoryPackageUpdate(**invalid_data)
+        CoverageUpdate(**invalid_data)
 
 
 # ==========================================
-# TESTS PARA: CategoryPackageRead
+# TESTS PARA: CoverageRead
 # ==========================================
 
 def test_category_package_read_from_attributes():
@@ -81,7 +81,7 @@ def test_category_package_read_from_attributes():
     db_object = FakeDBModel(category_id=3, package_id=7)
     
     # Dependiendo de cómo esté configurado tu ORMSchema (en Pydantic v2 usa model_validate)
-    schema = CategoryPackageRead.model_validate(db_object)
+    schema = CoverageRead.model_validate(db_object)
 
     assert schema.category_id == 3
     assert schema.package_id == 7

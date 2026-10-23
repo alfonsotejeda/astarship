@@ -5,10 +5,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, backref
 
 from app.db.base import Base
 
-class CategoryPackage(Base):
+class Coverage(Base):
     """Class category - package relation"""
 
-    __tablename__ = "category_package"
+    __tablename__ = "coverage"
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"), primary_key=True)
     package_id: Mapped[int] = mapped_column(ForeignKey("packages.id", ondelete="CASCADE"), primary_key=True)
     category = relationship("Category", backref= backref("category_packages", passive_deletes=True)
