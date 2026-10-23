@@ -32,14 +32,20 @@ def get_user(user_id: int, db: Session = Depends(get_db)) -> UserRead:
 
 @router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(data: UserCreate, db: Session = Depends(get_db)) -> UserRead:
-    """Create a new user."""
+    """Create a new user with the subtype given by its role."""
     return user_service.create_user(db, data)
 
 
 @router.patch("/{user_id}", response_model=UserRead)
 def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db)) -> UserRead:
-    """Update an existing user."""
+    """Update an existing user; only the subtype of its role can be sent."""
     user = _get_user_or_404(db, user_id)
+    foreign = user_service.foreign_subtypes(user, data)
+    if foreign:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"User with role {user.role} cannot update: {', '.join(foreign)}",
+        )
     return user_service.update_user(db, user, data)
 
 

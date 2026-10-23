@@ -13,9 +13,14 @@ from app.models import (  # noqa: F401
     category,
     coverage,
     itinerary,
+    membership,
     package,
     permission,
     travel_group,
+    admin,
+    guide,
+    operations_manager,
+    tourist,
     user
 )
 
