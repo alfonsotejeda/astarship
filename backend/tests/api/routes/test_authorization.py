@@ -23,7 +23,7 @@ def test_put_authorization_creates_it_with_201(client):
     package_id = _create_package(client)
 
     response = client.put(
-        f"/api/packages/{package_id}/authorizations/{guide_id}",
+        f"/api/authorizations/packages/{package_id}/guides/{guide_id}",
         json={"can_generate": True, "can_validate": False},
     )
 
@@ -39,7 +39,7 @@ def test_put_authorization_creates_it_with_201(client):
 def test_put_authorization_twice_replaces_the_flags(client):
     guide_id = _create_guide(client)
     package_id = _create_package(client)
-    url = f"/api/packages/{package_id}/authorizations/{guide_id}"
+    url = f"/api/authorizations/packages/{package_id}/guides/{guide_id}"
     client.put(url, json={"can_generate": True, "can_validate": False})
 
     response = client.put(url, json={"can_generate": False, "can_validate": True})
@@ -52,7 +52,7 @@ def test_put_authorization_twice_replaces_the_flags(client):
 def test_put_authorization_returns_404_when_package_missing(client):
     guide_id = _create_guide(client)
 
-    response = client.put(f"/api/packages/999999/authorizations/{guide_id}", json={})
+    response = client.put(f"/api/authorizations/packages/999999/guides/{guide_id}", json={})
 
     assert response.status_code == 404
 
@@ -64,7 +64,7 @@ def test_put_authorization_returns_404_when_user_is_not_a_guide(client):
     ).json()["id"]
     package_id = _create_package(client)
 
-    response = client.put(f"/api/packages/{package_id}/authorizations/{admin_id}", json={})
+    response = client.put(f"/api/authorizations/packages/{package_id}/guides/{admin_id}", json={})
 
     assert response.status_code == 404
 
@@ -73,17 +73,38 @@ def test_list_authorizations_returns_the_package_guides(client):
     first = _create_guide(client, "a@example.com")
     second = _create_guide(client, "b@example.com")
     package_id = _create_package(client)
-    client.put(f"/api/packages/{package_id}/authorizations/{first}", json={})
-    client.put(f"/api/packages/{package_id}/authorizations/{second}", json={})
+    client.put(f"/api/authorizations/packages/{package_id}/guides/{first}", json={})
+    client.put(f"/api/authorizations/packages/{package_id}/guides/{second}", json={})
 
-    response = client.get(f"/api/packages/{package_id}/authorizations")
+    response = client.get(f"/api/authorizations/packages/{package_id}")
 
     assert response.status_code == 200
     assert {a["guide_id"] for a in response.json()} == {first, second}
 
 
 def test_list_authorizations_returns_404_when_package_missing(client):
-    response = client.get("/api/packages/999999/authorizations")
+    response = client.get("/api/authorizations/packages/999999")
+
+    assert response.status_code == 404
+
+
+def test_list_guide_authorizations_returns_the_guide_packages(client):
+    guide_id = _create_guide(client, "a@example.com")
+    other_guide = _create_guide(client, "b@example.com")
+    first = _create_package(client, "Andes")
+    second = _create_package(client, "Amazon")
+    client.put(f"/api/authorizations/packages/{first}/guides/{guide_id}", json={})
+    client.put(f"/api/authorizations/packages/{second}/guides/{guide_id}", json={})
+    client.put(f"/api/authorizations/packages/{first}/guides/{other_guide}", json={})
+
+    response = client.get(f"/api/authorizations/guides/{guide_id}")
+
+    assert response.status_code == 200
+    assert {a["package_id"] for a in response.json()} == {first, second}
+
+
+def test_list_guide_authorizations_returns_404_when_guide_missing(client):
+    response = client.get("/api/authorizations/guides/999999")
 
     assert response.status_code == 404
 
@@ -91,18 +112,18 @@ def test_list_authorizations_returns_404_when_package_missing(client):
 def test_delete_authorization_returns_204(client):
     guide_id = _create_guide(client)
     package_id = _create_package(client)
-    client.put(f"/api/packages/{package_id}/authorizations/{guide_id}", json={})
+    client.put(f"/api/authorizations/packages/{package_id}/guides/{guide_id}", json={})
 
-    response = client.delete(f"/api/packages/{package_id}/authorizations/{guide_id}")
+    response = client.delete(f"/api/authorizations/packages/{package_id}/guides/{guide_id}")
 
     assert response.status_code == 204
-    assert client.get(f"/api/packages/{package_id}/authorizations").json() == []
+    assert client.get(f"/api/authorizations/packages/{package_id}").json() == []
 
 
 def test_delete_authorization_returns_404_when_missing(client):
     guide_id = _create_guide(client)
     package_id = _create_package(client)
 
-    response = client.delete(f"/api/packages/{package_id}/authorizations/{guide_id}")
+    response = client.delete(f"/api/authorizations/packages/{package_id}/guides/{guide_id}")
 
     assert response.status_code == 404
