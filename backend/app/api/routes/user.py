@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.schemas.user import UserCreate, UserRead, UserUpdate
+from app.services import travel_group as travel_group_service
 from app.services import user as user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -53,4 +54,8 @@ def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db)) -
 def delete_user(user_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a user."""
     user = _get_user_or_404(db, user_id)
+    if user.guide is not None and travel_group_service.guide_attends_travel_groups(db, user.id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Guide still attends travel groups"
+        )
     user_service.delete_user(db, user)
