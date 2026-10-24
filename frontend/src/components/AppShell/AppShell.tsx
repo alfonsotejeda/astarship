@@ -32,7 +32,7 @@ export function AppShell({ counts = {}, layout, children = <Outlet /> }: AppShel
 
   const brand = (
     <div className="app-shell__brand">
-      <img src="/favicon.svg" alt="" width={28} height={28} />
+      <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={28} height={28} />
       <span>Astarship</span>
     </div>
   );
