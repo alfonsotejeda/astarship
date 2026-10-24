@@ -8,8 +8,24 @@ def _create_tourist(client, email="ada@example.com") -> int:
     ).json()["id"]
 
 
+def _create_guide(client, email="gil@example.com") -> int:
+    return client.post(
+        "/api/users",
+        json={
+            "name": "Gil",
+            "role": "guide",
+            "email": email,
+            "password": "x",
+            "specialty": "History",
+        },
+    ).json()["id"]
+
+
 def _create_travel_group(client, name="Backpackers") -> int:
-    return client.post("/api/travel-groups", json={"name": name}).json()["id"]
+    guide_id = _create_guide(client, f"{name.lower()}@example.com")
+    return client.post(
+        "/api/travel-groups", json={"name": name, "guide_id": guide_id}
+    ).json()["id"]
 
 
 def test_add_tourist_returns_201(client):
