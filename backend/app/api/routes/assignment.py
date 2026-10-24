@@ -8,6 +8,7 @@ from app.models.assignment import Assignment
 from app.schemas.assignment import AssignmentCreate, AssignmentRead, AssignmentUpdate
 from app.services import assignment as assignment_service
 from app.services import itinerary as itinerary_service
+from app.services import user as user_service
 
 router = APIRouter(tags=["assignments"])
 
@@ -20,7 +21,7 @@ def _ensure_itinerary_exists(db: Session, itinerary_id: int) -> None:
 
 def _ensure_tourist_exists(db: Session, tourist_id: int) -> None:
     """Raise a 404 if the tourist doesn't exist."""
-    if assignment_service.get_tourist(db, tourist_id) is None:
+    if user_service.get_tourist(db, tourist_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tourist not found")
 
 
@@ -59,7 +60,7 @@ def create_assignment(
     """Assign an itinerary to a tourist."""
     _ensure_itinerary_exists(db, itinerary_id)
     _ensure_tourist_exists(db, tourist_id)
-    if assignment_service.get_admin(db, data.admin_id) is None:
+    if user_service.get_admin(db, data.admin_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
     if assignment_service.get_assignment(db, itinerary_id, tourist_id) is not None:
         raise HTTPException(
