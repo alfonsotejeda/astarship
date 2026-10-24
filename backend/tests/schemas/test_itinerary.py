@@ -11,16 +11,18 @@ from app.schemas.itinerary import ItineraryCreate, ItineraryUpdate
 
 def test_create_requires_required_fields():
     with pytest.raises(ValidationError):
-        ItineraryCreate(creation_date=date(2026, 1, 1))
+        ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=3)
 
 
 def test_create_accepts_valid_data():
-    itinerary = ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=3)
+    itinerary = ItineraryCreate(
+        creation_date=date(2026, 1, 1), activity_count=3, package_id=1, guide_id=2
+    )
 
     assert itinerary.creation_date == date(2026, 1, 1)
     assert itinerary.activity_count == 3
-    assert itinerary.package_id is None
-    assert itinerary.creator_id is None
+    assert itinerary.package_id == 1
+    assert itinerary.guide_id == 2
 
 
 def test_update_allows_partial_data():
