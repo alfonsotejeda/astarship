@@ -27,6 +27,11 @@ def get_user(db: Session, user_id: int) -> User | None:
     return db.get(User, user_id)
 
 
+def get_guide(db: Session, guide_id: int) -> Guide | None:
+    """Return a guide by id, or None if the user doesn't exist or isn't a guide."""
+    return db.get(Guide, guide_id)
+
+
 def create_user(db: Session, data: UserCreate) -> User:
     """Create and persist a new user together with its subtype row."""
     user = User(

@@ -1,7 +1,7 @@
 """Tests for the membership service."""
 
 from app.schemas.travel_group import TravelGroupCreate
-from app.schemas.user import TouristCreate
+from app.schemas.user import GuideCreate, TouristCreate
 from app.services import membership as membership_service
 from app.services import travel_group as travel_group_service
 from app.services import user as user_service
@@ -14,8 +14,18 @@ def _create_tourist(db_session, email="ada@example.com"):
     )
 
 
+def _create_guide(db_session, email="gil@example.com"):
+    return user_service.create_user(
+        db_session,
+        GuideCreate(name="Gil", role="guide", email=email, password="x", specialty="History"),
+    )
+
+
 def _create_travel_group(db_session, name="Backpackers"):
-    return travel_group_service.create_travel_group(db_session, TravelGroupCreate(name=name))
+    guide = _create_guide(db_session, f"{name.lower()}@example.com")
+    return travel_group_service.create_travel_group(
+        db_session, TravelGroupCreate(name=name, guide_id=guide.id)
+    )
 
 
 def test_create_membership_adds_the_tourist_to_the_group(db_session):
