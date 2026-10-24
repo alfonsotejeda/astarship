@@ -15,7 +15,6 @@ from app.models import (  # noqa: F401
     itinerary,
     membership,
     package,
-    permission,
     travel_group,
 )
 from app.models.user import (  # noqa: F401
