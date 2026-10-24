@@ -2,6 +2,7 @@
 
 import pytest
 
+from app.models.status import ReviewStatus
 from app.schemas.package import PackageCreate, PackageUpdate
 from app.services import package as package_service
 
@@ -13,13 +14,14 @@ def _create_package(db_session, name="Europa Capitales", destination="París"):
     )
 
 
-def test_create_package_persists_with_validated_false(db_session):
+def test_create_package_persists_as_pending(db_session):
     package = _create_package(db_session)
 
     assert package.id is not None
     assert package.name == "Europa Capitales"
     assert package.destination == "París"
-    assert package.validated is False
+    assert package.status is ReviewStatus.PENDING
+    assert package.creation_date is not None
 
 
 def test_get_package_returns_none_when_missing(db_session):
@@ -48,9 +50,11 @@ def test_create_package_allows_same_name_with_other_destination(db_session):
 def test_update_package_applies_partial_changes(db_session):
     package = _create_package(db_session)
 
-    updated = package_service.update_package(db_session, package, PackageUpdate(validated=True))
+    updated = package_service.update_package(
+        db_session, package, PackageUpdate(status=ReviewStatus.APPROVED)
+    )
 
-    assert updated.validated is True
+    assert updated.status is ReviewStatus.APPROVED
     assert updated.name == "Europa Capitales"
 
 
@@ -82,3 +86,15 @@ def test_delete_package_removes_it(db_session):
     package_service.delete_package(db_session, package)
 
     assert package_service.get_package(db_session, package.id) is None
+
+
+def test_list_packages_filters_by_status(db_session):
+    approved = _create_package(db_session, name="A", destination="Roma")
+    _create_package(db_session, name="B", destination="Roma")
+    package_service.update_package(
+        db_session, approved, PackageUpdate(status=ReviewStatus.APPROVED)
+    )
+
+    result = package_service.list_packages(db_session, ReviewStatus.APPROVED)
+
+    assert [p.id for p in result] == [approved.id]

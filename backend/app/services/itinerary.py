@@ -4,12 +4,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.itinerary import Itinerary
+from app.models.status import ItineraryStatus
 from app.schemas.itinerary import ItineraryCreate, ItineraryUpdate
 
 
-def list_itineraries(db: Session) -> list[Itinerary]:
-    """Return all itineraries."""
-    return list(db.scalars(select(Itinerary)))
+def list_itineraries(db: Session, status: ItineraryStatus | None = None) -> list[Itinerary]:
+    """Return all itineraries, optionally only those with the given status."""
+    statement = select(Itinerary)
+    if status is not None:
+        statement = statement.where(Itinerary.status == status)
+    return list(db.scalars(statement))
 
 
 def get_itinerary(db: Session, itinerary_id: int) -> Itinerary | None:

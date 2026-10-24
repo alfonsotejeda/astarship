@@ -1,14 +1,17 @@
 """Package schema."""
 
+from datetime import date
+
 from pydantic import BaseModel
 
+from app.models.status import ReviewStatus
 from app.schemas.base import ORMSchema
 
 
 class PackageCreate(BaseModel):
     """Fields required to create a package.
 
-    A package is never born validated: `validated` only changes through an update.
+    A package is always born pending: `status` only changes through an update.
     """
 
     name: str
@@ -20,7 +23,7 @@ class PackageUpdate(BaseModel):
 
     name: str | None = None
     destination: str | None = None
-    validated: bool | None = None
+    status: ReviewStatus | None = None
 
 
 class PackageRead(ORMSchema):
@@ -29,4 +32,5 @@ class PackageRead(ORMSchema):
     id: int
     name: str
     destination: str
-    validated: bool
+    status: ReviewStatus
+    creation_date: date
