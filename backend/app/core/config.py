@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     debug: bool = True
     database_url: str = "postgresql+psycopg://astarship:astarship@localhost:5432/astarship"
-    cors_origins: list[str] = ["http://localhost:5173"]
+    cors_origins: list[str] = ["http://localhost:5173", "https://alfonsotejeda.github.io"]
 
 
 @lru_cache
