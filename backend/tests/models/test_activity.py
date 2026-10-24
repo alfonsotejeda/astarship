@@ -14,6 +14,8 @@ def test_expected_columns():
         "id",
         "name",
         "effort_level",
+        "status",
+        "creation_date",
         "activity_type_code",
         "category_id",
         "user_id",
