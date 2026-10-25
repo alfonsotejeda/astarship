@@ -17,5 +17,6 @@ class Tourist(Base):
     age: Mapped[int]
 
     user = relationship("User", back_populates="tourist")
+    bookings = relationship("Booking", back_populates="tourist", passive_deletes=True)
     memberships: Mapped[list[Membership]] = relationship(cascade="all, delete-orphan")
     travel_groups: Mapped[list[TravelGroup]] = relationship(secondary="memberships", viewonly=True)

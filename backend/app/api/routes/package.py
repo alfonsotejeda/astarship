@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.status import ReviewStatus
 from app.schemas.package import PackageCreate, PackageRead, PackageUpdate
-from app.schemas.user import UserRead
+from app.schemas.user import TouristRead
 from app.services import booking as booking_service
 from app.services import package as package_service
 
@@ -42,11 +42,11 @@ def list_packages(
     return package_service.list_packages(db, status)
 
 
-@router.get("/{package_id}/users", response_model=list[UserRead])
-def get_package_users(package_id: int, db: Session = Depends(get_db)) -> list[UserRead]:
-    """List all users booked into a package."""
+@router.get("/{package_id}/tourists", response_model=list[TouristRead])
+def get_package_tourists(package_id: int, db: Session = Depends(get_db)) -> list[TouristRead]:
+    """List all tourists booked into a package."""
     package = _get_package_or_404(db, package_id)
-    return booking_service.get_users_for_package(db, package.id)
+    return booking_service.get_tourists_for_package(db, package.id)
 
 
 @router.get("/{package_id}", response_model=PackageRead)

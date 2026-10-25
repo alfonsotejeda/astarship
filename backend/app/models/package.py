@@ -25,3 +25,5 @@ class Package(Base):
         status_enum(ReviewStatus), default=ReviewStatus.PENDING
     )
     authorizations: Mapped[list[Authorization]] = relationship(cascade="all, delete-orphan")
+
+    bookings = relationship("Booking", back_populates="package", passive_deletes=True)

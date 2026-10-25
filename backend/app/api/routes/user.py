@@ -4,9 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.package import PackageRead
 from app.schemas.user import UserCreate, UserRead, UserUpdate
-from app.services import booking as booking_service
 from app.services import user as user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -24,13 +22,6 @@ def _get_user_or_404(db: Session, user_id: int):
 def list_users(db: Session = Depends(get_db)) -> list[UserRead]:
     """List all users."""
     return user_service.list_users(db)
-
-
-@router.get("/{user_id}/packages", response_model=list[PackageRead])
-def get_user_packages(user_id: int, db: Session = Depends(get_db)) -> list[PackageRead]:
-    """List all packages a user is booked into."""
-    user = _get_user_or_404(db, user_id)
-    return booking_service.get_packages_for_user(db, user.id)
 
 
 @router.get("/{user_id}", response_model=UserRead)

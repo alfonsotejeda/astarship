@@ -140,40 +140,40 @@ def test_delete_package_removes_it(client):
     assert client.get(f"/api/packages/{created['id']}").status_code == 404
 
 
-def _create_user(client, email="ada@example.com"):
+def _create_tourist(client, email="ada@example.com", age=30):
     return client.post(
         "/api/users",
-        json={"name": "Ada", "role": "tourist", "email": email, "password": "s3cret"},
+        json={"name": "Ada", "role": "tourist", "email": email, "password": "s3cret", "age": age},
     ).json()
 
 
-def _create_booking(client, user_id, package_id):
+def _create_booking(client, tourist_id, package_id):
     return client.post(
-        "/api/bookings", json={"user_id": user_id, "package_id": package_id}
+        "/api/bookings", json={"tourist_id": tourist_id, "package_id": package_id}
     )
 
 
-def test_get_package_users_returns_booked_users(client):
-    user = _create_user(client, email="pkguser@example.com")
+def test_get_package_tourists_returns_booked_tourists(client):
+    tourist = _create_tourist(client, email="pkgtourist@example.com", age=30)
     package = _create_package(client)
-    _create_booking(client, user["id"], package["id"])
+    _create_booking(client, tourist["id"], package["id"])
 
-    response = client.get(f"/api/packages/{package['id']}/users")
+    response = client.get(f"/api/packages/{package['id']}/tourists")
 
     assert response.status_code == 200
-    assert any(u["email"] == "pkguser@example.com" for u in response.json())
+    assert any(t["age"] == 30 for t in response.json())
 
 
-def test_get_package_users_returns_404_when_package_missing(client):
-    response = client.get("/api/packages/999999/users")
+def test_get_package_tourists_returns_404_when_package_missing(client):
+    response = client.get("/api/packages/999999/tourists")
 
     assert response.status_code == 404
 
 
-def test_get_package_users_empty_when_no_bookings(client):
+def test_get_package_tourists_empty_when_no_bookings(client):
     package = _create_package(client)
 
-    response = client.get(f"/api/packages/{package['id']}/users")
+    response = client.get(f"/api/packages/{package['id']}/tourists")
 
     assert response.status_code == 200
     assert response.json() == []

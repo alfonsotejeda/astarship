@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models.booking import Booking
 from app.models.package import Package
-from app.models.user import User
+from app.models.user.tourist import Tourist
 from app.schemas.booking import BookingCreate
 
 
@@ -15,40 +15,40 @@ def list_bookings(db: Session) -> list[Booking]:
     return list(db.scalars(select(Booking)))
 
 
-def get_booking(db: Session, user_id: int, package_id: int) -> Booking | None:
-    """Return a booking by its user and package ids, or None if it doesn't exist."""
-    return db.get(Booking, (user_id, package_id))
+def get_booking(db: Session, tourist_id: int, package_id: int) -> Booking | None:
+    """Return a booking by its tourist and package ids, or None if it doesn't exist."""
+    return db.get(Booking, (tourist_id, package_id))
 
 
 def create_booking(db: Session, data: BookingCreate) -> Booking:
-    """Create and persist a new booking between an existing user and package.
+    """Create and persist a new booking between an existing tourist and a package.
 
     Args:
         db: Database session.
-        data: Creation payload with user_id and package_id.
+        data: Creation payload with tourist_id and package_id.
 
     Returns:
         The persisted booking.
 
     Raises:
-        ValueError: If the user or package does not exist, or if a booking
+        ValueError: If the tourist or the package does not exist, or if a booking
             for the same pair already exists.
     """
-    user = db.get(User, data.user_id)
-    if user is None:
-        raise ValueError("User not found")
+    tourist = db.get(Tourist, data.tourist_id)
+    if tourist is None:
+        raise ValueError("Tourist not found")
     package = db.get(Package, data.package_id)
     if package is None:
         raise ValueError("Package not found")
-    if get_booking(db, data.user_id, data.package_id) is not None:
-        raise ValueError("Booking for this user and package already exists")
-    booking = Booking(user_id=data.user_id, package_id=data.package_id)
+    if get_booking(db, data.tourist_id, data.package_id) is not None:
+        raise ValueError("Booking for this tourist and package already exists")
+    booking = Booking(tourist=tourist, package=package)
     db.add(booking)
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise ValueError("Booking for this user and package already exists")
+        raise ValueError("Booking for this tourist and package already exists")
     db.refresh(booking)
     return booking
 
@@ -59,21 +59,21 @@ def delete_booking(db: Session, booking: Booking) -> None:
     db.commit()
 
 
-def get_users_for_package(db: Session, package_id: int) -> list[User]:
-    """Return all users booked into a package."""
+def get_tourists_for_package(db: Session, package_id: int) -> list[Tourist]:
+    """Return all tourists booked into a package."""
     statement = (
-        select(User)
-        .join(Booking, User.id == Booking.user_id)
+        select(Tourist)
+        .join(Booking, Tourist.id == Booking.tourist_id)
         .where(Booking.package_id == package_id)
     )
     return list(db.scalars(statement))
 
 
-def get_packages_for_user(db: Session, user_id: int) -> list[Package]:
-    """Return all packages a user is booked into."""
+def get_packages_for_tourist(db: Session, tourist_id: int) -> list[Package]:
+    """Return all packages a tourist is booked into."""
     statement = (
         select(Package)
         .join(Booking, Package.id == Booking.package_id)
-        .where(Booking.user_id == user_id)
+        .where(Booking.tourist_id == tourist_id)
     )
     return list(db.scalars(statement))
