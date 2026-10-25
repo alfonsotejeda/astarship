@@ -13,6 +13,7 @@ from app.api.routes import (
     membership,
     package,
     permission,
+    tourist,
     travel_group,
     user,
 )
@@ -31,3 +32,4 @@ api_router.include_router(travel_group.router)
 api_router.include_router(itinerary.router)
 api_router.include_router(membership.router)
 api_router.include_router(authorization.router)
+api_router.include_router(tourist.router)
