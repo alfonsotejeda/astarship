@@ -193,7 +193,7 @@ def test_booking_disappears_when_package_deleted(db_session):
 def test_get_tourists_for_package_returns_booked_tourists(db_session):
     tourist_a = _create_tourist(db_session, email="a@example.com")
     tourist_b = _create_tourist(db_session, email="b@example.com")
-    _create_tourist(db_session, email="c@example.com")  # sin bookings
+    _create_tourist(db_session, email="c@example.com")  # no bookings
     package = _create_package(db_session)
 
     booking_service.create_booking(
@@ -218,7 +218,7 @@ def test_get_packages_for_tourist_returns_booked_packages(db_session):
     tourist = _create_tourist(db_session)
     package_a = _create_package(db_session, name="A", destination="Roma")
     package_b = _create_package(db_session, name="B", destination="Lisboa")
-    _create_package(db_session, name="C", destination="París")  # sin booking
+    _create_package(db_session, name="C", destination="París")  # without a booking
 
     booking_service.create_booking(
         db_session, BookingCreate(tourist_id=tourist.id, package_id=package_a.id)
