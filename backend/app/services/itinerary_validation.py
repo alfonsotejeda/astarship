@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.models.itinerary import Itinerary
 from app.models.itinerary_validation import ItineraryValidation
 from app.models.package import Package
+from app.models.status import ItineraryStatus
 from app.models.user.guide import Guide
 from app.schemas.itinerary_validation import ItineraryValidationCreate
 from app.services.authorization import get_authorization
@@ -155,6 +156,7 @@ def create_validation(
     itinerary_id: int, data: ItineraryValidationCreate, db: Session
 ) -> ItineraryValidation:
     """Validate an itinerary as a guide and update the itinerary."""
+
     itinerary = get_itinerary_or_raise(itinerary_id, db)
     guide = get_guide_or_raise(data.guide_id, db)
 
@@ -165,7 +167,6 @@ def create_validation(
         raise ValueError("The itinerary does not belong to a package")
 
     authorization = get_authorization(db, itinerary.package_id, guide.id)
-
     if authorization is None or not authorization.can_validate:
         raise PermissionError("The guide cannot validate itineraries of this package")
 
@@ -175,7 +176,7 @@ def create_validation(
         result=data.result,
         observations=data.observations,
     )
-    itinerary.validated = data.result
+    itinerary.status = ItineraryStatus.VALIDATED if data.result else ItineraryStatus.REJECTED
     db.add(validation)
     db.commit()
     db.refresh(validation)
