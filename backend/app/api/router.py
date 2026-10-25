@@ -13,6 +13,7 @@ from app.api.routes import (
     package,
     permission,
     travel_group,
+    itinerary_validation,
     user,
 )
 
@@ -29,3 +30,4 @@ api_router.include_router(travel_group.router)
 api_router.include_router(itinerary.router)
 api_router.include_router(membership.router)
 api_router.include_router(authorization.router)
+api_router.include_router(itinerary_validation.router)

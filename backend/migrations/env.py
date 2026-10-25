@@ -13,6 +13,7 @@ from app.models import (  # noqa: F401
     authorization,
     category,
     itinerary,
+    itinerary_validation,
     membership,
     package,
     permission,
