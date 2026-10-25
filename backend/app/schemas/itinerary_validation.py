@@ -12,7 +12,7 @@ class ItineraryValidationCreate(BaseModel):
 
     guide_id: int
     result: bool
-    observations: str | None
+    observations: str | None = None
 
 
 class ItineraryValidationRead(ORMSchema):
