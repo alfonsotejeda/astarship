@@ -10,9 +10,12 @@ from app.models.user.tourist import Tourist
 from app.schemas.booking import BookingCreate
 
 
-def list_bookings(db: Session) -> list[Booking]:
-    """Return all bookings."""
-    return list(db.scalars(select(Booking)))
+def list_bookings(db: Session, tourist_id: int | None = None) -> list[Booking]:
+    """Return all bookings, optionally filtered by tourist id."""
+    statement = select(Booking)
+    if tourist_id is not None:
+        statement = statement.where(Booking.tourist_id == tourist_id)
+    return list(db.scalars(statement))
 
 
 def get_booking(db: Session, tourist_id: int, package_id: int) -> Booking | None:

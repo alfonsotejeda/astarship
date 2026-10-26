@@ -107,6 +107,41 @@ def test_list_bookings_includes_created_booking(client):
     )
 
 
+def test_list_bookings_filter_by_tourist_id(client):
+    tourist_a = _create_tourist(client, email="filter-a@example.com")
+    tourist_b = _create_tourist(client, email="filter-b@example.com")
+    package_a = _create_package(client, name="A", destination="Roma")
+    package_b = _create_package(client, name="B", destination="Lisboa")
+
+    _create_booking(client, tourist_a["id"], package_a["id"])
+    _create_booking(client, tourist_a["id"], package_b["id"])
+    _create_booking(client, tourist_b["id"], package_a["id"])
+
+    response = client.get(f"/api/bookings?tourist_id={tourist_a['id']}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 2
+    assert all(b["tourist_id"] == tourist_a["id"] for b in body)
+    assert {b["package_id"] for b in body} == {package_a["id"], package_b["id"]}
+
+
+def test_list_bookings_filter_by_tourist_id_empty_when_none(client):
+    tourist = _create_tourist(client, email="filter-empty@example.com")
+
+    response = client.get(f"/api/bookings?tourist_id={tourist['id']}")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_list_bookings_filter_by_unknown_tourist_id_returns_empty(client):
+    response = client.get("/api/bookings?tourist_id=999999")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
 def test_get_booking_returns_created_booking(client):
     tourist = _create_tourist(client)
     package = _create_package(client)

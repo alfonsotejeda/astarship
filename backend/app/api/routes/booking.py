@@ -56,9 +56,11 @@ def _raise_conflict(db: Session, exc: Exception) -> None:
 
 
 @router.get("", response_model=list[BookingRead])
-def list_bookings(db: Session = Depends(get_db)) -> list[BookingRead]:
-    """List all bookings."""
-    return booking_service.list_bookings(db)
+def list_bookings(
+    tourist_id: int | None = None, db: Session = Depends(get_db)
+) -> list[BookingRead]:
+    """List all bookings, optionally filtered by tourist id."""
+    return booking_service.list_bookings(db, tourist_id=tourist_id)
 
 
 @router.get("/{tourist_id}/{package_id}", response_model=BookingRead)
