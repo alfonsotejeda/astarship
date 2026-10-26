@@ -1,7 +1,7 @@
 """add assignment
 
 Revision ID: a6d2f8c41e93
-Revises: d41a7e9c2b58, e7b3c1f9a250
+Revises: d41a7e9c2b58, e7b3c1f9a250, e7b3c5a1f962
 Create Date: 2026-10-26 12:00:00.000000
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 revision: str = 'a6d2f8c41e93'
-down_revision: Union[str, Sequence[str], None] = ('d41a7e9c2b58', 'e7b3c1f9a250')
+down_revision: Union[str, Sequence[str], None] = ('d41a7e9c2b58', 'e7b3c1f9a250', 'e7b3c5a1f962')
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

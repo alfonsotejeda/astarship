@@ -80,8 +80,10 @@ def test_me_returns_current_user_and_role(client):
 
 def test_me_returns_guide_authorizations(client):
     guide = _create_user(client, role="guide", specialty="History")
+    admin = _create_user(client, name="Grace", email="grace@example.com")
     package = client.post(
-        "/api/packages", json={"name": "Rutas del Sur", "destination": "Sevilla"}
+        "/api/packages",
+        json={"name": "Rutas del Sur", "destination": "Sevilla", "admin_id": admin["id"]},
     ).json()
     client.put(
         f"/api/authorizations/packages/{package['id']}/guides/{guide['id']}",
