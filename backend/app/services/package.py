@@ -4,12 +4,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.package import Package
+from app.models.status import ReviewStatus
 from app.schemas.package import PackageCreate, PackageUpdate
 
 
-def list_packages(db: Session) -> list[Package]:
-    """Return all packages."""
-    return list(db.scalars(select(Package)))
+def list_packages(db: Session, status: ReviewStatus | None = None) -> list[Package]:
+    """Return all packages, optionally only those with the given status."""
+    statement = select(Package)
+    if status is not None:
+        statement = statement.where(Package.status == status)
+    return list(db.scalars(statement))
 
 
 def get_package(db: Session, package_id: int) -> Package | None:
@@ -38,11 +42,11 @@ def find_package_by_name_destination(
 
 
 def create_package(db: Session, data: PackageCreate) -> Package:
-    """Create and persist a new package, never validated on creation.
+    """Create and persist a new package, always pending on creation.
 
     Args:
         db: Database session.
-        data: Creation payload with name and destination.
+        data: Creation payload with name, destination and the generating admin.
 
     Returns:
         The persisted package.
@@ -52,7 +56,7 @@ def create_package(db: Session, data: PackageCreate) -> Package:
     """
     if find_package_by_name_destination(db, data.name, data.destination) is not None:
         raise ValueError("Package with this name and destination already exists")
-    package = Package(name=data.name, destination=data.destination, validated=False)
+    package = Package(name=data.name, destination=data.destination, admin_id=data.admin_id)
     db.add(package)
     db.commit()
     db.refresh(package)

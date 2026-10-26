@@ -14,7 +14,7 @@ def test_expected_columns():
         "id",
         "creation_date",
         "activity_count",
-        "validated",
+        "status",
         "package_id",
         "creator_id",
     }
