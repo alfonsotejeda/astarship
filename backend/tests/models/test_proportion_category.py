@@ -33,7 +33,7 @@ def test_value_is_not_nullable():
 
 @pytest.mark.parametrize("value", [-1, 101])
 def test_value_outside_range_is_rejected(db_session, value):
-    itinerary = Itinerary(creation_date=date(2026, 1, 1), activity_count=1, validated=False)
+    itinerary = Itinerary(creation_date=date(2026, 1, 1), activity_count=1)
     category = Category(name="Culture")
     db_session.add_all([itinerary, category])
     db_session.flush()

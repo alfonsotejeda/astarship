@@ -23,8 +23,13 @@ def get_user(db: Session, user_id: int) -> User | None:
 
 
 def get_admin(db: Session, admin_id: int) -> Admin | None:
-    """Return an admin by id, or None if it doesn't exist."""
+    """Return an admin by id, or None if the user doesn't exist or isn't an admin."""
     return db.get(Admin, admin_id)
+
+
+def get_tourist(db: Session, tourist_id: int) -> Tourist | None:
+    """Return a tourist by id, or None if the user doesn't exist or isn't a tourist."""
+    return db.get(Tourist, tourist_id)
 
 
 def create_user(db: Session, data: UserCreate) -> User:
