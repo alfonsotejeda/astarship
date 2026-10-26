@@ -14,11 +14,14 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "AstarShip API"
+    app_name: str = "Astarship API"
     environment: str = "development"
     debug: bool = True
     database_url: str = "postgresql+psycopg://astarship:astarship@localhost:5432/astarship"
     cors_origins: list[str] = ["http://localhost:5173", "https://alfonsotejeda.github.io"]
+    jwt_secret_key: str = "change-me-in-production-with-32-bytes-or-more"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
 
 
 @lru_cache
