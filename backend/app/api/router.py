@@ -13,6 +13,7 @@ from app.api.routes import (
     itinerary_composition,
     membership,
     package,
+    proportion_category,
     proportion_type,
     travel_group,
     user,
@@ -29,6 +30,7 @@ api_router.include_router(activity.router)
 api_router.include_router(activity_type.router)
 api_router.include_router(travel_group.router)
 api_router.include_router(itinerary.router)
+api_router.include_router(proportion_category.router)
 api_router.include_router(proportion_type.router)
 api_router.include_router(itinerary_composition.router)
 api_router.include_router(membership.router)
