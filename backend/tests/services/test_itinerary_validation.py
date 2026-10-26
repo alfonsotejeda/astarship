@@ -9,6 +9,7 @@ from app.models.itinerary import Itinerary
 from app.models.itinerary_validation import ItineraryValidation
 from app.models.package import Package
 from app.models.status import ItineraryStatus
+from app.models.user.admin import Admin
 from app.models.user.guide import Guide
 from app.models.user.user import User
 from app.schemas.itinerary_validation import ItineraryValidationCreate
@@ -28,6 +29,17 @@ def make_guide(db_session, number: int) -> Guide:
     db_session.add(guide)
     db_session.flush()
     return guide
+
+
+def make_admin(db_session) -> Admin:
+    """Create a user and the admin that extends it."""
+    user = User(name="Admin", email="admin@test.com", password_hash="hash")
+    db_session.add(user)
+    db_session.flush()
+    admin = Admin(id=user.id)
+    db_session.add(admin)
+    db_session.flush()
+    return admin
 
 
 def make_itinerary(package, creator) -> Itinerary:
@@ -73,9 +85,10 @@ def sample_data(db_session):
       4: it3, g2, approved   5: it4, g1, approved   6: it1, g1, approved
     """
     g1, g2, g3 = (make_guide(db_session, n) for n in (1, 2, 3))
-    pkg1 = Package(name="Havana", destination="Cuba")
-    pkg2 = Package(name="Trinidad", destination="Cuba")
-    pkg3 = Package(name="Empty", destination="Cuba")
+    admin = make_admin(db_session)
+    pkg1 = Package(name="Havana", destination="Cuba", admin_id=admin.id)
+    pkg2 = Package(name="Trinidad", destination="Cuba", admin_id=admin.id)
+    pkg3 = Package(name="Empty", destination="Cuba", admin_id=admin.id)
     db_session.add_all([pkg1, pkg2, pkg3])
     db_session.flush()
 

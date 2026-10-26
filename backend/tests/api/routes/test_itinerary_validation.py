@@ -9,6 +9,7 @@ from app.models.itinerary import Itinerary
 from app.models.itinerary_validation import ItineraryValidation
 from app.models.package import Package
 from app.models.status import ItineraryStatus
+from app.models.user.admin import Admin
 from app.models.user.guide import Guide
 from app.models.user.user import User
 
@@ -35,11 +36,23 @@ def make_guide(db_session, number: int) -> Guide:
     return guide
 
 
+def make_admin(db_session) -> Admin:
+    """Create a user and the admin that extends it."""
+    user = User(name="Admin", email="admin@test.com", password_hash="hash")
+    db_session.add(user)
+    db_session.flush()
+    admin = Admin(id=user.id)
+    db_session.add(admin)
+    db_session.flush()
+    return admin
+
+
 @pytest.fixture
 def sample_data(db_session):
     """Create a package, three guides and three itineraries."""
     g1, g2, creator = (make_guide(db_session, n) for n in (1, 2, 3))
-    package = Package(name="Havana", destination="Cuba")
+    admin = make_admin(db_session)
+    package = Package(name="Havana", destination="Cuba", admin_id=admin.id)
     db_session.add(package)
     db_session.flush()
 
