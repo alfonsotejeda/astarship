@@ -222,8 +222,8 @@ Decisiones técnicas ya tomadas por el equipo y aprobadas por el profesor:
 \item \textbf{RE-02 Base de datos:} PostgreSQL 18, con SQLAlchemy y migraciones con Alembic.
 \item \textbf{RE-03 Frontend:} TypeScript + React (Vite).
 \item \textbf{RE-04 Entorno:} Docker y Docker Compose.
-\item \textbf{RE-05 Despliegue:} propuesto Vercel (frontend) + Render (API); sin cerrar.
-\item \textbf{RE-06 Caché:} Redis, si RNF-01 lo exige.
+\item \textbf{RE-05 Despliegue:} Vercel (frontend) + Render (API);
+\item \textbf{RE-06 Caché:} Redis,
 \end{itemize}
 \newpage
 \section{Modelo Conceptual Relacional-Extendido (MERX)}
@@ -343,7 +343,7 @@ Booking & Agregación & \underline{ID\_Tourist}, \underline{ID\_Package}, Bookin
 Conforme a RNF-02, la red de atracciones (tiempos y costos entre atracciones) \textbf{no} forma parte de este esquema relacional: se gestiona de forma independiente y se enlaza con Attraction mediante su identificador.
 
 \subsection{Red de atracciones y búsqueda de alternativas (RF-33)}
-RF-33 exige recorrer la red de atracciones para proponer alternativas cuando una actividad no puede realizarse en el horario previsto. Por RNF-02 la red no vive en el esquema relacional: cada \textit{nodo} es una atracción (identificada por \texttt{Attraction.ID}, con \texttt{Latitude} y \texttt{Longitude}) y cada \textit{arista} es una conexión dirigida con dos pesos, \textbf{tiempo} y \textbf{costo} (RF-32). Esta subsección describe el algoritmo elegido y su integración en el sistema. Depende de la incidencia \#48 del repositorio y de PA-10 (referenciado en el requerimiento; no figura en la versión de \texttt{requisitos.md} usada para este informe, por lo que el diseño de abajo debe confirmarse contra él).
+RF-33 exige recorrer la red de atracciones para proponer alternativas cuando una actividad no puede realizarse en el horario previsto. Por RNF-02 la red no vive en el esquema relacional: cada \textit{nodo} es una atracción (identificada por \texttt{Attraction.ID}, con \texttt{Latitude} y \texttt{Longitude}) y cada \textit{arista} es una conexión dirigida con dos pesos, \textbf{tiempo} y \textbf{costo} (RF-32). Esta subsección describe el algoritmo elegido y su integración en el sistema.
 
 \subsubsection{Algoritmo: A* con heurística de Haversine}
 A* encuentra el camino de menor peso entre un origen y un destino expandiendo siempre el nodo con menor \textit{f(n) = g(n) + h(n)}, donde \textit{g(n)} es el peso acumulado desde el origen y \textit{h(n)} estima el peso restante hasta el destino. Con una heurística admisible (nunca sobreestima) y consistente, el primer camino que alcanza el destino es óptimo y se exploran menos nodos que con una búsqueda ciega.
