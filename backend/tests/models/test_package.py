@@ -12,7 +12,15 @@ def test_table_name():
 def test_expected_columns():
     columns = {c.name for c in Package.__table__.columns}
 
-    assert columns == {"id", "name", "destination", "status", "creation_date"}
+    assert columns == {"id", "name", "destination", "status", "creation_date", "admin_id"}
+
+
+def test_admin_id_references_admins():
+    column = Package.__table__.c.admin_id
+    (fk,) = column.foreign_keys
+
+    assert fk.target_fullname == "admins.id"
+    assert column.nullable is False
 
 
 def test_name_and_destination_are_unique_together():

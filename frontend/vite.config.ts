@@ -9,6 +9,7 @@ import { defineConfig } from "vite";
  * everything came from the same origin.
  */
 export default defineConfig({
+  base: process.env.BASE_PATH ?? "/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
