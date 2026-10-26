@@ -163,7 +163,7 @@ RF-31 & Registrar todo el proceso de solicitud y el resultado de la modificació
 \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
 \endhead
 RF-32 & Mantener las conexiones entre atracciones según cercanía geográfica y transporte disponible, con tiempo y costo asociados. & Sistema \\ \hline
-RF-33 & Recorrer la red para proponer alternativas cuando una actividad no pueda realizarse en el horario previsto (A* con Strategy; ver sección 3.5). & Sistema \\ \hline
+RF-33 & Recorrer la red para proponer alternativas cuando una actividad no pueda realizarse en el horario previsto (Dijkstra con Strategy; ver sección 3.5). & Sistema \\ \hline
 \end{longtable}}
 \vspace{2pt}
 \subsubsection{Reportes y exportación}
@@ -345,20 +345,19 @@ Conforme a RNF-02, la red de atracciones (tiempos y costos entre atracciones) \t
 \subsection{Red de atracciones y búsqueda de alternativas (RF-33)}
 RF-33 exige recorrer la red de atracciones para proponer alternativas cuando una actividad no puede realizarse en el horario previsto. Por RNF-02 la red no vive en el esquema relacional: cada \textit{nodo} es una atracción (identificada por \texttt{Attraction.ID}, con \texttt{Latitude} y \texttt{Longitude}) y cada \textit{arista} es una conexión dirigida con dos pesos, \textbf{tiempo} y \textbf{costo} (RF-32). Esta subsección describe el algoritmo elegido y su integración en el sistema.
 
-\subsubsection{Algoritmo: A* con heurística de Haversine}
-A* encuentra el camino de menor peso entre un origen y un destino expandiendo siempre el nodo con menor \textit{f(n) = g(n) + h(n)}, donde \textit{g(n)} es el peso acumulado desde el origen y \textit{h(n)} estima el peso restante hasta el destino. Con una heurística admisible (nunca sobreestima) y consistente, el primer camino que alcanza el destino es óptimo y se exploran menos nodos que con una búsqueda ciega.
+\subsubsection{Algoritmo base: Dijkstra}
+Dijkstra encuentra el camino de menor peso acumulado entre un origen y un destino en un grafo dirigido con pesos no negativos. Mantiene una cola de prioridad ordenada por \textit{g(n)}, el peso acumulado desde el origen, y en cada paso extrae el nodo de menor \textit{g(n)} y relaja sus aristas salientes. Como los pesos (tiempo y costo, RF-32) son no negativos, la primera vez que un nodo sale de la cola su peso es el óptimo, por lo que la búsqueda puede detenerse al extraer el destino.
 
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=3pt]
-\item \textbf{Peso por tiempo.} La distancia de Haversine entre dos atracciones, calculada con sus coordenadas, es una cota inferior de la distancia real recorrible. Para usarla como heurística de \textit{tiempo} se divide entre la velocidad máxima de la red: \textit{h(n) = d\textsubscript{Haversine}(n, destino) / v\textsubscript{max}}. Sin esa conversión las unidades serían kilómetros frente a minutos y la heurística dejaría de ser admisible. Se requiere que \textit{v\textsubscript{max}} sea al menos la mayor velocidad implícita en cualquier arista (distancia / tiempo).
-\item \textbf{Peso por costo.} No existe relación geométrica entre la distancia y el costo monetario del transporte (un tramo corto puede ser caro y uno largo gratuito), por lo que no hay una cota geométrica válida. Se usa \textit{h(n) = 0}, con lo que \textit{f(n) = g(n)} y A* se degrada exactamente a \textbf{Dijkstra}, que sigue siendo óptimo.
-\item \textbf{Complejidad.} En el peor caso O((V + E) log V) con cola de prioridad binaria, igual que Dijkstra; la heurística solo reduce los nodos expandidos en la práctica. El costo de Haversine por nodo es constante.
+\item \textbf{Peso por tiempo y peso por costo.} El mismo algoritmo sirve para ambos criterios: solo cambia la función \textit{peso(arista)} que se le entrega (el tiempo o el costo de la conexión). No requiere coordenadas ni heurística, por lo que no depende de \texttt{Latitude} y \texttt{Longitude} de Attraction.
+\item \textbf{Alternativas múltiples.} Una única ejecución desde la atracción de origen calcula el peso mínimo hacia \textit{todas} las atracciones alcanzables, de modo que el servicio puede evaluar todas las atracciones candidatas con una sola pasada en lugar de una búsqueda por candidata.
+\item \textbf{Complejidad.} O((V + E) log V) con cola de prioridad binaria, siendo V el número de atracciones y E el de conexiones.
 \end{itemize}
-Fórmula de Haversine para dos puntos (\ensuremath{\varphi}\textsubscript{1}, \ensuremath{\lambda}\textsubscript{1}) y (\ensuremath{\varphi}\textsubscript{2}, \ensuremath{\lambda}\textsubscript{2}) en radianes, con radio terrestre R \ensuremath{\approx} 6371 km: a = sen\ensuremath{^{2}}(\ensuremath{\Delta}\ensuremath{\varphi}/2) + cos \ensuremath{\varphi}\textsubscript{1} · cos \ensuremath{\varphi}\textsubscript{2} · sen\ensuremath{^{2}}(\ensuremath{\Delta}\ensuremath{\lambda}/2); d = 2R · arcsen(\ensuremath{\surd}a).
 
 \begin{Verbatim}[fontsize=\scriptsize,frame=single,framesep=2mm]
-A_ESTRELLA(grafo, origen, destino, peso, h):
+DIJKSTRA(grafo, origen, destino, peso):
     abiertos <- cola_prioridad();  g[origen] <- 0
-    abiertos.insertar(origen, prioridad = h(origen, destino))
+    abiertos.insertar(origen, prioridad = 0)
     mientras abiertos no vacia:
         n <- abiertos.extraer_minimo()
         si n == destino: devolver reconstruir_camino(padre, n)
@@ -366,11 +365,11 @@ A_ESTRELLA(grafo, origen, destino, peso, h):
             nuevo <- g[n] + peso(w)             # tiempo o costo
             si nuevo < g.get(m, infinito):
                 g[m] <- nuevo;  padre[m] <- n
-                abiertos.insertar_o_actualizar(m, nuevo + h(m, destino))
+                abiertos.insertar_o_actualizar(m, nuevo)
     devolver SIN_CAMINO
 \end{Verbatim}
 \subsubsection{Intercambio del algoritmo con el patrón Strategy}
-El criterio de optimización (tiempo o costo) y su heurística se encapsulan tras una interfaz común, de modo que el servicio que propone alternativas no conoce el algoritmo concreto y puede cambiarse sin modificarlo. Este es uno de los dos patrones de diseño exigidos por RNF-05, junto con el que se elija y justifique en el resto de la aplicación.
+El algoritmo de búsqueda y su criterio de optimización (tiempo o costo) se encapsulan tras una interfaz común, de modo que el servicio que propone alternativas no conoce el algoritmo concreto y puede cambiarse sin modificarlo. Dijkstra es la estrategia por defecto, pero el patrón se mantiene para poder incorporar otras búsquedas (por ejemplo A*, búsqueda bidireccional o BFS por número de transbordos) sin alterar el resto del sistema. Este es uno de los dos patrones de diseño exigidos por RNF-05, junto con el que se elija y justifique en el resto de la aplicación.
 
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{2.98cm}|>{\raggedright\arraybackslash}p{5.08cm}|>{\raggedright\arraybackslash}p{7.48cm}|}
@@ -378,8 +377,9 @@ El criterio de optimización (tiempo o costo) y su heurística se encapsulan tra
 \rowcolor{gray!20} \textbf{Rol (Strategy)} & \textbf{Elemento} & \textbf{Responsabilidad} \\ \hline
 \endhead
 Strategy & \texttt{RouteStrategy} (interfaz) & Declara \texttt{find\_\allowbreak{}path(graph, origin, target) \ensuremath{\rightarrow} Route | None}. \\ \hline
-ConcreteStrategy & \texttt{AStarTimeStrategy} & Minimiza tiempo; heurística Haversine / v\textsubscript{max}. \\ \hline
-ConcreteStrategy & \texttt{DijkstraCostStrategy} & Minimiza costo; equivale a A* con h = 0. \\ \hline
+ConcreteStrategy & \texttt{DijkstraTimeStrategy} & Dijkstra con peso = tiempo (estrategia por defecto). \\ \hline
+ConcreteStrategy & \texttt{DijkstraCostStrategy} & Dijkstra con peso = costo. \\ \hline
+ConcreteStrategy (futura) & \texttt{OtraBusquedaStrategy} & Cualquier otro algoritmo que implemente \texttt{find\_\allowbreak{}path} (A*, bidireccional, BFS, etc.). \\ \hline
 Context & \texttt{AlternativesService} & Recibe la estrategia por inyección, filtra candidatos y ordena resultados. \\ \hline
 Cliente & Endpoint FastAPI & Elige la estrategia según el parámetro de criterio y se la entrega al servicio. \\ \hline
 \end{longtable}}
@@ -388,13 +388,14 @@ Cliente & Endpoint FastAPI & Elige la estrategia según el parámetro de criteri
 class RouteStrategy(Protocol):
     def find_path(self, graph: AttractionGraph, origin: int, target: int) -> Route | None: ...
 
-class AStarTimeStrategy:      # peso = tiempo, h = haversine(n, target) / V_MAX
-class DijkstraCostStrategy:   # peso = costo,  h = 0
+class DijkstraTimeStrategy:   # Dijkstra, peso = tiempo (por defecto)
+class DijkstraCostStrategy:   # Dijkstra, peso = costo
+# class AStarStrategy: ...    # ejemplo de extensión futura: otra búsqueda, misma interfaz
 
 class AlternativesService:
     def __init__(self, strategy: RouteStrategy): self._strategy = strategy
 \end{Verbatim}
-Añadir un nuevo criterio (por ejemplo, minimizar transbordos) solo requiere una nueva estrategia concreta, sin tocar el servicio ni el endpoint, lo que refuerza RNF-04 (arquitectura extensible y mantenible).
+Añadir un nuevo criterio o un algoritmo distinto de Dijkstra (por ejemplo, A*, o minimizar transbordos) solo requiere una nueva estrategia concreta, sin tocar el servicio ni el endpoint, lo que refuerza RNF-04 (arquitectura extensible y mantenible).
 
 \subsubsection{Endpoint y flujo de la consulta}
 \texttt{GET /attractions/\{id\}/alternatives?activity=<id>\&time=<hora>}
