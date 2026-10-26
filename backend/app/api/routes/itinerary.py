@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.models.status import ItineraryStatus
 from app.schemas.itinerary import ItineraryCreate, ItineraryRead, ItineraryUpdate
 from app.services import itinerary as itinerary_service
 
@@ -21,9 +22,11 @@ def _get_itinerary_or_404(db: Session, itinerary_id: int):
 
 
 @router.get("", response_model=list[ItineraryRead])
-def list_itineraries(db: Session = Depends(get_db)) -> list[ItineraryRead]:
-    """List all itineraries."""
-    return itinerary_service.list_itineraries(db)
+def list_itineraries(
+    status: ItineraryStatus | None = None, db: Session = Depends(get_db)
+) -> list[ItineraryRead]:
+    """List all itineraries, optionally filtered by status."""
+    return itinerary_service.list_itineraries(db, status)
 
 
 @router.get("/{itinerary_id}", response_model=ItineraryRead)
