@@ -4,6 +4,7 @@ from datetime import date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.itinerary_composition import ItineraryComposition
 from app.models.proportion_type import ProportionType
 from app.models.status import ItineraryStatus, status_enum
 
@@ -25,3 +26,4 @@ class Itinerary(Base):
     creator_id: Mapped[int | None]
 
     proportion_types: Mapped[list[ProportionType]] = relationship(cascade="all, delete-orphan")
+    compositions: Mapped[list[ItineraryComposition]] = relationship(cascade="all, delete-orphan")
