@@ -16,6 +16,7 @@ from app.models import (  # noqa: F401
     itinerary_composition,
     membership,
     package,
+    proportion_type,
     travel_group,
 )
 from app.models.user import (  # noqa: F401
