@@ -10,7 +10,6 @@ from app.models.package import Package
 from app.models.user.tourist import Tourist
 from app.schemas.booking import BookingCreate, BookingRead
 from app.services import booking as booking_service
-from app.services import membership as membership_service
 from app.services import package as package_service
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
@@ -18,7 +17,7 @@ router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 def _get_tourist_or_404(db: Session, tourist_id: int) -> Tourist:
     """Return the tourist or raise a 404."""
-    tourist = membership_service.get_tourist(db, tourist_id)
+    tourist = db.get(Tourist, tourist_id)
     if tourist is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tourist not found")
     return tourist
