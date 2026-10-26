@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.models.status import ReviewStatus
 from app.schemas.package import PackageCreate, PackageRead, PackageUpdate
 from app.services import package as package_service
+from app.services import user as user_service
 
 router = APIRouter(prefix="/packages", tags=["packages"])
 
@@ -49,6 +50,8 @@ def get_package(package_id: int, db: Session = Depends(get_db)) -> PackageRead:
 @router.post("", response_model=PackageRead, status_code=status.HTTP_201_CREATED)
 def create_package(data: PackageCreate, db: Session = Depends(get_db)) -> PackageRead:
     """Create a new package; the name and destination pair must be unique."""
+    if user_service.get_admin(db, data.admin_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
     try:
         return package_service.create_package(db, data)
     except (ValueError, IntegrityError) as exc:

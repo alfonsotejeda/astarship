@@ -15,7 +15,13 @@ def _create_guide(client, email="gil@example.com") -> int:
 
 
 def _create_package(client, name="Andes") -> int:
-    return client.post("/api/packages", json={"name": name, "destination": "Peru"}).json()["id"]
+    admin_id = client.post(
+        "/api/users",
+        json={"name": "Ada", "role": "admin", "email": f"{name.lower()}@example.com", "password": "x"},
+    ).json()["id"]
+    return client.post(
+        "/api/packages", json={"name": name, "destination": "Peru", "admin_id": admin_id}
+    ).json()["id"]
 
 
 def test_put_authorization_creates_it_with_201(client):

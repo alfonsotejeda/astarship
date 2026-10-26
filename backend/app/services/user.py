@@ -22,6 +22,11 @@ def get_user(db: Session, user_id: int) -> User | None:
     return db.get(User, user_id)
 
 
+def get_admin(db: Session, admin_id: int) -> Admin | None:
+    """Return an admin by id, or None if it doesn't exist."""
+    return db.get(Admin, admin_id)
+
+
 def create_user(db: Session, data: UserCreate) -> User:
     """Create and persist a new user together with its subtype row."""
     user = User(

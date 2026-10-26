@@ -94,3 +94,18 @@ def test_delete_user_removes_it(client):
 
     assert response.status_code == 204
     assert client.get(f"/api/users/{created['id']}").status_code == 404
+
+
+def test_delete_admin_with_packages_returns_409(client):
+    admin = client.post(
+        "/api/users",
+        json={"name": "Ada", "role": "admin", "email": "ada@example.com", "password": "x"},
+    ).json()
+    client.post(
+        "/api/packages", json={"name": "Andes", "destination": "Peru", "admin_id": admin["id"]}
+    )
+
+    response = client.delete(f"/api/users/{admin['id']}")
+
+    assert response.status_code == 409
+    assert client.get(f"/api/users/{admin['id']}").status_code == 200
