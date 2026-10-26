@@ -6,17 +6,31 @@ from sqlalchemy.orm import Session
 
 from app.models.category import Category
 from app.models.package import Package
+from app.models.user.admin import Admin
+from app.models.user.user import User
 
 BASE = "/api/coverage"  # quita "/api" si tus otras rutas no lo usan
+
+
+def make_admin(db_session: Session) -> Admin:
+    """Create a user and the admin that extends it."""
+    user = User(name="Admin", email="admin@test.com", password_hash="hash")
+    db_session.add(user)
+    db_session.flush()
+    admin = Admin(id=user.id)
+    db_session.add(admin)
+    db_session.flush()
+    return admin
 
 
 @pytest.fixture
 def sample_data(db_session: Session) -> dict:
     """Create two categories and two packages."""
+    admin = make_admin(db_session)
     cat1 = Category(name="Aventura")
     cat2 = Category(name="Playa")
-    pkg1 = Package(name="Excursión Montaña", destination="Alpes")
-    pkg2 = Package(name="Caribe Todo Incluido", destination="Cancún")
+    pkg1 = Package(name="Excursión Montaña", destination="Alpes", admin_id=admin.id)
+    pkg2 = Package(name="Caribe Todo Incluido", destination="Cancún", admin_id=admin.id)
     db_session.add_all([cat1, cat2, pkg1, pkg2])
     db_session.commit()
     for obj in (cat1, cat2, pkg1, pkg2):
