@@ -10,6 +10,7 @@ from app.api.routes import (
     category,
     health,
     itinerary,
+    itinerary_composition,
     membership,
     package,
     travel_group,
@@ -27,5 +28,6 @@ api_router.include_router(activity.router)
 api_router.include_router(activity_type.router)
 api_router.include_router(travel_group.router)
 api_router.include_router(itinerary.router)
+api_router.include_router(itinerary_composition.router)
 api_router.include_router(membership.router)
 api_router.include_router(authorization.router)
