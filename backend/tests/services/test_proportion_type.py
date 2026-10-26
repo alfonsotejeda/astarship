@@ -13,7 +13,7 @@ from app.services import proportion_type as proportion_type_service
 def _create_itinerary(db_session):
     return itinerary_service.create_itinerary(
         db_session,
-        ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=4, validated=False),
+        ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=4),
     )
 
 

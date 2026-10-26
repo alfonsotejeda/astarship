@@ -6,7 +6,7 @@ import pytest
 def _create_itinerary(client) -> int:
     return client.post(
         "/api/itineraries",
-        json={"creation_date": "2026-01-01", "activity_count": 4, "validated": False},
+        json={"creation_date": "2026-01-01", "activity_count": 4},
     ).json()["id"]
 
 

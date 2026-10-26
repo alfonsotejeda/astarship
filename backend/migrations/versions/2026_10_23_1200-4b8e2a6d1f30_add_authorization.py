@@ -1,7 +1,7 @@
 """add authorization
 
 Revision ID: 4b8e2a6d1f30
-Revises: 7c3d9f2b6e18
+Revises: 7c3d9f2b6e18, 5c1e7a9d2b40
 Create Date: 2026-10-23 12:00:00.000000
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 revision: str = '4b8e2a6d1f30'
-down_revision: Union[str, Sequence[str], None] = '7c3d9f2b6e18'
+down_revision: Union[str, Sequence[str], None] = ('7c3d9f2b6e18', '5c1e7a9d2b40')
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

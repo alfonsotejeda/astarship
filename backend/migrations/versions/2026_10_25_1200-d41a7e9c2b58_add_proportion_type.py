@@ -1,8 +1,8 @@
 """add proportion type
 
 Revision ID: d41a7e9c2b58
-Revises: 7c3d9f2b6e18
-Create Date: 2026-10-23 13:00:00.000000
+Revises: 8a2f4c6e1d93, 8d4f1b3c7a52
+Create Date: 2026-10-25 12:00:00.000000
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 revision: str = 'd41a7e9c2b58'
-down_revision: Union[str, Sequence[str], None] = '7c3d9f2b6e18'
+down_revision: Union[str, Sequence[str], None] = ('8a2f4c6e1d93', '8d4f1b3c7a52')
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
