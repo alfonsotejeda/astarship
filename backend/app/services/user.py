@@ -1,20 +1,15 @@
 """User service."""
 
-import bcrypt
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.security import hash_password
 from app.models.user.admin import Admin
 from app.models.user.guide import Guide
 from app.models.user.operations_manager import OperationsManager
 from app.models.user.tourist import Tourist
 from app.models.user.user import User, UserRole
 from app.schemas.user import UserCreate, UserUpdate
-
-
-def _hash_password(password: str) -> str:
-    """Hash a plain-text password."""
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def list_users(db: Session) -> list[User]:
@@ -42,7 +37,7 @@ def create_user(db: Session, data: UserCreate) -> User:
     user = User(
         name=data.name,
         email=data.email,
-        password_hash=_hash_password(data.password),
+        password_hash=hash_password(data.password),
     )
     subtype_values = data.model_dump(exclude={"name", "email", "password", "role"})
 
@@ -86,7 +81,7 @@ def update_user(db: Session, user: User, data: UserUpdate) -> User:
             setattr(subtype, field, value)
     
     if password is not None:
-        user.password_hash = _hash_password(password)
+        user.password_hash = hash_password(password)
     
     db.commit()
     db.refresh(user)

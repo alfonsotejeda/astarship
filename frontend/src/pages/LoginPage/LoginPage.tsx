@@ -73,7 +73,7 @@ export function LoginPage() {
         </div>
 
         <div className="login__logo">
-          <img src="/favicon.svg" alt="" width={36} height={36} />
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={36} height={36} />
           <span>Astarship</span>
         </div>
 

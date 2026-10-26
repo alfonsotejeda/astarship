@@ -2,9 +2,10 @@
 from datetime import date
 
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.itinerary_composition import ItineraryComposition
 from app.models.status import ReviewStatus, status_enum
 
 
@@ -25,3 +26,4 @@ class Activity(Base):
     activity_type_code: Mapped[str | None] = mapped_column(String(50))
     category_id: Mapped[int | None]
     user_id: Mapped[int | None]
+    compositions: Mapped[list[ItineraryComposition]] = relationship(cascade="all, delete-orphan")

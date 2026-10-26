@@ -51,6 +51,10 @@ def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db)) -
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: int, db: Session = Depends(get_db)) -> None:
-    """Delete a user."""
+    """Delete a user; an admin that still generates packages cannot be deleted."""
     user = _get_user_or_404(db, user_id)
+    if user.admin is not None and user.admin.packages:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Admin still generates packages"
+        )
     user_service.delete_user(db, user)
