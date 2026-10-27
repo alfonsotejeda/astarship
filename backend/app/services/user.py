@@ -22,6 +22,11 @@ def get_user(db: Session, user_id: int) -> User | None:
     return db.get(User, user_id)
 
 
+def get_guide(db: Session, guide_id: int) -> Guide | None:
+    """Return a guide by id, or None if the user doesn't exist or isn't a guide."""
+    return db.get(Guide, guide_id)
+
+
 def get_admin(db: Session, admin_id: int) -> Admin | None:
     """Return an admin by id, or None if the user doesn't exist or isn't an admin."""
     return db.get(Admin, admin_id)

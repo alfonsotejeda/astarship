@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.travel_group import TravelGroupCreate, TravelGroupRead, TravelGroupUpdate
 from app.services import travel_group as travel_group_service
+from app.services import user as user_service
 
 router = APIRouter(prefix="/travel-groups", tags=["travel-groups"])
 
@@ -18,6 +19,12 @@ def _get_travel_group_or_404(db: Session, travel_group_id: int):
             status_code=status.HTTP_404_NOT_FOUND, detail="TravelGroup not found"
         )
     return travel_group
+
+
+def _ensure_guide_exists(db: Session, guide_id: int) -> None:
+    """Raise a 404 if the guide doesn't exist."""
+    if user_service.get_guide(db, guide_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Guide not found")
 
 
 @router.get("", response_model=list[TravelGroupRead])
@@ -37,6 +44,7 @@ def create_travel_group(
     data: TravelGroupCreate, db: Session = Depends(get_db)
 ) -> TravelGroupRead:
     """Create a new travel group."""
+    _ensure_guide_exists(db, data.guide_id)
     return travel_group_service.create_travel_group(db, data)
 
 
@@ -46,6 +54,8 @@ def update_travel_group(
 ) -> TravelGroupRead:
     """Update an existing travel group."""
     travel_group = _get_travel_group_or_404(db, travel_group_id)
+    if data.guide_id is not None:
+        _ensure_guide_exists(db, data.guide_id)
     return travel_group_service.update_travel_group(db, travel_group, data)
 
 
