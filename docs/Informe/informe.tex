@@ -310,7 +310,7 @@ User & Tourist & Age \\ \hline
 \endfirsthead
 \hline \rowcolor{gray!20} \textbf{Interrelación} & \textbf{Participantes} & \textbf{Cardinalidad} & \textbf{(min,max)} \\ \hline
 \endhead
-Belongs & Tourist — TravelGroup & N:1 & Tourist (1,1) — TravelGroup (1,*) \\ \hline
+Belongs & Tourist — TravelGroup & N:M & Tourist (0,*) — TravelGroup (0,*) \\ \hline
 Classifies & Activity — Category & N:1 & Activity (1,1) — Category (0,*) \\ \hline
 Is of Type & Activity — ActivityType & N:1 & Activity (1,1) — ActivityType (0,*) \\ \hline
 Coverage & Category — Package & N:M & Category (0,*) — Package (1,*) \\ \hline
@@ -354,7 +354,7 @@ Las agregaciones \textit{Assignment} e \textit{Itinerary Composition} participan
 Aplicando las reglas de transformación del MERX al modelo relacional se obtienen 25 esquemas: las entidades incorporan como llave foránea las interrelaciones de cardinalidad N:1 / 1:N; cada subtipo de la especialización comparte la llave de User (partición total y disjunta); la interrelación N:M Coverage y las agregaciones generan esquemas propios cuya llave es la concatenación de las llaves de sus participantes.
 
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
-\begin{longtable}{|>{\raggedright\arraybackslash}p{2.88cm}|>{\raggedright\arraybackslash}p{1.78cm}|>{\raggedright\arraybackslash}p{5.38cm}|>{\raggedright\arraybackslash}p{5.28cm}|}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.88cm}|>{\raggedright\arraybackslash}p{2.35cm}|>{\raggedright\arraybackslash}p{5.00cm}|>{\raggedright\arraybackslash}p{5.07cm}|}
 \caption{Esquema lógico relacional: las 25 relaciones con sus llaves y llaves foráneas.}\label{tab:esquema}\\ \hline
 \rowcolor{gray!20} \textbf{Relación} & \textbf{Tipo} & \textbf{Atributos (llave subrayada)} & \textbf{Llaves foráneas} \\ \hline
 \endfirsthead
@@ -602,8 +602,8 @@ Las dependencias del dominio del cuadro \ref{tab:dominio} que resultaron ser uni
 \subsection{Restricciones de Cardinalidad por Interrelación}
 \subsubsection{Tourist – TravelGroup (Belongs)}
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=3pt]
-\item \textbf{Tourist} (1,1): cada Tourist se asocia con exactamente un(a) TravelGroup.
-\item \textbf{TravelGroup} (1,*): cada TravelGroup se asocia con de uno a muchos(as) Tourist.
+\item \textbf{Tourist} (0,*): cada Tourist se asocia con varios TravelGroup o puede no asociarse a ninguno.
+\item \textbf{TravelGroup} (0,*): cada TravelGroup se asocia con de cero a muchos(as) Tourist.
 \end{itemize}
 \subsubsection{Activity – Category (Classifies)}
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=3pt]
