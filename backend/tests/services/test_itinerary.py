@@ -6,25 +6,13 @@ import pytest
 
 from app.models.status import ItineraryStatus
 from app.schemas.itinerary import ItineraryCreate, ItineraryUpdate
-from app.schemas.package import PackageCreate
-from app.schemas.user import GuideCreate
 from app.services import itinerary as itinerary_service
 from app.services import package as package_service
-from app.services import user as user_service
 
 
 @pytest.fixture
-def owners(db_session):
-    package = package_service.create_package(
-        db_session, PackageCreate(name="Andes", destination="Peru")
-    )
-    guide = user_service.create_user(
-        db_session,
-        GuideCreate(
-            name="Gil", role="guide", email="gil@example.com", password="x", specialty="History"
-        ),
-    )
-    return {"package_id": package.id, "guide_id": guide.id}
+def owners(itinerary_owners):
+    return itinerary_owners
 
 
 def test_create_itinerary_persists_it(db_session, owners):

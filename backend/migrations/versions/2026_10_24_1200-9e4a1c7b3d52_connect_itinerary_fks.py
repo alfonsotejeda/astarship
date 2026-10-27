@@ -1,7 +1,7 @@
 """connect itinerary fks
 
 Revision ID: 9e4a1c7b3d52
-Revises: 4b8e2a6d1f30
+Revises: 4b8e2d7f1a63
 Create Date: 2026-10-24 12:00:00.000000
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 revision: str = '9e4a1c7b3d52'
-down_revision: Union[str, Sequence[str], None] = '4b8e2a6d1f30'
+down_revision: Union[str, Sequence[str], None] = '4b8e2d7f1a63'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

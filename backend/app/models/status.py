@@ -22,6 +22,14 @@ class ItineraryStatus(StrEnum):
     REJECTED = "rejected"
 
 
+class AssignmentStatus(StrEnum):
+    """Progress of a tourist through an assigned itinerary."""
+
+    ASSIGNED = "assigned"
+    IN_PROGRESS = "in_progress"
+    FINISHED = "finished"
+
+
 def status_enum(enum_class: type[StrEnum]) -> Enum:
     """Return a portable column type storing the enum values behind a check constraint."""
     return Enum(

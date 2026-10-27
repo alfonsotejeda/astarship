@@ -2,7 +2,7 @@
 
 from app.schemas.authorization import AuthorizationUpsert
 from app.schemas.package import PackageCreate
-from app.schemas.user import GuideCreate
+from app.schemas.user import AdminCreate, GuideCreate
 from app.services import authorization as authorization_service
 from app.services import package as package_service
 from app.services import user as user_service
@@ -16,8 +16,12 @@ def _create_guide(db_session, email="gil@example.com"):
 
 
 def _create_package(db_session, name="Andes"):
+    admin = user_service.create_user(
+        db_session,
+        AdminCreate(name="Ada", role="admin", email=f"{name.lower()}@example.com", password="x"),
+    )
     return package_service.create_package(
-        db_session, PackageCreate(name=name, destination="Peru")
+        db_session, PackageCreate(name=name, destination="Peru", admin_id=admin.id)
     )
 
 

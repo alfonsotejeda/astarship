@@ -16,8 +16,10 @@ def _create_guide(client, email="gil@example.com") -> int:
     ).json()["id"]
 
 
-def _create_package(client, name="Andes") -> int:
-    return client.post("/api/packages", json={"name": name, "destination": "Peru"}).json()["id"]
+def _create_package(client, admin_id, name="Andes") -> int:
+    return client.post(
+        "/api/packages", json={"name": name, "destination": "Peru", "admin_id": admin_id}
+    ).json()["id"]
 
 
 def _authorize(client, package_id, guide_id, can_generate=True) -> None:
@@ -28,8 +30,17 @@ def _authorize(client, package_id, guide_id, can_generate=True) -> None:
 
 
 @pytest.fixture
-def payload(client):
-    package_id = _create_package(client)
+def admin_id(client):
+    """Id of an admin that generates the packages of a test."""
+    return client.post(
+        "/api/users",
+        json={"name": "Ada", "role": "admin", "email": "ada@example.com", "password": "x"},
+    ).json()["id"]
+
+
+@pytest.fixture
+def payload(client, admin_id):
+    package_id = _create_package(client, admin_id)
     guide_id = _create_guide(client)
     _authorize(client, package_id, guide_id)
     return {
@@ -65,8 +76,8 @@ def test_create_itinerary_returns_404_when_guide_missing(client, payload):
     assert response.status_code == 404
 
 
-def test_create_itinerary_returns_403_without_authorization(client, payload):
-    other_package_id = _create_package(client, name="Patagonia")
+def test_create_itinerary_returns_403_without_authorization(client, admin_id, payload):
+    other_package_id = _create_package(client, admin_id, name="Patagonia")
 
     response = client.post("/api/itineraries", json={**payload, "package_id": other_package_id})
 

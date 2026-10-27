@@ -7,6 +7,7 @@ from app.db.session import get_db
 from app.schemas.membership import MembershipRead
 from app.services import membership as membership_service
 from app.services import travel_group as travel_group_service
+from app.services import user as user_service
 
 router = APIRouter(prefix="/travel-groups/{travel_group_id}/tourists", tags=["memberships"])
 
@@ -20,7 +21,7 @@ def add_tourist(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="TravelGroup not found"
         )
-    if membership_service.get_tourist(db, tourist_id) is None:
+    if user_service.get_tourist(db, tourist_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tourist not found")
     if membership_service.get_membership(db, travel_group_id, tourist_id) is not None:
         raise HTTPException(

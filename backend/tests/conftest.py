@@ -11,6 +11,12 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from app.schemas.authorization import AuthorizationUpsert
+from app.schemas.package import PackageCreate
+from app.schemas.user import AdminCreate, GuideCreate
+from app.services import authorization as authorization_service
+from app.services import package as package_service
+from app.services import user as user_service
 
 
 @pytest.fixture
@@ -35,3 +41,25 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
     app.dependency_overrides[get_db] = lambda: db_session
     yield TestClient(app)
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def itinerary_owners(db_session: Session) -> dict[str, int]:
+    """Package and guide authorized to generate it, required to create an itinerary."""
+    admin = user_service.create_user(
+        db_session,
+        AdminCreate(name="Owen", role="admin", email="owen@example.com", password="x"),
+    )
+    package = package_service.create_package(
+        db_session, PackageCreate(name="Andes", destination="Peru", admin_id=admin.id)
+    )
+    guide = user_service.create_user(
+        db_session,
+        GuideCreate(
+            name="Gil", role="guide", email="gil@example.com", password="x", specialty="History"
+        ),
+    )
+    authorization_service.create_authorization(
+        db_session, package.id, guide.id, AuthorizationUpsert(can_generate=True)
+    )
+    return {"package_id": package.id, "guide_id": guide.id}

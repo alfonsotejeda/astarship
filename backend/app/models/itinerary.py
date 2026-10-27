@@ -1,10 +1,15 @@
 """Itinerary model."""
+
 from datetime import date
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.assignment import Assignment
+from app.models.itinerary_composition import ItineraryComposition
+from app.models.proportion_category import ProportionCategory
+from app.models.proportion_type import ProportionType
 from app.models.status import ItineraryStatus, status_enum
 
 
@@ -15,11 +20,18 @@ class Itinerary(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     creation_date: Mapped[date]
-    
+
     status: Mapped[ItineraryStatus] = mapped_column(
         status_enum(ItineraryStatus), default=ItineraryStatus.PENDING
     )
-    
+
     activity_count: Mapped[int]
     package_id: Mapped[int] = mapped_column(ForeignKey("packages.id", ondelete="CASCADE"))
     guide_id: Mapped[int] = mapped_column(ForeignKey("guides.id", ondelete="RESTRICT"))
+
+    assignments: Mapped[list[Assignment]] = relationship(cascade="all, delete-orphan")
+    proportion_categories: Mapped[list[ProportionCategory]] = relationship(
+        cascade="all, delete-orphan"
+    )
+    proportion_types: Mapped[list[ProportionType]] = relationship(cascade="all, delete-orphan")
+    compositions: Mapped[list[ItineraryComposition]] = relationship(cascade="all, delete-orphan")
