@@ -164,9 +164,11 @@ una deducción nuestra que conviene confirmar.
 | RF-33 | Recorrer la red para **proponer alternativas** cuando una actividad no pueda realizarse en el horario previsto. | Sistema | "el sistema debe recorrer dicha red para proponer alternativas cuando una actividad no pueda realizarse en el horario previsto" |
 
 > Esta red tiene tratamiento especial: ver [RNF-02](#4-requisitos-no-funcionales).
-> Para RF-33 (recorrer la red y proponer alternativas) se propone usar **A\*** como
-> algoritmo de búsqueda de ruta. Ver [PA-10](#pa-10-algoritmo-para-recorrer-la-red-de-atracciones)
-> para la heurística y el resto de decisiones pendientes.
+> Para RF-33 (recorrer la red y proponer alternativas) se usa **Dijkstra** con peso
+> intercambiable (tiempo o costo), detrás de una interfaz **Strategy** que permite sustituir
+> el algoritmo sin tocar el servicio ni el endpoint. Ver
+> [PA-10](#pa-10-algoritmo-para-recorrer-la-red-de-atracciones), ya cerrado, para la
+> justificación.
 
 ### 3.8 Reportes y exportación
 
@@ -252,7 +254,8 @@ Decisiones ya tomadas por el equipo y aprobadas por el profesor:
 ## 8. Puntos abiertos
 
 Decisiones que el equipo todavía no ha cerrado y que bloquean partes del modelo. **Cada
-una hay que resolverla antes de escribir los modelos ORM.**
+una hay que resolverla antes de escribir los modelos ORM.** Los puntos ya cerrados se
+conservan aquí, marcados como tales, para dejar registro de la decisión y de su motivo.
 
 ### PA-1. ¿El administrador existe como actor del sistema?
 
@@ -319,28 +322,45 @@ son analíticas. Una salida intermedia: ORM para el CRUD, SQL a mano para las se
 
 ### PA-10. Algoritmo para recorrer la red de atracciones
 
+> ✅ **Cerrado.** Se usa **Dijkstra** con peso intercambiable, y **A\*** se conserva como
+> estrategia alternativa detrás del patrón Strategy. Se mantiene el punto como registro de
+> la decisión. La justificación completa está en la sección 3.5 del informe de diseño,
+> [`docs/Informe/informe.tex`](Informe/informe.tex).
+
 RF-33 exige recorrer la red de atracciones (RF-32) para proponer alternativas cuando una
-actividad no se pueda realizar en el horario previsto. **Propuesta: algoritmo A\*** para
-calcular la ruta alternativa de menor coste entre dos atracciones.
+actividad no se pueda realizar en el horario previsto.
 
-- **Peso de la arista:** el **tiempo** de conexión (RF-32), salvo que la alternativa se
-  busque explícitamente por costo monetario; en ese caso el peso es el **costo**.
-- **Heurística:** si la atracción almacena coordenadas geográficas, distancia en línea
-  recta (Haversine) entre el nodo y el destino, dividida por una velocidad media de
-  referencia — admisible mientras el peso de arista sea tiempo. **Si el peso de arista es
-  costo monetario, no hay heurística geométrica admisible conocida; en ese caso A\* se
-  degrada a Dijkstra (heurística 0).** Hay que decidir si se implementan ambos modos o solo
-  uno.
-- **Dónde vive:** no como tabla del esquema relacional (RNF-02). Candidato a un servicio de
-  backend independiente (p. ej. `services/attraction_network/`) con el grafo en memoria o en
-  Redis, aislado del ORM — lo que también lo hace candidato a contar como uno de los dos
-  patrones de diseño exigidos por RNF-05 (p. ej. Strategy para intercambiar la heurística o
-  el algoritmo).
+- **Algoritmo: Dijkstra.** La consulta es **de uno a varios, no de uno a uno**: el endpoint
+  busca alternativas, es decir, varios candidatos desde un mismo origen. Una sola expansión
+  de Dijkstra desde la atracción de origen da el peso mínimo hacia *todas* las candidatas
+  alcanzables; con A\* habría que lanzar una búsqueda por cada candidata.
+- **Peso de la arista:** el **tiempo** de conexión (RF-32), o el **costo** cuando la
+  alternativa se busque por costo monetario. El mismo algoritmo sirve para los dos criterios
+  —solo cambia la función de peso— y admite un corte por la ventana del horario.
+- **Por qué no A\* como algoritmo base:** su ventaja depende de una heurística fuerte, y
+  Haversine dividido entre la velocidad máxima es floja en cuanto las rutas tienen rodeos,
+  esperas o transbordos. Con peso por **costo** no hay heurística geométrica admisible, así
+  que h = 0 y A\* se comporta exactamente como Dijkstra: en uno de los dos criterios del
+  sistema la diferencia desaparece. La complejidad en el peor caso es la misma,
+  O((V + E) log V), y la red de un destino turístico tiene decenas o cientos de atracciones:
+  Dijkstra la recorre entera en microsegundos, de sobra para RNF-01. A\* solo mejora en la
+  práctica y en grafos grandes, y añade supuestos que hay que mantener (coordenadas
+  correctas y una velocidad máxima bien calculada; si alguno falla, puede devolver un camino
+  no óptimo).
+- **A\* se mantiene** como estrategia intercambiable, no se descarta: tendría ventaja real
+  si la red creciera mucho y la consulta fuera punto a punto — por ejemplo, calcular la ruta
+  concreta hasta la alternativa que el turista acabe eligiendo.
+- **Dónde vive:** no como tabla del esquema relacional (RNF-02). Servicio de backend
+  independiente (p. ej. `services/attraction_network/`) con el grafo en memoria o en Redis,
+  aislado del ORM. El patrón **Strategy** que encapsula el algoritmo y su criterio cuenta
+  como uno de los dos que exige RNF-05.
+- **Coordenadas:** Dijkstra **no** necesita `Latitude` ni `Longitude`. Se mantienen en
+  Attraction por utilidad de presentación y porque A\* las requiere como estrategia
+  alternativa, pero dejan de ser una dependencia del algoritmo base (afecta a
+  [PA-8](#pa-8-atributos-que-el-enunciado-no-define)).
 
-**Queda pendiente:** confirmar con el equipo si A\* es el algoritmo a usar (frente a
-Dijkstra simple u otra alternativa), si se soportan los dos pesos (tiempo y costo) o solo
-uno, y si las coordenadas geográficas de las atracciones se guardan como atributo (afecta a
-[PA-8](#pa-8-atributos-que-el-enunciado-no-define)).
+**Queda pendiente** elegir y justificar el **segundo** patrón de diseño que exige RNF-05:
+Strategy cubre solo uno de los dos.
 
 ---
 
