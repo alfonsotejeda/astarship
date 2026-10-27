@@ -6,13 +6,15 @@
 \usepackage{newunicodechar,amsmath,amssymb}
 \usepackage{longtable,array,colortbl,xcolor,float,graphicx,enumitem,fancyvrb,needspace,caption}
 \usepackage[colorlinks=true,linkcolor=black,urlcolor=black]{hyperref}
+\hypersetup{pdftitle={Informe: Diseño de la base de datos. Proyecto Astarship},pdfauthor={Equipo HAVING Fe},pdfsubject={Bases de Datos II; Ingeniería de Software. Curso 2026--2027}}
 \setcounter{secnumdepth}{3}\setcounter{tocdepth}{3}
 \emergencystretch=3em
 \sloppy
 \captionsetup{font=small,labelfont=bf}
 \renewcommand{\abstractname}{Resumen}
 \renewcommand{\contentsname}{Índice}
-\renewcommand{\listfigurename}{Figuras}
+\renewcommand{\listfigurename}{Índice de figuras}
+\renewcommand{\listtablename}{Índice de cuadros}
 \newunicodechar{²}{\ensuremath{^{2}}}
 \newunicodechar{Δ}{\ensuremath{\Delta}}
 \newunicodechar{Π}{\ensuremath{\Pi}}
@@ -33,7 +35,6 @@
 
 \title{\textbf{Informe: Diseño de la base de datos}\\[1ex]\large Generación automática de itinerarios turísticos\\Proyecto Astarship}
 \author{\textbf{Equipo: HAVING Fe}\\Bases de Datos II \textperiodcentered{} Ingeniería de Software\\Curso 2026--2027}
-\date{\textit{Borrador para revisión del equipo}}
 \begin{document}
 \begin{titlepage}
 \centering\vspace*{4cm}
@@ -48,9 +49,10 @@
 El presente informe tiene como objetivo diseñar una base de datos para la gestión de la generación automática de itinerarios turísticos de una agencia de viajes. Se realizó un análisis de los requerimientos funcionales, no funcionales y de entorno del sistema, lo que permitió identificar con claridad los procesos de gestión de guías, turistas, atracciones, actividades, paquetes, itinerarios y las seis consultas analíticas que constituyen el criterio de evaluación. A partir de ello se elaboró un Modelo Conceptual Relacional-Extendido (MERX, versión 1.8.1) que muestra las entidades, atributos, interrelaciones y agregaciones críticas, junto con la especificación de las restricciones de integridad y el esquema lógico relacional derivado. Finalmente, se valoró la corrección del diseño mediante la extracción del cubrimiento minimal de dependencias funcionales, la descomposición en Tercera Forma Normal (3FN) y la comprobación de las propiedades de preservación de dependencias (PPDF) y de join sin pérdida (PLJ). Se concluye que el diseño es coherente y se recogen, de forma explícita, los puntos abiertos que deben cerrarse antes de la implementación física.
 \end{abstract}
 \newpage
-\newpage
 \tableofcontents
 \newpage
+\listoftables
+\listoffigures
 \newpage
 \section{Introducción}
 Este informe tiene como propósito mostrar el proceso de análisis, diseño y valoración teórica de la base de datos correspondiente al proyecto «Astarship — generación automática de itinerarios turísticos», desarrollado por el equipo HAVING Fe en el marco de las asignaturas Bases de Datos II e Ingeniería de Software. En él se recoge el trabajo colaborativo orientado a establecer una especificación clara que garantice la correcta implementación de los procesos de almacenamiento, abarcando desde la gestión de los distintos actores (guías turísticos, jefe de operaciones, turistas y administrador) hasta la generación de itinerarios equilibrados bajo criterios de proporción por tipo, cobertura de categorías y cantidad total de actividades.
@@ -60,16 +62,18 @@ El documento inicia con un análisis y reformulación de los requerimientos func
 \section{Análisis y reformulación enriquecedora de los requerimientos funcionales e informacionales del sistema}
 Astarship es una aplicación web para una agencia de viajes que genera itinerarios turísticos de forma automática. El sistema administra el banco de actividades y atracciones, los paquetes turísticos en que se usan, los guías que las describen y validan, y los turistas que las recorren. La generación no es aleatoria: cada itinerario debe respetar criterios de equilibrio y conservar el orden de recorrido para poder analizar cómo se acumula el esfuerzo físico a lo largo del viaje. Quedan fuera del alcance pagos, facturación, reservas de transporte o alojamiento, mensajería entre usuarios e integraciones con servicios externos.
 
-\subsubsection*{Actores del sistema}
+\subsection{Actores del sistema}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{3.78cm}|>{\raggedright\arraybackslash}p{11.98cm}|}
-\hline
+\caption{Actores del sistema y sus responsabilidades.}\label{tab:actores}\\ \hline
 \rowcolor{gray!20} \textbf{Actor} & \textbf{Qué hace en el sistema} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{Actor} & \textbf{Qué hace en el sistema} \\ \hline
 \endhead
 Guía turístico & Registra atracciones y actividades; clasifica por categoría y tipo y asigna nivel de esfuerzo a las actividades que él describió; genera itinerarios; atiende solicitudes de modificación. \\ \hline
 Jefe de operaciones turísticas & Revisa y aprueba los itinerarios generados; puede ordenar la confección de otro bajo sus criterios. \\ \hline
 Turista & Consulta los itinerarios que le asignan, registra sus visitas, valora la experiencia y solicita modificaciones. \\ \hline
-Administrador & Evita actividades duplicadas e impide la asignación doble de itinerarios (ver PA-1 en la sección 5.4). \\ \hline
+Administrador & Evita actividades duplicadas e impide la asignación doble de itinerarios (ver PA-1 en la sección \ref{sec:abiertos}). \\ \hline
 \end{longtable}}
 \vspace{2pt}
 Un mismo guía puede estar autorizado en unos paquetes y no en otros, y la autorización distingue entre \textbf{generar} y \textbf{validar} itinerarios.
@@ -78,8 +82,10 @@ Un mismo guía puede estar autorizado en unos paquetes y no en otros, y la autor
 \subsubsection{Actividades y atracciones}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{1.28cm}|>{\raggedright\arraybackslash}p{11.28cm}|>{\raggedright\arraybackslash}p{2.98cm}|}
-\hline
+\caption{Requerimientos funcionales: actividades y atracciones.}\label{tab:rf-actividades}\\ \hline
 \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
 \endhead
 RF-01 & Registrar una atracción. & Guía \\ \hline
 RF-02 & Registrar una actividad e indicar en qué atracción se realiza. & Guía \\ \hline
@@ -93,8 +99,10 @@ RF-07 & Consultar y listar el banco de actividades y atracciones. & Todos \\ \hl
 \subsubsection{Paquetes turísticos, guías y turistas}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{1.28cm}|>{\raggedright\arraybackslash}p{11.28cm}|>{\raggedright\arraybackslash}p{2.98cm}|}
-\hline
+\caption{Requerimientos funcionales: paquetes turísticos, guías y turistas.}\label{tab:rf-paquetes}\\ \hline
 \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
 \endhead
 RF-08 & Registrar un paquete con identificador único, nombre, destino y la lista de categorías a cubrir. & — \\ \hline
 RF-09 & Registrar en qué paquetes está autorizado cada guía, distinguiendo si puede generar, validar o ambas. & — \\ \hline
@@ -106,8 +114,10 @@ RF-12 & Gestionar grupos de viaje y la pertenencia de turistas a ellos. & — \\
 \subsubsection{Generación de itinerarios}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{1.28cm}|>{\raggedright\arraybackslash}p{11.28cm}|>{\raggedright\arraybackslash}p{2.98cm}|}
-\hline
+\caption{Requerimientos funcionales: generación de itinerarios.}\label{tab:rf-generacion}\\ \hline
 \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
 \endhead
 RF-13 & Generar un itinerario automáticamente a partir de un conjunto de actividades seleccionadas. & Guía autorizado \\ \hline
 RF-14 & Parametrizar la generación con la proporción de actividades por tipo, la cobertura de categorías y la cantidad total de actividades. & Guía autorizado \\ \hline
@@ -122,8 +132,10 @@ El enunciado separa quién \textit{añade} actividades de quién \textit{crea} e
 \subsubsection{Validación}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{1.28cm}|>{\raggedright\arraybackslash}p{11.28cm}|>{\raggedright\arraybackslash}p{2.98cm}|}
-\hline
+\caption{Requerimientos funcionales: validación.}\label{tab:rf-validacion}\\ \hline
 \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
 \endhead
 RF-19 & Revisar y aprobar o rechazar un itinerario generado, registrando fecha de validación, resultado y observaciones. & Jefe de operaciones \\ \hline
 RF-20 & Indicar la confección de otro itinerario bajo sus propios criterios. & Jefe de operaciones \\ \hline
@@ -133,8 +145,10 @@ RF-21 & Distinguir el estado de un itinerario entre «generado pendiente de vali
 \subsubsection{Asignación y recorrido}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{1.28cm}|>{\raggedright\arraybackslash}p{11.28cm}|>{\raggedright\arraybackslash}p{2.98cm}|}
-\hline
+\caption{Requerimientos funcionales: asignación y recorrido.}\label{tab:rf-asignacion}\\ \hline
 \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
 \endhead
 RF-22 & Asignar un itinerario a un turista (actor por definir, ver PA-1). & — \\ \hline
 RF-23 & Impedir la asignación doble de itinerarios. & Administrador \\ \hline
@@ -148,8 +162,10 @@ RF-28 & Consultar todas las valoraciones propias agrupadas por paquete turístic
 \subsubsection{Solicitud de modificación}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{1.28cm}|>{\raggedright\arraybackslash}p{11.28cm}|>{\raggedright\arraybackslash}p{2.98cm}|}
-\hline
+\caption{Requerimientos funcionales: solicitud de modificación.}\label{tab:rf-modificacion}\\ \hline
 \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
 \endhead
 RF-29 & Solicitar de forma virtual una modificación del itinerario. & Turista \\ \hline
 RF-30 & Pedir el apoyo de un guía adicional al asignado para que atienda la solicitud. & Turista \\ \hline
@@ -159,18 +175,22 @@ RF-31 & Registrar todo el proceso de solicitud y el resultado de la modificació
 \subsubsection{Red de atracciones}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{1.28cm}|>{\raggedright\arraybackslash}p{11.28cm}|>{\raggedright\arraybackslash}p{2.98cm}|}
-\hline
+\caption{Requerimientos funcionales: red de atracciones.}\label{tab:rf-red}\\ \hline
 \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
 \endhead
 RF-32 & Mantener las conexiones entre atracciones según cercanía geográfica y transporte disponible, con tiempo y costo asociados. & Sistema \\ \hline
-RF-33 & Recorrer la red para proponer alternativas cuando una actividad no pueda realizarse en el horario previsto (Dijkstra con Strategy; ver sección 3.5). & Sistema \\ \hline
+RF-33 & Recorrer la red para proponer alternativas cuando una actividad no pueda realizarse en el horario previsto (Dijkstra con Strategy; véase la sección \ref{sec:red}). & Sistema \\ \hline
 \end{longtable}}
 \vspace{2pt}
 \subsubsection{Reportes y exportación}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{1.28cm}|>{\raggedright\arraybackslash}p{11.28cm}|>{\raggedright\arraybackslash}p{2.98cm}|}
-\hline
+\caption{Requerimientos funcionales: reportes y exportación.}\label{tab:rf-reportes}\\ \hline
 \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} & \textbf{Actor} \\ \hline
 \endhead
 RF-34 & Generar reportes sobre la creación de itinerarios, las actividades más utilizadas, la distribución de niveles de esfuerzo y el desempeño de la experiencia según el esfuerzo. & Todos \\ \hline
 RF-35 & Presentar los resultados en tablas y gráficos. & Sistema \\ \hline
@@ -183,8 +203,10 @@ Técnicamente son requisitos funcionales; se separan porque constituyen el crite
 
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{1.28cm}|>{\raggedright\arraybackslash}p{14.48cm}|}
-\hline
+\caption{Las seis consultas analíticas que constituyen el criterio de evaluación.}\label{tab:consultas}\\ \hline
 \rowcolor{gray!20} \textbf{ID} & \textbf{Consulta} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{ID} & \textbf{Consulta} \\ \hline
 \endhead
 RC-1 & Itinerarios generados automáticamente para un paquete, indicando creador, fecha de creación y parámetros utilizados. \\ \hline
 RC-2 & Actividades más utilizadas en los itinerarios finales de un paquete, clasificadas por nivel de esfuerzo y categoría. \\ \hline
@@ -199,14 +221,16 @@ RC-6 es la consulta más exigente y condiciona el modelo: exige calcular una \te
 \subsection{Requerimientos No Funcionales}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{1.48cm}|>{\raggedright\arraybackslash}p{14.28cm}|}
-\hline
+\caption{Requerimientos no funcionales.}\label{tab:rnf}\\ \hline
 \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{ID} & \textbf{Requisito} \\ \hline
 \endhead
 RNF-01 & \textbf{Rendimiento.} El itinerario del día debe entregarse sin demoras perceptibles, incluso con varios grupos consultando a la vez; justifica una capa de caché. \\ \hline
 RNF-02 & \textbf{La red de atracciones no se modela como tabla del esquema relacional.} Se gestiona de forma independiente para poder navegarla con agilidad. \\ \hline
 RNF-03 & \textbf{Multiplataforma.} Accesible desde cualquier sistema; una aplicación web es suficiente. \\ \hline
 RNF-04 & \textbf{Arquitectura desacoplada, extensible y mantenible.} \\ \hline
-RNF-05 & \textbf{Patrones de diseño.} Al menos dos implementados y justificados (Strategy para el algoritmo de rutas, sección 3.5). \\ \hline
+RNF-05 & \textbf{Patrones de diseño.} Al menos dos implementados y justificados (Strategy para el algoritmo de rutas, sección \ref{sec:red}). \\ \hline
 RNF-06 & \textbf{Documentación.} Docstrings en todo el código, verificados automáticamente. \\ \hline
 RNF-07 & \textbf{Pruebas unitarias} de back-end y front-end. \\ \hline
 RNF-08 & \textbf{Control de versiones} (Git + GitHub). \\ \hline
@@ -233,8 +257,10 @@ El MERX (versión 1.8.1) se organiza en tres bloques: entidades con sus atributo
 \begin{figure}[H]\centering\includegraphics[width=16.20cm]{ent.png}\caption{MERX v1.8.1 — Entidades.}\end{figure}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{3.28cm}|>{\raggedright\arraybackslash}p{12.48cm}|}
-\hline
+\caption{Entidades del MERX y sus atributos.}\label{tab:entidades}\\ \hline
 \rowcolor{gray!20} \textbf{Entidad} & \textbf{Atributos} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{Entidad} & \textbf{Atributos} \\ \hline
 \endhead
 User & \underline{ID}, Name, Email \\ \hline
 TravelGroup & \underline{ID}, Name \\ \hline
@@ -250,8 +276,10 @@ Attraction & \underline{ID}, Name, Address, Latitude, Longitude \\ \hline
 
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{3.28cm}|>{\raggedright\arraybackslash}p{4.28cm}|>{\raggedright\arraybackslash}p{7.98cm}|}
-\hline
+\caption{Especialización de User: subtipos y atributos propios.}\label{tab:especializacion}\\ \hline
 \rowcolor{gray!20} \textbf{Supertipo} & \textbf{Subtipo} & \textbf{Atributos propios} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{Supertipo} & \textbf{Subtipo} & \textbf{Atributos propios} \\ \hline
 \endhead
 User & Admin & — \\ \hline
 User & Guide & Specialty \\ \hline
@@ -264,8 +292,10 @@ User & Tourist & Age \\ \hline
 \begin{figure}[H]\centering\includegraphics[width=12.60cm]{rel.png}\caption{MERX v1.8.1 — Interrelaciones.}\end{figure}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{2.48cm}|>{\raggedright\arraybackslash}p{4.08cm}|>{\raggedright\arraybackslash}p{2.38cm}|>{\raggedright\arraybackslash}p{6.38cm}|}
-\hline
+\caption{Interrelaciones binarias del MERX y sus cardinalidades.}\label{tab:interrelaciones}\\ \hline
 \rowcolor{gray!20} \textbf{Interrelación} & \textbf{Participantes} & \textbf{Cardinalidad} & \textbf{(min,max)} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{Interrelación} & \textbf{Participantes} & \textbf{Cardinalidad} & \textbf{(min,max)} \\ \hline
 \endhead
 Belongs & Tourist — TravelGroup & N:1 & Tourist (1,1) — TravelGroup (1,*) \\ \hline
 Classifies & Activity — Category & N:1 & Activity (1,1) — Category (0,*) \\ \hline
@@ -281,12 +311,14 @@ Assigns & Admin — Assignment & 1:N & Admin (0,*) — Assignment (1,1) \\ \hlin
 \end{longtable}}
 \vspace{2pt}
 \newpage
-\subsection{Agregaciones}
+\subsection{Agregaciones}\label{sec:agregaciones}
 \begin{figure}[H]\centering\includegraphics[width=13.57cm]{agg.png}\caption{MERX v1.8.1 — Agregaciones.}\end{figure}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{2.68cm}|>{\raggedright\arraybackslash}p{3.28cm}|>{\raggedright\arraybackslash}p{0.88cm}|>{\raggedright\arraybackslash}p{4.18cm}|>{\raggedright\arraybackslash}p{4.08cm}|}
-\hline
+\caption{Agregaciones del MERX: cardinalidades y atributos propios.}\label{tab:agregaciones}\\ \hline
 \rowcolor{gray!20} \textbf{Agregación} & \textbf{Participantes} & \textbf{Card.} & \textbf{(min,max)} & \textbf{Atributos} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{Agregación} & \textbf{Participantes} & \textbf{Card.} & \textbf{(min,max)} & \textbf{Atributos} \\ \hline
 \endhead
 Proportion Type & Itinerary — ActivityType & N:M & Itinerary (1,*) — ActivityType (0,*) & Value \\ \hline
 Proportion Category & Itinerary — Category & N:M & Itinerary (1,*) — Category (0,*) & Value \\ \hline
@@ -305,13 +337,15 @@ Booking & Tourist — Package & N:M & Tourist (0,*) — Package (0,*) & BookingD
 Las agregaciones \textit{Assignment} e \textit{Itinerary Composition} participan a su vez como extremos de otras interrelaciones (\textit{Modification Request} y \textit{Visit}), por lo que se tratan como entidades agregadas con identidad propia dada por la concatenación de las llaves de sus participantes.
 
 \needspace{8\baselineskip}
-\subsection{Esquema lógico relacional}
+\subsection{Esquema lógico relacional}\label{sec:esquema-logico}
 Aplicando las reglas de transformación del MERX al modelo relacional se obtienen 25 esquemas: las entidades incorporan como llave foránea las interrelaciones de cardinalidad N:1 / 1:N; cada subtipo de la especialización comparte la llave de User (partición total y disjunta); la interrelación N:M Coverage y las agregaciones generan esquemas propios cuya llave es la concatenación de las llaves de sus participantes.
 
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{2.88cm}|>{\raggedright\arraybackslash}p{1.78cm}|>{\raggedright\arraybackslash}p{5.38cm}|>{\raggedright\arraybackslash}p{5.28cm}|}
-\hline
+\caption{Esquema lógico relacional: las 25 relaciones con sus llaves y llaves foráneas.}\label{tab:esquema}\\ \hline
 \rowcolor{gray!20} \textbf{Relación} & \textbf{Tipo} & \textbf{Atributos (llave subrayada)} & \textbf{Llaves foráneas} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{Relación} & \textbf{Tipo} & \textbf{Atributos (llave subrayada)} & \textbf{Llaves foráneas} \\ \hline
 \endhead
 User & Entidad & \underline{ID}, Name, Email & — \\ \hline
 TravelGroup & Entidad & \underline{ID}, Name, ID\_Guide & (ID\_Guide) \ensuremath{\rightarrow} Guide(ID) \\ \hline
@@ -342,7 +376,7 @@ Booking & Agregación & \underline{ID\_Tourist}, \underline{ID\_Package}, Bookin
 \vspace{2pt}
 Conforme a RNF-02, la red de atracciones (tiempos y costos entre atracciones) \textbf{no} forma parte de este esquema relacional: se gestiona de forma independiente y se enlaza con Attraction mediante su identificador.
 
-\subsection{Red de atracciones y búsqueda de alternativas (RF-33)}
+\subsection{Red de atracciones y búsqueda de alternativas (RF-33)}\label{sec:red}
 RF-33 exige recorrer la red de atracciones para proponer alternativas cuando una actividad no puede realizarse en el horario previsto. Por RNF-02 la red no vive en el esquema relacional: cada \textit{nodo} es una atracción (identificada por \texttt{Attraction.ID}, con \texttt{Latitude} y \texttt{Longitude}) y cada \textit{arista} es una conexión dirigida con dos pesos, \textbf{tiempo} y \textbf{costo} (RF-32). Esta subsección describe el algoritmo elegido y su integración en el sistema.
 
 \subsubsection{Algoritmo base: Dijkstra}
@@ -373,8 +407,10 @@ El algoritmo de búsqueda y su criterio de optimización (tiempo o costo) se enc
 
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{2.98cm}|>{\raggedright\arraybackslash}p{5.08cm}|>{\raggedright\arraybackslash}p{7.48cm}|}
-\hline
+\caption{Roles del patrón Strategy en la búsqueda de alternativas.}\label{tab:strategy}\\ \hline
 \rowcolor{gray!20} \textbf{Rol (Strategy)} & \textbf{Elemento} & \textbf{Responsabilidad} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{Rol (Strategy)} & \textbf{Elemento} & \textbf{Responsabilidad} \\ \hline
 \endhead
 Strategy & \texttt{RouteStrategy} (interfaz) & Declara \texttt{find\_\allowbreak{}path(graph, origin, target) \ensuremath{\rightarrow} Route | None}. \\ \hline
 ConcreteStrategy & \texttt{DijkstraTimeStrategy} & Dijkstra con peso = tiempo (estrategia por defecto). \\ \hline
@@ -402,8 +438,10 @@ Añadir un nuevo criterio o un algoritmo distinto de Dijkstra (por ejemplo, A*, 
 
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{3.08cm}|>{\raggedright\arraybackslash}p{12.68cm}|}
-\hline
+\caption{Parámetros del endpoint de búsqueda de alternativas.}\label{tab:endpoint}\\ \hline
 \rowcolor{gray!20} \textbf{Parámetro} & \textbf{Significado} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{Parámetro} & \textbf{Significado} \\ \hline
 \endhead
 \texttt{id} (ruta) & Atracción donde la actividad no puede realizarse; es el \textit{origen} de la búsqueda. \\ \hline
 \texttt{activity} & Actividad afectada; se usa para buscar actividades sustitutas comparables (misma categoría y tipo). \\ \hline
@@ -472,7 +510,7 @@ Se detallan las reglas y restricciones que aseguran la fiabilidad de los datos d
 \item \texttt{PK\_\allowbreak{}Booking}: (ID\_Tourist, ID\_Package).
 \end{itemize}
 \subsubsection*{Llaves alternativas}
-Las dependencias del dominio de la tabla \ref{tab:dominio} que resultaron ser unicidades se declaran como llaves alternativas. Sin ellas, las reglas de negocio correspondientes quedarían enunciadas pero no garantizadas.
+Las dependencias del dominio del cuadro \ref{tab:dominio} que resultaron ser unicidades se declaran como llaves alternativas. Sin ellas, las reglas de negocio correspondientes quedarían enunciadas pero no garantizadas.
 
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=3pt]
 \item \texttt{UQ\_\allowbreak{}User\_\allowbreak{}Email}: (Email). Es la credencial de acceso, luego ha de ser única.
@@ -605,19 +643,19 @@ Las dependencias del dominio de la tabla \ref{tab:dominio} que resultaron ser un
 \item \textbf{Assignment} (1,1): cada Assignment se asocia con exactamente un(a) Admin.
 \end{itemize}
 \subsubsection{Agregaciones}
-Las cardinalidades (min,max) de las doce agregaciones se recogen en la tabla de la sección 3.3. Destacan Proportion Type, Proportion Category e Itinerary Composition, donde el itinerario participa con cardinalidad mínima 1: todo itinerario debe tener al menos una proporción por tipo, una por categoría y al menos una actividad. En el resto, ambos extremos participan con (0,*), de modo que la existencia de la interrelación es opcional para ambas partes.
+Las cardinalidades (min,max) de las doce agregaciones se recogen en el cuadro \ref{tab:agregaciones}. Destacan Proportion Type, Proportion Category e Itinerary Composition, donde el itinerario participa con cardinalidad mínima 1: todo itinerario debe tener al menos una proporción por tipo, una por categoría y al menos una actividad. En el resto, ambos extremos participan con (0,*), de modo que la existencia de la interrelación es opcional para ambas partes.
 
 \newpage
 \section{Valoración de la corrección del diseño de la base de datos}
 \subsection{Demostración formal de normalización (3FN), PPDF, PLJ y discusión del diseño}
-La corrección teórica de una descomposición se apoya en las tres condiciones siguientes. Son \textit{necesarias}, no suficientes: un esquema puede cumplirlas y seguir modelando mal el dominio, de modo que la valoración formal de esta sección se complementa con la valoración de completitud de la sección 5.4.
+La corrección teórica de una descomposición se apoya en las tres condiciones siguientes. Son \textit{necesarias}, no suficientes: un esquema puede cumplirlas y seguir modelando mal el dominio, de modo que la valoración formal de esta sección se complementa con la valoración de completitud de la sección \ref{sec:valoracion-final}.
 
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=3pt]
 \item Todos los esquemas relacionales de la descomposición están en Tercera Forma Normal (3FN) o superior.
 \item Se cumple la Propiedad de Preservación de Dependencias Funcionales (PPDF).
 \item Se cumple la Propiedad del Join sin Pérdida de Información (PLJ).
 \end{itemize}
-\subsubsection{Extracción de dependencias funcionales}
+\subsubsection{Extracción de dependencias funcionales}\label{sec:extraccion}
 A partir de la especificación conceptual se aplica el algoritmo de extracción:
 
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=3pt]
@@ -629,11 +667,11 @@ A partir de la especificación conceptual se aplica el algoritmo de extracción:
 
 Dos precisiones sobre este paso, porque condicionan todo lo que sigue.
 
-\textbf{Renombrado por rol.} La misma llave aparece en varios papeles distintos: \texttt{ID\_\allowbreak{}Guide} designa al guía que \textit{describe} una actividad (Generates), al que \textit{genera} un itinerario (Generates), al que lo \textit{valida} (Itinerary Validation), al que \textit{atiende} un grupo (Attends), al que \textit{atiende una solicitud} (Modification Request) y al que está \textit{autorizado} en un paquete (Authorization). Para que el esquema universal R(U) esté bien definido, cada papel debe tratarse como un atributo propio (un renombrado \ensuremath{\rho} del atributo original); de lo contrario las dependencias de papeles distintos se confundirían entre sí. En las tablas siguientes el papel se indica como superíndice. Lo mismo ocurre con las llaves de los subtipos de la especialización, que son renombrados de \texttt{ID\_\allowbreak{}User}.
+\textbf{Renombrado por rol.} La misma llave aparece en varios papeles distintos: \texttt{ID\_\allowbreak{}Guide} designa al guía que \textit{describe} una actividad (Generates), al que \textit{genera} un itinerario (Generates), al que lo \textit{valida} (Itinerary Validation), al que \textit{atiende} un grupo (Attends), al que \textit{atiende una solicitud} (Modification Request) y al que está \textit{autorizado} en un paquete (Authorization). Para que el esquema universal R(U) esté bien definido, cada papel debe tratarse como un atributo propio (un renombrado \ensuremath{\rho} del atributo original); de lo contrario las dependencias de papeles distintos se confundirían entre sí. En los cuadros siguientes el papel se indica como superíndice. Lo mismo ocurre con las llaves de los subtipos de la especialización, que son renombrados de \texttt{ID\_\allowbreak{}User}.
 
-\textbf{Dependencias no inducidas por las llaves.} La extracción anterior produce, por construcción, exactamente las dependencias que las llaves ya elegidas inducen. Si el análisis se detuviera aquí, el algoritmo de síntesis devolvería sin remedio los mismos esquemas de partida y la verificación no probaría nada: sería circular. Por eso se examina además el dominio en busca de dependencias \textit{no} inducidas por las llaves —unicidades alternativas y dependencias entre atributos no primos—, que son las únicas capaces de romper la 3FN. El resultado de ese examen se recoge en la segunda tabla de la sección siguiente.
-\subsubsection{Cubrimiento minimal}
-Un conjunto G de dependencias funcionales es un cubrimiento minimal de F si: (1) G \ensuremath{\equiv} F; (2) ningún determinante contiene atributos redundantes; y (3) G no contiene dependencias redundantes. Aplicando el algoritmo de minimización (descomposición del lado derecho y comprobación de redundancias vía clausura de atributos) se obtiene el conjunto G que recoge la tabla \ref{tab:cubrimiento}.
+\textbf{Dependencias no inducidas por las llaves.} La extracción anterior produce, por construcción, exactamente las dependencias que las llaves ya elegidas inducen. Si el análisis se detuviera aquí, el algoritmo de síntesis devolvería sin remedio los mismos esquemas de partida y la verificación no probaría nada: sería circular. Por eso se examina además el dominio en busca de dependencias \textit{no} inducidas por las llaves —unicidades alternativas y dependencias entre atributos no primos—, que son las únicas capaces de romper la 3FN. El resultado de ese examen se recoge en el cuadro \ref{tab:dominio}.
+\subsubsection{Cubrimiento minimal}\label{sec:cubrimiento}
+Un conjunto G de dependencias funcionales es un cubrimiento minimal de F si: (1) G \ensuremath{\equiv} F; (2) ningún determinante contiene atributos redundantes; y (3) G no contiene dependencias redundantes. Aplicando el algoritmo de minimización (descomposición del lado derecho y comprobación de redundancias vía clausura de atributos) se obtiene el conjunto G que recoge el cuadro \ref{tab:cubrimiento}.
 
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{0.78cm}|>{\raggedright\arraybackslash}p{9.68cm}|>{\raggedright\arraybackslash}p{4.88cm}|}
@@ -671,7 +709,7 @@ f\textsubscript{22} & \texttt{ID\_Tourist}, \texttt{ID\_Package} \ensuremath{\ri
 
 Las dependencias triviales K \ensuremath{\rightarrow} K que producen las relaciones cuyos atributos son todos llave (Admin, OperationsManager, Coverage) no forman parte del cubrimiento minimal; esos esquemas se conservan mediante el paso 3 del algoritmo de síntesis (atributos no contenidos en ninguna dependencia).
 
-\textbf{Dependencias del dominio ajenas a las llaves.} Conforme a lo advertido en la sección 5.1.1, se examinó el dominio en busca de dependencias que las llaves elegidas no inducen. Son las únicas que pueden sacar un esquema de la 3FN, porque la 3FN solo se rompe cuando un atributo no primo depende de algo que no es llave candidata. La tabla \ref{tab:dominio} recoge el examen completo.
+\textbf{Dependencias del dominio ajenas a las llaves.} Conforme a lo advertido en la sección \ref{sec:extraccion}, se examinó el dominio en busca de dependencias que las llaves elegidas no inducen. Son las únicas que pueden sacar un esquema de la 3FN, porque la 3FN solo se rompe cuando un atributo no primo depende de algo que no es llave candidata. El cuadro \ref{tab:dominio} recoge el examen completo.
 
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{4.68cm}|>{\raggedright\arraybackslash}p{1.88cm}|>{\raggedright\arraybackslash}p{8.78cm}|}
@@ -702,12 +740,14 @@ Para obtener la descomposición \ensuremath{\rho} en 3FN del esquema R(U, F), do
 \item Entonces \ensuremath{\rho} = \{R\textsubscript{i}\} está en 3FN respecto a \ensuremath{\Pi}\textsubscript{Ri}(F).
 \end{itemize}
 \subsubsection{Aplicación del algoritmo}
-La aplicación del algoritmo agrupa las dependencias por determinante; como el cubrimiento tiene un único determinante por esquema, la descomposición coincide con los 25 esquemas del esquema lógico (sección 3.4). La siguiente tabla muestra, para cada uno, su llave candidata y la verificación de 3FN: todo atributo no primo depende directamente de la llave y no existe dependencia transitiva entre atributos no primos (las llaves foráneas son atributos no primos que no determinan a ningún otro atributo del esquema).
+La aplicación del algoritmo agrupa las dependencias por determinante; como el cubrimiento tiene un único determinante por esquema, la descomposición coincide con los 25 esquemas del esquema lógico (sección \ref{sec:esquema-logico}). Esa coincidencia no constituye por sí sola una verificación: conforme a lo razonado en la sección \ref{sec:extraccion}, es la consecuencia inevitable de haber extraído las dependencias del propio esquema. Lo que sí verifica el diseño es que ninguna de las dependencias del dominio del cuadro \ref{tab:dominio} saque un esquema de la Tercera Forma Normal. El cuadro \ref{tab:3fn} recoge, para cada esquema, su llave candidata y esa comprobación: todo atributo no primo depende directamente de la llave y no existe dependencia transitiva entre atributos no primos (las llaves foráneas son atributos no primos que no determinan a ningún otro atributo del esquema).
 
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{3.88cm}|>{\raggedright\arraybackslash}p{3.98cm}|>{\raggedright\arraybackslash}p{5.78cm}|>{\raggedright\arraybackslash}p{1.68cm}|}
-\hline
+\caption{Verificación de la Tercera Forma Normal esquema por esquema.}\label{tab:3fn}\\ \hline
 \rowcolor{gray!20} \textbf{Esquema} & \textbf{Llave} & \textbf{Atributos no primos} & \textbf{3FN} \\ \hline
+\endfirsthead
+\hline \rowcolor{gray!20} \textbf{Esquema} & \textbf{Llave} & \textbf{Atributos no primos} & \textbf{3FN} \\ \hline
 \endhead
 R1 — User & ID & Name, Email & Sí (BCNF) \\ \hline
 R2 — TravelGroup & ID & Name, ID\_Guide & Sí (BCNF) \\ \hline
@@ -736,26 +776,26 @@ R24 — Authorization & ID\_Guide, ID\_Package & CanGenerate, CanValidate & Sí 
 R25 — Booking & ID\_Tourist, ID\_Package & BookingDate & Sí (BCNF) \\ \hline
 \end{longtable}}
 \vspace{2pt}
-Todos los esquemas están además en la Forma Normal de Boyce-Codd (BCNF): por la tabla \ref{tab:dominio}, todo determinante de una dependencia no trivial es una llave candidata del esquema donde vive. Los cuatro esquemas con una segunda llave candidata (User por Email, ActivityType y Category por Name, Activity por (Name, \texttt{ID\_Attraction})) siguen cumpliéndolo, porque un determinante que es llave candidata nunca viola la BCNF. La única salvedad es la de Attraction recogida en la nota anterior: la BCNF de R7 depende de la decisión de modelado de que Address no determine las coordenadas.
+Todos los esquemas están además en la Forma Normal de Boyce-Codd (BCNF): por el cuadro \ref{tab:dominio}, todo determinante de una dependencia no trivial es una llave candidata del esquema donde vive. Los cuatro esquemas con una segunda llave candidata (User por Email, ActivityType y Category por Name, Activity por (Name, \texttt{ID\_Attraction})) siguen cumpliéndolo, porque un determinante que es llave candidata nunca viola la BCNF. La única salvedad es la de Attraction recogida en la nota anterior: la BCNF de R7 depende de la decisión de modelado de que Address no determine las coordenadas.
 
 \subsection{Garantía de cumplimiento de la PPDF y la PLJ}
 \subsubsection{Preservación de dependencias funcionales (PPDF)}
-La PPDF se cumple por construcción del algoritmo de síntesis. Cada dependencia X \ensuremath{\rightarrow} Y \ensuremath{\in} G dio origen a un esquema R\textsubscript{j} con U\textsubscript{j} \ensuremath{\supseteq} X \ensuremath{\cup} Y, luego esa dependencia sobrevive en \ensuremath{\Pi}\textsubscript{Rj}(G) y por tanto G \ensuremath{\subseteq} (\ensuremath{\bigcup}\textsubscript{i} \ensuremath{\Pi}\textsubscript{Ri}(G))\textsuperscript{+}. Esta es la inclusión que hay que probar; la contraria, (\ensuremath{\bigcup}\textsubscript{i} \ensuremath{\Pi}\textsubscript{Ri}(G))\textsuperscript{+} \ensuremath{\subseteq} G\textsuperscript{+}, es inmediata porque toda proyección de G se deduce de G. De ambas se sigue la equivalencia, y con ella que cada dependencia del cubrimiento puede verificarse sobre un único esquema, sin reunir ninguno: las 22 dependencias de la tabla \ref{tab:cubrimiento} son exactamente las llaves primarias de los 22 esquemas que no son todo-llave.
+La PPDF se cumple por construcción del algoritmo de síntesis. Cada dependencia X \ensuremath{\rightarrow} Y \ensuremath{\in} G dio origen a un esquema R\textsubscript{j} con U\textsubscript{j} \ensuremath{\supseteq} X \ensuremath{\cup} Y, luego esa dependencia sobrevive en \ensuremath{\Pi}\textsubscript{Rj}(G) y por tanto G \ensuremath{\subseteq} (\ensuremath{\bigcup}\textsubscript{i} \ensuremath{\Pi}\textsubscript{Ri}(G))\textsuperscript{+}. Esta es la inclusión que hay que probar; la contraria, (\ensuremath{\bigcup}\textsubscript{i} \ensuremath{\Pi}\textsubscript{Ri}(G))\textsuperscript{+} \ensuremath{\subseteq} G\textsuperscript{+}, es inmediata porque toda proyección de G se deduce de G. De ambas se sigue la equivalencia, y con ella que cada dependencia del cubrimiento puede verificarse sobre un único esquema, sin reunir ninguno: los determinantes de las 22 dependencias del cuadro \ref{tab:cubrimiento} son exactamente las llaves primarias de los 22 esquemas que no son todo-llave.
 
 Los tres esquemas todo-llave (Admin, OperationsManager, Coverage) no preservan ninguna dependencia porque no la tienen, de modo que su presencia es inocua para la PPDF.
 
 \subsubsection{Join sin pérdida (PLJ)}
-Conviene empezar por lo que el algoritmo de síntesis \textit{no} garantiza. La síntesis asegura 3FN y PPDF, pero \textbf{no} la PLJ: es perfectamente posible sintetizar una descomposición en 3FN que preserve las dependencias y cuya reunión natural produzca tuplas espurias. La garantía clásica (Biskup, Dayal y Bernstein) restituye la propiedad añadiendo a \ensuremath{\rho} un esquema cuyo conjunto de atributos sea una \textbf{llave candidata del esquema universal} R(U). No es un requisito opcional ni una formalidad: es la pieza que cierra la demostración.
+Es preciso partir de lo que el algoritmo de síntesis \textit{no} garantiza. La síntesis asegura 3FN y PPDF, pero \textbf{no} la PLJ: es perfectamente posible sintetizar una descomposición en 3FN que preserve las dependencias y cuya reunión natural produzca tuplas espurias. La garantía clásica (Biskup, Dayal y Bernstein) restituye la propiedad añadiendo a \ensuremath{\rho} un esquema cuyo conjunto de atributos sea una \textbf{llave candidata del esquema universal} R(U). No es un requisito opcional ni una formalidad: es la pieza que cierra la demostración.
 
 \textbf{Dos precisiones sobre el criterio.} Primera: la condición (U\textsubscript{1} \ensuremath{\cap} U\textsubscript{2}) \ensuremath{\rightarrow} U\textsubscript{1} o (U\textsubscript{1} \ensuremath{\cap} U\textsubscript{2}) \ensuremath{\rightarrow} U\textsubscript{2} vale para descomposiciones \textit{binarias}. La reunión sin pérdida de \textit{n} esquemas no se sigue de que lo sea dos a dos: hay descomposiciones cuyas reuniones parciales son todas sin pérdida y cuya reunión conjunta no lo es, de modo que la condición no puede aplicarse «de forma encadenada». El test general para \textit{n} esquemas es el algoritmo del tableau o \textit{chase} (Aho, Beeri y Ullman). Segunda: la unión de las llaves de los 25 esquemas \textbf{no} es una llave candidata del universal. Determina U, luego es \textit{superllave}, pero no es minimal, y una llave candidata exige minimalidad.
 
-\textbf{Llave candidata del universal en este diseño.} Como se advirtió en la sección 5.1.1, R(U) solo está bien definido tras el renombrado por rol: sin él, los seis papeles de \texttt{ID\_Guide} colapsarían en un atributo y las dependencias de papeles distintos se contaminarían. Hecho el renombrado, una llave de U se obtiene por el procedimiento habitual: los atributos que no aparecen en el lado derecho de ninguna dependencia de G tienen que pertenecer a toda llave, y en este cubrimiento basta con ellos. Son los identificadores que ninguna dependencia determina —\texttt{ID\_User}, \texttt{ID\_Itinerary}, \texttt{ID\_Activity}, \texttt{ID\_Tourist}, \texttt{ID\_Manager}, los papeles de \texttt{ID\_Guide} y \texttt{ID\_Admin} que no son determinados por f\textsubscript{2}, f\textsubscript{3}, f\textsubscript{4}, f\textsubscript{8} ni f\textsubscript{17}, y los papeles de \texttt{ID\_Package} ajenos a f\textsubscript{4}— más los cinco discriminantes de fecha (ValidationDate de Itinerary Validation, ApprovalDate, ValidationDate de Package Validation, ValidationDate de Activity Validation y RequestDate), que son atributos primos de sus agregaciones y no los determina nada. Su clausura es U, y ningún subconjunto propio la alcanza porque suprimir cualquiera de ellos deja sin determinar al menos un atributo. Añadir R\textsubscript{26} con ese conjunto completa la descomposición y la PLJ queda garantizada por el teorema.
+\textbf{Llave candidata del universal en este diseño.} Como se advirtió en la sección \ref{sec:extraccion}, R(U) solo está bien definido tras el renombrado por rol: sin él, los seis papeles de \texttt{ID\_Guide} colapsarían en un atributo y las dependencias de papeles distintos se contaminarían. Hecho el renombrado, una llave de U se obtiene por el procedimiento habitual: los atributos que no aparecen en el lado derecho de ninguna dependencia de G tienen que pertenecer a toda llave, y en este cubrimiento basta con ellos. Son los identificadores que ninguna dependencia determina —\texttt{ID\_User}, \texttt{ID\_Itinerary}, \texttt{ID\_Activity}, \texttt{ID\_Tourist}, \texttt{ID\_Manager}, los papeles de \texttt{ID\_Guide} y \texttt{ID\_Admin} que no son determinados por f\textsubscript{2}, f\textsubscript{3}, f\textsubscript{4}, f\textsubscript{8} ni f\textsubscript{17}, y los papeles de \texttt{ID\_Package} ajenos a f\textsubscript{4}— más los cinco discriminantes de fecha (ValidationDate de Itinerary Validation, ApprovalDate, ValidationDate de Package Validation, ValidationDate de Activity Validation y RequestDate), que son atributos primos de sus agregaciones y no los determina nada. Su clausura es U, y ningún subconjunto propio la alcanza porque suprimir cualquiera de ellos deja sin determinar al menos un atributo. Añadir R\textsubscript{26} con ese conjunto completa la descomposición y la PLJ queda garantizada por el teorema.
 
 \textbf{Por qué, en la práctica, R\textsubscript{26} es un artificio.} Ese esquema no corresponde a ningún hecho del negocio: reúne identificadores de papeles que no coexisten en ninguna tupla real (el guía que valida, el que atiende una solicitud y el administrador que valida una actividad no tienen por qué aparecer juntos). Es el síntoma conocido de que el esquema universal es una ficción cuando el modelo tiene llaves foráneas con varios papeles sobre la misma entidad. Por eso, en un diseño derivado de un modelo conceptual no se recurre a R\textsubscript{26}, sino al resultado más fuerte del que ya se dispone: la \textbf{transformación MERX \ensuremath{\rightarrow} relacional es sin pérdida por construcción}. Cada entidad conserva su llave; cada interrelación de cardinalidad máxima 1 se absorbe como llave foránea en el extremo N, y la reunión por esa llave foránea contra la primaria referenciada devuelve exactamente los pares originales; cada interrelación N:M y cada agregación genera un esquema cuya llave es la concatenación de las llaves de los participantes, que es precisamente la extensión de la interrelación. Ninguna de esas transformaciones pierde ni inventa información, de modo que la descomposición de 25 esquemas representa el mismo contenido que el modelo conceptual del que procede.
 
-En resumen: la PLJ se sostiene por la corrección de la transformación conceptual, y la formulación clásica se satisface añadiendo R\textsubscript{26} si se exige la demostración por el teorema de síntesis. Lo que no se sostiene —y conviene no afirmarlo— es deducirla encadenando la condición binaria sobre los 25 esquemas.
+En resumen: la PLJ se sostiene por la corrección de la transformación conceptual, y la formulación clásica se satisface añadiendo R\textsubscript{26} si se exige la demostración por el teorema de síntesis. Lo que no resulta válido es deducirla encadenando la condición binaria sobre los 25 esquemas.
 
-\subsection{Valoración final del diseño}
+\subsection{Valoración final del diseño}\label{sec:valoracion-final}
 \subsubsection{Completitud respecto a los requerimientos}
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=3pt]
 \item \textbf{RF-01 a RF-07:} Activity, Attraction, ActivityType, Category y las relaciones Classifies, Is of Type y At; ActivityValidation soporta el control de duplicados.
@@ -764,12 +804,12 @@ En resumen: la PLJ se sostiene por la corrección de la transformación conceptu
 \item \textbf{RF-19 a RF-21:} ItineraryValidation e ItineraryApproval con fecha, resultado y observaciones; el estado en Itinerary.
 \item \textbf{RF-22 a RF-28:} Assignment y Visit (comentario, valoración y estado de la visita).
 \item \textbf{RF-29 a RF-31:} ModificationRequest, con guía adicional y resultado.
-\item \textbf{RF-32 y RF-33:} fuera del esquema relacional, según RNF-02; el algoritmo de búsqueda de alternativas se describe en la sección 3.5.
+\item \textbf{RF-32 y RF-33:} fuera del esquema relacional, según RNF-02; el algoritmo de búsqueda de alternativas se describe en la sección \ref{sec:red}.
 \item \textbf{RF-34 a RF-37:} no añaden estructura al esquema. Son requisitos de presentación —reportes, tablas y gráficos, exportación a PDF y ordenación por columna— que se resuelven en la capa de aplicación sobre las consultas RC-1 a RC-6; el esquema las soporta en tanto que soporta esas consultas.
 \end{itemize}
 De esta manera el modelo ofrece la base necesaria para implementar las consultas RC-1 a RC-6; en particular, la tasa de abandono de RC-6 se obtiene de Visit.Status, la traza hasta el guía creador de Activity.ID\_Guide, y la comparación con el grupo de viaje de la cadena ModificationRequest \ensuremath{\rightarrow} Assignment \ensuremath{\rightarrow} Tourist \ensuremath{\rightarrow} TravelGroup.
 
-\subsubsection{Observaciones y puntos abiertos detectados}
+\subsubsection{Observaciones y puntos abiertos detectados}\label{sec:abiertos}
 Durante el análisis se detectaron los siguientes puntos que conviene resolver antes de escribir los modelos ORM:
 
 \begin{itemize}[leftmargin=1.2em,itemsep=2pt,topsep=3pt]
@@ -781,9 +821,9 @@ Durante el análisis se detectaron los siguientes puntos que conviene resolver a
 \item \textbf{PA-7. Autorización.} Authorization es un dato de negocio (qué paquetes atiende un guía) y debe distinguirse de los permisos de aplicación.
 \item \textbf{PA-8.} Los atributos de atracción, actividad, itinerario y grupo de viaje son decisiones del equipo no respaldadas por el enunciado.
 \item \textbf{PA-9.} ORM o SQL directo: se propone ORM para el CRUD y SQL escrito a mano para las seis consultas analíticas.
-\item \textbf{PA-10 (cerrado).} El algoritmo para recorrer la red de atracciones queda resuelto en favor de \textbf{Dijkstra} con peso intercambiable (tiempo o costo), manteniendo A* como estrategia alternativa tras la interfaz del patrón Strategy, según se justifica en la sección 3.5. El cierre está recogido en \texttt{requisitos.md} (sección 3.7 y PA-10).
+\item \textbf{PA-10 (cerrado).} El algoritmo para recorrer la red de atracciones queda resuelto en favor de \textbf{Dijkstra} con peso intercambiable (tiempo o costo), manteniendo A* como estrategia alternativa tras la interfaz del patrón Strategy, según se justifica en la sección \ref{sec:red}. El cierre está recogido en \texttt{requisitos.md} (sección 3.7 y PA-10).
 \end{itemize}
-Además se señalan cinco mejoras de diseño: (1) \texttt{Itinerary.ActivityCount} es un atributo derivado (cardinal de ItineraryComposition), redundancia inter-relacional que la normalización no detecta —según se razona en la tabla \ref{tab:dominio}— y que debe controlarse mediante restricción o vista; (2) \texttt{Order} es palabra reservada en SQL y conviene renombrarlo (p. ej., \texttt{Position}); (3) la llave (ID\_Itinerary, ID\_Activity) de ItineraryComposition impide repetir una actividad en un mismo itinerario, lo cual es coherente con la generación equilibrada pero debe confirmarse; (4) cinco relaciones llevan una fecha dentro de la llave primaria (ItineraryValidation, ItineraryApproval, PackageValidation, ActivityValidation y ModificationRequest) para admitir repeticiones del mismo par de participantes; es frágil, porque dos registros con el mismo instante colisionan, y un identificador propio con la fecha como atributo sería más robusto y simplificaría el cubrimiento de la sección 5.1.2; (5) la agregación PackageValidation no responde a ningún requerimiento del enunciado —ninguna consulta la usa y ningún RF pide validar paquetes—, de modo que hay que justificarla como decisión del equipo o retirarla.
+Además se señalan cinco mejoras de diseño: (1) \texttt{Itinerary.ActivityCount} es un atributo derivado (cardinal de ItineraryComposition), redundancia inter-relacional que la normalización no detecta —según se razona en el cuadro \ref{tab:dominio}— y que debe controlarse mediante restricción o vista; (2) \texttt{Order} es palabra reservada en SQL y conviene renombrarlo (p. ej., \texttt{Position}); (3) la llave (ID\_Itinerary, ID\_Activity) de ItineraryComposition impide repetir una actividad en un mismo itinerario, lo cual es coherente con la generación equilibrada pero debe confirmarse; (4) cinco relaciones llevan una fecha dentro de la llave primaria (ItineraryValidation, ItineraryApproval, PackageValidation, ActivityValidation y ModificationRequest) para admitir repeticiones del mismo par de participantes; es frágil, porque dos registros con el mismo instante colisionan, y un identificador propio con la fecha como atributo sería más robusto y simplificaría el cubrimiento de la sección \ref{sec:cubrimiento}; (5) la agregación PackageValidation no responde a ningún requerimiento del enunciado —ninguna consulta la usa y ningún RF pide validar paquetes—, de modo que hay que justificarla como decisión del equipo o retirarla.
 
 \subsection{Flexibilidad y extensibilidad}
 El diseño presenta una estructura modular que facilita su adaptación ante la evolución del dominio sin afectar el esquema base. La independencia entre actividades, atracciones, categorías, tipos, paquetes e itinerarios permite incorporar nuevas combinaciones o paquetes de forma directa. La separación entre las agregaciones de validación (guía, jefe de operaciones, administrador) y las entidades permite incorporar nuevos revisores o nuevos roles sin alterar las relaciones existentes, y la gestión independiente de la red de atracciones permite evolucionarla (por ejemplo, hacia una base de datos orientada a grafos) sin modificar el modelo relacional.
@@ -793,6 +833,6 @@ El desarrollo de este informe permitió consolidar una visión clara y teóricam
 
 La formulación del MERX, sumada a las restricciones de integridad para llaves, llaves alternativas, dominios y cardinalidades, refuerza la integridad operativa y evita estados inconsistentes. La aplicación del algoritmo de síntesis sobre el cubrimiento minimal de 22 dependencias evidenció que los 25 esquemas están en Tercera Forma Normal y, de hecho, en BCNF, con una única salvedad explícita: la BCNF de Attraction depende de la decisión de modelado de que la dirección no determine las coordenadas. La PPDF se cumple por construcción de la síntesis; la PLJ se sostiene en la corrección de la transformación conceptual, y se satisface además en su formulación clásica añadiendo un esquema con una llave candidata del universal.
 
-Queda pendiente cerrar los puntos abiertos señalados en la sección 5.4.2, en especial PA-1, PA-2 y PA-4, que condicionan la forma final del modelo. Una vez resueltos, el diseño estará preparado para escalar hacia su implementación física en PostgreSQL y su integración con el resto de la aplicación.
+Queda pendiente cerrar los puntos abiertos señalados en la sección \ref{sec:abiertos}, en especial PA-1, PA-2 y PA-4, que condicionan la forma final del modelo. Una vez resueltos, el diseño estará preparado para escalar hacia su implementación física en PostgreSQL y su integración con el resto de la aplicación.
 
 \end{document}
