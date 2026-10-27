@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.models.authorization import Authorization
+from app.models.itinerary import Itinerary
 from app.models.status import ReviewStatus, status_enum
 
 
@@ -27,3 +28,4 @@ class Package(Base):
     )
     authorizations: Mapped[list[Authorization]] = relationship(cascade="all, delete-orphan")
     admin = relationship("Admin", back_populates="packages")
+    itineraries: Mapped[list[Itinerary]] = relationship(cascade="all, delete-orphan")

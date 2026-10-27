@@ -11,9 +11,9 @@ from app.services import itinerary as itinerary_service
 from app.services import user as user_service
 
 
-def _create_itinerary(db_session):
+def _create_itinerary(db_session, owners):
     return itinerary_service.create_itinerary(
-        db_session, ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=2)
+        db_session, ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=2, **owners)
     )
 
 
@@ -36,8 +36,8 @@ def _assign(db_session, itinerary, tourist, admin, **fields):
     )
 
 
-def test_create_assignment_is_born_assigned_today(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_create_assignment_is_born_assigned_today(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     tourist = _create_tourist(db_session)
     admin = _create_admin(db_session)
 
@@ -50,8 +50,8 @@ def test_create_assignment_is_born_assigned_today(db_session):
     assert assignment.assignment_date == date.today()
 
 
-def test_create_assignment_keeps_the_given_date(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_create_assignment_keeps_the_given_date(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     tourist = _create_tourist(db_session)
     admin = _create_admin(db_session)
 
@@ -60,9 +60,9 @@ def test_create_assignment_keeps_the_given_date(db_session):
     assert assignment.assignment_date == date(2026, 5, 1)
 
 
-def test_list_assignments_only_returns_the_itinerary_ones(db_session):
-    itinerary = _create_itinerary(db_session)
-    other = _create_itinerary(db_session)
+def test_list_assignments_only_returns_the_itinerary_ones(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
+    other = _create_itinerary(db_session, itinerary_owners)
     ada = _create_tourist(db_session, "ada@example.com")
     bob = _create_tourist(db_session, "bob@example.com")
     admin = _create_admin(db_session)
@@ -75,9 +75,9 @@ def test_list_assignments_only_returns_the_itinerary_ones(db_session):
     assert {a.tourist_id for a in assignments} == {ada.id, bob.id}
 
 
-def test_list_tourist_assignments_only_returns_the_tourist_ones(db_session):
-    first = _create_itinerary(db_session)
-    second = _create_itinerary(db_session)
+def test_list_tourist_assignments_only_returns_the_tourist_ones(db_session, itinerary_owners):
+    first = _create_itinerary(db_session, itinerary_owners)
+    second = _create_itinerary(db_session, itinerary_owners)
     ada = _create_tourist(db_session, "ada@example.com")
     bob = _create_tourist(db_session, "bob@example.com")
     admin = _create_admin(db_session)
@@ -90,8 +90,8 @@ def test_list_tourist_assignments_only_returns_the_tourist_ones(db_session):
     assert {a.itinerary_id for a in assignments} == {first.id, second.id}
 
 
-def test_update_assignment_advances_the_status(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_update_assignment_advances_the_status(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     tourist = _create_tourist(db_session)
     admin = _create_admin(db_session)
     assignment = _assign(db_session, itinerary, tourist, admin)
@@ -109,8 +109,8 @@ def test_get_assignment_returns_none_when_missing(db_session):
     assert assignment_service.get_assignment(db_session, 999, 999) is None
 
 
-def test_delete_assignment_removes_it(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_delete_assignment_removes_it(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     tourist = _create_tourist(db_session)
     admin = _create_admin(db_session)
     assignment = _assign(db_session, itinerary, tourist, admin)
@@ -120,8 +120,8 @@ def test_delete_assignment_removes_it(db_session):
     assert assignment_service.get_assignment(db_session, itinerary.id, tourist.id) is None
 
 
-def test_deleting_the_itinerary_removes_its_assignments(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_deleting_the_itinerary_removes_its_assignments(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     tourist = _create_tourist(db_session)
     admin = _create_admin(db_session)
     _assign(db_session, itinerary, tourist, admin)
@@ -131,8 +131,8 @@ def test_deleting_the_itinerary_removes_its_assignments(db_session):
     assert assignment_service.list_tourist_assignments(db_session, tourist.id) == []
 
 
-def test_deleting_the_tourist_removes_its_assignments(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_deleting_the_tourist_removes_its_assignments(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     tourist = _create_tourist(db_session)
     admin = _create_admin(db_session)
     _assign(db_session, itinerary, tourist, admin)

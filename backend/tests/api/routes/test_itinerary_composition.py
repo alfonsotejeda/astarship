@@ -5,9 +5,9 @@ import pytest
 COMPOSITION = {"order": 1, "day": 1, "start_time": "09:00:00"}
 
 
-def _create_itinerary(client) -> int:
+def _create_itinerary(client, owners) -> int:
     return client.post(
-        "/api/itineraries", json={"creation_date": "2026-01-01", "activity_count": 2}
+        "/api/itineraries", json={"creation_date": "2026-01-01", "activity_count": 2, **owners}
     ).json()["id"]
 
 
@@ -15,8 +15,8 @@ def _create_activity(client, name="Museum") -> int:
     return client.post("/api/activities", json={"name": name, "effort_level": 1}).json()["id"]
 
 
-def test_create_composition_returns_201(client):
-    itinerary_id = _create_itinerary(client)
+def test_create_composition_returns_201(client, itinerary_owners):
+    itinerary_id = _create_itinerary(client, itinerary_owners)
     activity_id = _create_activity(client)
 
     response = client.post(
@@ -31,8 +31,8 @@ def test_create_composition_returns_201(client):
     }
 
 
-def test_create_composition_twice_returns_409(client):
-    itinerary_id = _create_itinerary(client)
+def test_create_composition_twice_returns_409(client, itinerary_owners):
+    itinerary_id = _create_itinerary(client, itinerary_owners)
     activity_id = _create_activity(client)
     url = f"/api/itineraries/{itinerary_id}/activities/{activity_id}"
     client.post(url, json=COMPOSITION)
@@ -43,8 +43,8 @@ def test_create_composition_twice_returns_409(client):
 
 
 @pytest.mark.parametrize("field", ["order", "day"])
-def test_create_composition_returns_422_when_value_not_positive(client, field):
-    itinerary_id = _create_itinerary(client)
+def test_create_composition_returns_422_when_value_not_positive(client, field, itinerary_owners):
+    itinerary_id = _create_itinerary(client, itinerary_owners)
     activity_id = _create_activity(client)
 
     response = client.post(
@@ -63,16 +63,16 @@ def test_create_composition_returns_404_when_itinerary_missing(client):
     assert response.status_code == 404
 
 
-def test_create_composition_returns_404_when_activity_missing(client):
-    itinerary_id = _create_itinerary(client)
+def test_create_composition_returns_404_when_activity_missing(client, itinerary_owners):
+    itinerary_id = _create_itinerary(client, itinerary_owners)
 
     response = client.post(f"/api/itineraries/{itinerary_id}/activities/999999", json=COMPOSITION)
 
     assert response.status_code == 404
 
 
-def test_update_composition_reschedules_the_activity(client):
-    itinerary_id = _create_itinerary(client)
+def test_update_composition_reschedules_the_activity(client, itinerary_owners):
+    itinerary_id = _create_itinerary(client, itinerary_owners)
     activity_id = _create_activity(client)
     url = f"/api/itineraries/{itinerary_id}/activities/{activity_id}"
     client.post(url, json=COMPOSITION)
@@ -86,8 +86,8 @@ def test_update_composition_reschedules_the_activity(client):
     assert body["order"] == 1
 
 
-def test_update_composition_returns_404_when_missing(client):
-    itinerary_id = _create_itinerary(client)
+def test_update_composition_returns_404_when_missing(client, itinerary_owners):
+    itinerary_id = _create_itinerary(client, itinerary_owners)
     activity_id = _create_activity(client)
 
     response = client.patch(
@@ -97,8 +97,8 @@ def test_update_composition_returns_404_when_missing(client):
     assert response.status_code == 404
 
 
-def test_list_compositions_returns_the_activities_in_order(client):
-    itinerary_id = _create_itinerary(client)
+def test_list_compositions_returns_the_activities_in_order(client, itinerary_owners):
+    itinerary_id = _create_itinerary(client, itinerary_owners)
     museum = _create_activity(client, "Museum")
     hike = _create_activity(client, "Hike")
     client.post(
@@ -118,8 +118,8 @@ def test_list_compositions_returns_404_when_itinerary_missing(client):
     assert response.status_code == 404
 
 
-def test_delete_composition_returns_204(client):
-    itinerary_id = _create_itinerary(client)
+def test_delete_composition_returns_204(client, itinerary_owners):
+    itinerary_id = _create_itinerary(client, itinerary_owners)
     activity_id = _create_activity(client)
     client.post(f"/api/itineraries/{itinerary_id}/activities/{activity_id}", json=COMPOSITION)
 
@@ -129,8 +129,8 @@ def test_delete_composition_returns_204(client):
     assert client.get(f"/api/itineraries/{itinerary_id}/activities").json() == []
 
 
-def test_delete_composition_returns_404_when_missing(client):
-    itinerary_id = _create_itinerary(client)
+def test_delete_composition_returns_404_when_missing(client, itinerary_owners):
+    itinerary_id = _create_itinerary(client, itinerary_owners)
     activity_id = _create_activity(client)
 
     response = client.delete(f"/api/itineraries/{itinerary_id}/activities/{activity_id}")

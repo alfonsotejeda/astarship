@@ -13,8 +13,8 @@ class ItineraryCreate(BaseModel):
 
     creation_date: date
     activity_count: int
-    package_id: int | None = None
-    creator_id: int | None = None
+    package_id: int
+    guide_id: int
 
 
 class ItineraryUpdate(BaseModel):
@@ -23,8 +23,6 @@ class ItineraryUpdate(BaseModel):
     creation_date: date | None = None
     status: ItineraryStatus | None = None
     activity_count: int | None = None
-    package_id: int | None = None
-    creator_id: int | None = None
 
 
 class ItineraryRead(ORMSchema):
@@ -34,5 +32,5 @@ class ItineraryRead(ORMSchema):
     creation_date: date
     status: ItineraryStatus
     activity_count: int
-    package_id: int | None
-    creator_id: int | None
+    package_id: int
+    guide_id: int

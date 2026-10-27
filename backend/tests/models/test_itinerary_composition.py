@@ -33,8 +33,8 @@ def test_attributes_are_not_nullable(column):
 
 
 @pytest.mark.parametrize("field", ["order", "day"])
-def test_non_positive_values_are_rejected(db_session, field):
-    itinerary = Itinerary(creation_date=date(2026, 1, 1), activity_count=1)
+def test_non_positive_values_are_rejected(db_session, field, itinerary_owners):
+    itinerary = Itinerary(creation_date=date(2026, 1, 1), activity_count=1, **itinerary_owners)
     activity = Activity(name="Museum", effort_level=1)
     db_session.add_all([itinerary, activity])
     db_session.flush()

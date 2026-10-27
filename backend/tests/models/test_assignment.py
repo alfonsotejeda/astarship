@@ -13,8 +13,8 @@ from app.models.user.tourist import Tourist
 from app.models.user.user import User
 
 
-def _add_participants(db_session) -> tuple[Itinerary, Tourist, Admin]:
-    itinerary = Itinerary(creation_date=date(2026, 1, 1), activity_count=1)
+def _add_participants(db_session, owners) -> tuple[Itinerary, Tourist, Admin]:
+    itinerary = Itinerary(creation_date=date(2026, 1, 1), activity_count=1, **owners)
     tourist_user = User(name="Ada", email="ada@example.com", password_hash="x")
     tourist_user.tourist = Tourist(age=30)
     admin_user = User(name="Ana", email="ana@example.com", password_hash="x")
@@ -42,8 +42,8 @@ def test_admin_is_required():
     assert not Assignment.__table__.c.admin_id.nullable
 
 
-def test_defaults_to_assigned_today(db_session):
-    itinerary, tourist, admin = _add_participants(db_session)
+def test_defaults_to_assigned_today(db_session, itinerary_owners):
+    itinerary, tourist, admin = _add_participants(db_session, itinerary_owners)
     assignment = Assignment(itinerary_id=itinerary.id, tourist_id=tourist.id, admin_id=admin.id)
     db_session.add(assignment)
     db_session.flush()
@@ -52,8 +52,8 @@ def test_defaults_to_assigned_today(db_session):
     assert assignment.assignment_date == date.today()
 
 
-def test_unknown_status_is_rejected(db_session):
-    itinerary, tourist, admin = _add_participants(db_session)
+def test_unknown_status_is_rejected(db_session, itinerary_owners):
+    itinerary, tourist, admin = _add_participants(db_session, itinerary_owners)
     db_session.add(
         Assignment(
             itinerary_id=itinerary.id, tourist_id=tourist.id, admin_id=admin.id, status="lost"
