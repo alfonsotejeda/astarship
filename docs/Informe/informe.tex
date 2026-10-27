@@ -301,8 +301,10 @@ User & Tourist & Age \\ \hline
 \end{longtable}}
 \vspace{2pt}
 \needspace{8\baselineskip}
-\subsection{Interrelaciones}
-\begin{figure}[H]\centering\includegraphics[width=12.60cm]{rel.png}\caption{MERX v1.8.1 — Interrelaciones.}\end{figure}
+\subsection{Interrelaciones}\label{sec:interrelaciones}
+\textbf{Convenio de lectura.} En las tablas de esta sección y de la siguiente, el par (mín,máx) escrito junto a una entidad expresa \textit{en cuántas ocurrencias de la interrelación participa esa entidad}: «Activity (1,1)» en \textit{Classifies} significa que cada actividad se clasifica en exactamente una categoría. En las figuras, en cambio, la etiqueta está dibujada en el extremo \textit{opuesto} de la línea, de modo que el par situado junto a una entidad describe a la otra. Ambas notaciones son habituales y describen el mismo modelo, pero conviene tenerlo presente al contrastar figura y tabla, porque leídas con el convenio equivocado todas las cardinalidades parecen invertidas.
+
+\begin{figure}[H]\centering\includegraphics[width=12.60cm]{rel.png}\caption{MERX v1.8.1 — Interrelaciones.}\label{fig:interrelaciones}\end{figure}
 {\footnotesize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\raggedright\arraybackslash}p{2.48cm}|>{\raggedright\arraybackslash}p{4.08cm}|>{\raggedright\arraybackslash}p{2.38cm}|>{\raggedright\arraybackslash}p{6.38cm}|}
 \caption{Interrelaciones binarias del MERX y sus cardinalidades.}\label{tab:interrelaciones}\\ \hline
@@ -323,6 +325,9 @@ Generates & Itinerary — Guide & N:1 & Itinerary (1,1) — Guide (0,*) \\ \hlin
 Assigns & Admin — Assignment & 1:N & Admin (0,*) — Assignment (1,1) \\ \hline
 \end{longtable}}
 \vspace{2pt}
+
+\textbf{Desajuste entre la figura y la tabla.} En la figura \ref{fig:interrelaciones}, \textit{Belongs} (Tourist — TravelGroup) aparece con (0,*) en ambos extremos, es decir, como N:M; no es cuestión de convenio, porque (0,*) en los dos lados es muchos a muchos en cualquiera de las dos notaciones. \textbf{El modelo que adopta este informe es el de la tabla}: N:1 con Tourist (1,1), que es el que se traslada al esquema lógico (sección \ref{sec:esquema-logico}) mediante la llave foránea simple \texttt{Tourist.ID\_\allowbreak{}TravelGroup}. La figura es anterior a esa decisión y debe regenerarse; el desajuste es el síntoma de \textbf{PA-6} (sección \ref{sec:abiertos}).
+
 \newpage
 \subsection{Agregaciones}\label{sec:agregaciones}
 \begin{figure}[H]\centering\includegraphics[width=13.57cm]{agg.png}\caption{MERX v1.8.1 — Agregaciones.}\end{figure}
@@ -830,6 +835,7 @@ Durante el análisis se detectaron los siguientes puntos que conviene resolver a
 \item \textbf{PA-2. User frente a Persona.} El profesor indicó que en el MERX debe existir Persona y no User, y que los permisos no se modelan; el revisor externo recomendó Usuario + Rol. Son criterios incompatibles y hay que elegir uno.
 \item \textbf{PA-3. Asignación doble.} El modelo solo impide asignar dos veces el mismo itinerario; impedir itinerarios solapados exige fechas por paquete o itinerario que el enunciado no pide.
 \item \textbf{PA-4 y PA-6. Grupo de viaje.} No está resuelto si el itinerario se asigna al turista o al grupo, ni si un turista pertenece a un único grupo (Tourist.ID\_TravelGroup lo supone) o a uno por paquete.
+\item \textbf{PA-6 (addenda).} La figura \ref{fig:interrelaciones} dibuja \textit{Belongs} (Tourist — TravelGroup) como N:M, mientras que la tabla y el esquema lógico la fijan como N:1. El informe adopta N:1; el diagrama debe regenerarse una vez cerrado PA-6.
 \item \textbf{PA-5.} Decisión interna no recogida en el enunciado: el turista toma el itinerario completo o lo cambia completo, sin modificación parcial.
 \item \textbf{PA-7. Autorización.} Authorization es un dato de negocio (qué paquetes atiende un guía) y debe distinguirse de los permisos de aplicación.
 \item \textbf{PA-8.} Los atributos de atracción, actividad, itinerario y grupo de viaje son decisiones del equipo no respaldadas por el enunciado.
