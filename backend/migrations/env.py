@@ -16,6 +16,7 @@ from app.models import (  # noqa: F401
     itinerary,
     itinerary_composition,
     membership,
+    modification_request,
     package,
     proportion_category,
     proportion_type,
