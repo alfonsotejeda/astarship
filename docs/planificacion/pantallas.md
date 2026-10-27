@@ -48,7 +48,7 @@ Falta llevarlas al **MERX** (diagrama v1.6) y las reglas a
 
 | Cambio | Por qué | Pantallas que lo usan |
 |---|---|---|
-| Nueva entidad **Attraction** (`ID`, `Name`, `Address`, `Latitude`, `Longitude`) e interrelación **Takes Place At**: cada Activity se realiza en una Attraction. La **red de conexiones** entre atracciones queda fuera del esquema relacional, como exige el enunciado. | El enunciado pide administrar atracciones y que los guías las registren (RF-01, RF-02). Las coordenadas sirven a la heurística de A\* (PA-10). | Banco de actividades, generador, Hoy |
+| Nueva entidad **Attraction** (`ID`, `Name`, `Address`, `Latitude`, `Longitude`) e interrelación **Takes Place At**: cada Activity se realiza en una Attraction. La **red de conexiones** entre atracciones queda fuera del esquema relacional, como exige el enunciado. | El enunciado pide administrar atracciones y que los guías las registren (RF-01, RF-02). Las coordenadas sostienen la **cercanía geográfica** con que RF-32 define las conexiones de la red, y la presentación de la atracción en pantalla. El algoritmo base de RF-33 es **Dijkstra**, que no las necesita; las requiere A\* como estrategia alternativa ([PA-10](../requisitos.md#pa-10-algoritmo-para-recorrer-la-red-de-atracciones), cerrado). | Banco de actividades, generador, Hoy |
 | **Composition** guarda `Day` y `StartTime` además de `Order`; **Activity** guarda `Duration`. | Sin día no existe «el itinerario del día» (RNF-01) ni se puede mirar el esfuerzo por día. La duración es de la actividad, no de cada itinerario. | Generador, revisión, Hoy |
 | **Itinerary** guarda `SubmittedDate`: vacía mientras el guía no lo envía a revisión. | Permite derivar el estado «En revisión». | Todas las de itinerarios |
 | **Visit** guarda `Status` (`done` / `skipped`), `Rating` y `Comment`. | RC-4 y RC-6 comparan satisfacción y abandono **por actividad**; con una sola nota por itinerario no se puede. | Hoy, valorar el viaje, RC-4, RC-6 |
@@ -317,7 +317,7 @@ Siguen la convención actual de la API (recursos en inglés y en plural, como `/
 | Permissions | ✅ `GET/POST/DELETE /permissions` (permisos de aplicación) | — |
 | Activities | ✅ CRUD `/activities` · filtros `?type&category&effort&author&q` | P-02, P-03 |
 | Duplicates | `GET /activities/duplicates` · `POST /activities/{id}/merge` `{into}` · `POST /activities/duplicates/{pair_id}/dismiss` | P-21 |
-| Attractions | CRUD `/attractions` · `GET /attractions/{id}/alternatives?activity&time` (A\*, RF-33) | P-02, P-12 |
+| Attractions | CRUD `/attractions` · `GET /attractions/{id}/alternatives?activity&time` (Dijkstra tras Strategy, RF-33) | P-02, P-12 |
 | Catálogos | `GET /categories` · `GET /activity-types` | varias |
 | Packages | CRUD `/packages` (filtro `?mine` para ver solo los paquetes con permisos del usuario) · `PUT /packages/{id}/categories` | P-17, P-28, P-29 |
 | Permissions (matriz) | ✅ `/permissions` (CRUD de filas `Permission`) · `GET/PUT /permissions/{id}/packages` (ToPackage) · `GET/PUT /permissions/{id}/itineraries` (ToItinerary) · `GET/PUT /users/{id}/permissions` (Have) · `GET /permissions/matrix` (vista persona × paquete para P-18; 422 si un cambio viola RN-10) | P-18 |
