@@ -1,10 +1,8 @@
 """add guide to travel group (Attends)
 
-Merges the status and partition branches, which both started from 3a00f2e974ec.
-
 Revision ID: 4b8e2d7f1a63
-Revises: 5c1e7a9d2b40, 7c3d9f2b6e18
-Create Date: 2026-10-24 12:00:00.000000
+Revises: a6d2f8c41e93
+Create Date: 2026-10-27 12:00:00.000000
 
 """
 from typing import Sequence, Union
@@ -14,7 +12,7 @@ import sqlalchemy as sa
 
 
 revision: str = '4b8e2d7f1a63'
-down_revision: Union[str, Sequence[str], None] = ('5c1e7a9d2b40', '7c3d9f2b6e18')
+down_revision: Union[str, Sequence[str], None] = 'a6d2f8c41e93'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
