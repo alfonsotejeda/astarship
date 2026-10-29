@@ -63,3 +63,28 @@ def itinerary_owners(db_session: Session) -> dict[str, int]:
         db_session, package.id, guide.id, AuthorizationUpsert(can_generate=True)
     )
     return {"package_id": package.id, "guide_id": guide.id}
+
+
+@pytest.fixture
+def approve_activity(client: TestClient):
+    """Return a function that approves an activity through the validation endpoint."""
+    reviewer: dict[str, int] = {}
+
+    def approve(activity_id: int) -> None:
+        if "id" not in reviewer:
+            reviewer["id"] = client.post(
+                "/api/users",
+                json={
+                    "name": "Reviewer",
+                    "role": "admin",
+                    "email": "reviewer@example.com",
+                    "password": "x",
+                },
+            ).json()["id"]
+        response = client.post(
+            f"/api/activities/{activity_id}/validations",
+            json={"admin_id": reviewer["id"], "result": "approved"},
+        )
+        assert response.status_code == 201
+
+    return approve

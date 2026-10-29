@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.itinerary_composition import ItineraryComposition
+from app.models.status import ReviewStatus
 from app.schemas.itinerary_composition import (
     ItineraryCompositionCreate,
     ItineraryCompositionRead,
@@ -57,10 +58,13 @@ def create_composition(
     data: ItineraryCompositionCreate,
     db: Session = Depends(get_db),
 ) -> ItineraryCompositionRead:
-    """Add an activity to an itinerary."""
+    """Add an approved activity to an itinerary."""
     _ensure_itinerary_exists(db, itinerary_id)
-    if activity_service.get_activity(db, activity_id) is None:
+    activity = activity_service.get_activity(db, activity_id)
+    if activity is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activity not found")
+    if activity.status is not ReviewStatus.APPROVED:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Activity is not approved")
     if composition_service.get_composition(db, itinerary_id, activity_id) is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Activity already in itinerary"
