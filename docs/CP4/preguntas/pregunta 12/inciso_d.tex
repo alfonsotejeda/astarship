@@ -1,1 +1,246 @@
 \section{Inciso d)}
+
+% Seccion con nombres de clase largos, que no se parten con guion.
+\sloppy
+
+\textit{Compara: Visitor vs. añadir métodos a cada elemento. ¿Cuándo conviene cada uno? Usa la
+métrica de ``número de cambios por nueva operación'' y ``número de cambios por nuevo tipo de
+elemento''. ¿Qué pasa si el número de operaciones crece mucho más rápido que el número de
+tipos de cuenta?}
+
+\vspace{0.4cm}
+
+\subsection*{Las dos alternativas son la misma matriz, descompuesta de dos maneras}
+
+El comportamiento que el sistema debe implementar es una matriz de $T \times V$ celdas: $T$
+tipos de cuenta por $V$ operaciones. En esta implementación son $T = 4$ y $V = 5$, es decir
+veinte comportamientos.
+
+Las dos alternativas no se diferencian en qué pueden expresar, porque ambas llenan la misma
+matriz, sino en \textbf{cómo la agrupan en unidades de código}:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Métodos en cada elemento:} la matriz se parte por filas. Cada clase de
+          cuenta contiene sus $V$ comportamientos.
+    \item \textbf{Visitor:} la matriz se parte por columnas. Cada visitante contiene los $T$
+          comportamientos de una operación.
+\end{itemize}
+
+Y como una clase es la unidad de modificación, la elección decide \textbf{qué eje queda
+cerrado a modificación}: el eje que se corta en unidades es el que se puede extender sin
+tocar nada. Esto es el \textit{expression problem}, y no tiene solución gratuita en un
+lenguaje con despacho simple: lo que se gana en un eje se paga en el otro.
+
+\subsection*{Las dos métricas}
+
+Para que la métrica signifique algo hay que distinguir dos cosas que no cuestan lo mismo:
+\textbf{añadir} un archivo nuevo, que no puede romper lo que ya funciona, y
+\textbf{modificar} un archivo existente, que sí puede. Un archivo modificado obliga a releer
+el código que lo rodea, a repetir sus pruebas, a recompilar cuanto dependa de él y, en un
+equipo que trabaja en ramas paralelas, es un conflicto de fusión en potencia. La métrica del
+enunciado cuenta, por tanto, archivos modificados:
+
+\begin{table}[h!]
+    \centering
+    \small
+    \begin{tabular}{p{3.9cm}p{5.1cm}p{5.1cm}}
+        \toprule
+        & \textbf{Cambios por nueva operación} & \textbf{Cambios por nuevo tipo de elemento} \\
+        \midrule
+        \textbf{Visitor}
+            & 1 archivo nuevo, \textbf{0 modificados}
+            & 1 archivo nuevo y \textbf{$V+1$ modificados}: la interfaz del visitante y los $V$
+              visitantes \\
+        \addlinespace
+        \textbf{Métodos en los elementos}
+            & \textbf{$T+1$ modificados}: las $T$ clases de cuenta y su interfaz común
+            & 1 archivo nuevo, \textbf{0 modificados} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+La tabla es perfectamente simétrica, y en esa simetría está todo el argumento: no hay una
+opción mejor, hay una opción adecuada a cada perfil de crecimiento.
+
+\subsection*{Medición sobre esta implementación}
+
+Las dos cifras no se afirman, se midieron sobre el propio repositorio.
+
+\textbf{Coste de una operación nueva con Visitor.} La quinta operación,
+\texttt{ExportarCsvVisitor}, se añadió en un \textit{commit} aislado precisamente para que la
+medida fuera verificable:
+
+{\small
+\begin{verbatim}
+$ git show --stat --format="%h %s" da8a926
+da8a926 docs(cp4): agrega una quinta operacion como experimento del inciso (d)
+
+ .../CP4/codigo/ejercicio12/ExportarCsvVisitor.java | 40 ++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+\end{verbatim}
+}
+
+Un archivo nuevo, cuarenta líneas, \textbf{cero archivos modificados}. Ninguna de las cuatro
+cuentas se tocó, y las cuatro operaciones anteriores siguieron compilando y pasando sus
+demostraciones. El contrafactual es igual de concreto: la misma operación escrita como método
+de los elementos habría modificado cinco archivos, las cuatro cuentas más
+\texttt{ElementoContable}, y habría forzado la recompilación de todo lo que depende de esa
+interfaz.
+
+\textbf{Coste de un tipo de elemento nuevo con Visitor.} El inciso (c) introdujo
+\texttt{GrupoCuentas}, que es exactamente eso: un tipo de elemento nuevo. El coste obligatorio
+fue un archivo nuevo más \emph{una} modificación, la interfaz \texttt{VisitanteOperacion}.
+Pagó menos que los $V+1$ de la tabla por una razón concreta: los métodos añadidos son
+\texttt{default}, de modo que los cuatro visitantes existentes no tuvieron que cambiar. Sin
+ese recurso del lenguaje habrían sido cinco archivos modificados.
+
+\begin{table}[h!]
+    \centering
+    \small
+    \begin{tabular}{p{5.6cm}p{2.5cm}p{2.5cm}p{3.0cm}}
+        \toprule
+        \textbf{Cambio realizado} & \textbf{Archivos nuevos} & \textbf{Modificados}
+        & \textbf{Con métodos en los elementos} \\
+        \midrule
+        Quinta operación (exportar a CSV) & 1 & 0 & 5 modificados \\
+        \addlinespace
+        Quinto tipo de elemento (el grupo) & 1 & 1 & 0 modificados \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+La comprobación de que las cinco operaciones conviven sobre la misma jerarquía intacta es la
+salida de \texttt{DemoMetricas}:
+
+{\small
+\begin{verbatim}
+Operacion 5 (agregada sin tocar las cuentas):
+AHO-001;Ahorro;4,500.00;retiros=1
+COR-001;Corriente;-305.00;sobregiro=500.00
+INV-001;Inversion;19,490.00;penalizaciones=10.00
+EMP-001;Empresarial;99,500.00;doble-firma=true
+
+Las cinco operaciones sobre el mismo arbol:
+  1 ejecutar   -> EMP-001
+  2 revertir   -> true
+  3 auditar    -> riesgo ALTO
+  4 intereses  -> 1,996.10
+  5 exportar   -> 4 lineas
+
+Archivos de elemento modificados para lograrlo: 0
+\end{verbatim}
+}
+
+\subsection*{Cuándo conviene cada uno}
+
+El criterio de decisión se puede enunciar en una frase: \textbf{el eje que se cierra debe ser
+el que no va a crecer}, y si alguno de los dos lo van a extender terceros, ése es el que hay
+que dejar abierto.
+
+\textbf{Conviene Visitor cuando:}
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item La jerarquía de elementos es cerrada y estable, y está bajo control propio.
+    \item Las operaciones son numerosas o se anuncian como crecientes, que es el caso del
+          enunciado.
+    \item La operación \emph{no} es responsabilidad del elemento: auditar, exportar, calcular
+          intereses regulatorios o generar reportes no forman parte de lo que una cuenta
+          \emph{es}.
+    \item La operación necesita recorrer la estructura y agregar resultados, como la
+          consolidación del inciso (c).
+\end{itemize}
+
+\textbf{Conviene poner métodos en el elemento cuando:}
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item La operación es intrínseca al elemento y necesita su estado privado. En esta misma
+          implementación, \texttt{saldo()}, \texttt{aplicar()} y \texttt{cerrojo()} son
+          métodos de \texttt{Cuenta}, y sacarlos a un visitante sería absurdo.
+    \item Las operaciones son pocas y estables: con $V$ pequeño, la indirección de Visitor
+          solo resta legibilidad.
+    \item La jerarquía de elementos crece, sobre todo si la extienden terceros. Una biblioteca
+          cuyos usuarios definen subclases no puede cerrar ese eje.
+\end{itemize}
+
+Lo que esta implementación muestra, y conviene subrayar, es que \textbf{las dos cosas conviven
+sin contradicción}: \texttt{Cuenta} tiene métodos propios para lo que es suyo, y las
+operaciones de negocio viven en visitantes. La pregunta correcta ante cada operación no es qué
+patrón usar, sino si esa operación define al elemento o si es una política externa que lo
+consulta.
+
+\subsection*{Qué pasa si las operaciones crecen mucho más rápido que los tipos}
+
+Es la situación del enunciado, $V \gg T$ con $T$ fijo, y tiene cuatro consecuencias.
+
+\textbf{1. La ventaja acumulada de Visitor es lineal en $V$.} Cada operación nueva evita
+$T+1$ modificaciones, así que llegar a $V$ operaciones evita $V \cdot (T+1)$ modificaciones de
+archivos existentes. Con $T = 4$ y $V = 20$, son cien modificaciones evitadas frente a cero
+realizadas. En un equipo que trabaja con ramas y revisiones, ese número no es estético: son
+cien ocasiones de conflicto de fusión y cien revisiones de código que ya estaba cerrado.
+
+\textbf{2. El riesgo se concentra en el eje cerrado.} El coste de un tipo de elemento nuevo es
+$V+1$, y ese número crece con el éxito del diseño: con $V = 20$, un quinto tipo de cuenta
+cuesta veintiuna modificaciones. Visitor cambia un coste frecuente y moderado por uno raro y
+caro, lo cual es un buen negocio \emph{mientras la premisa se cumpla}. Si la jerarquía resulta
+no estar cerrada, el patrón cobra la deuda entera de golpe.
+
+\textbf{3. Hay mitigaciones, y todas tienen precio.} Conviene conocerlas y elegir a ojos
+abiertos:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Métodos \texttt{default} en la interfaz del visitante}, que es lo hecho en
+          el inciso (c): el tipo nuevo cuesta una sola modificación. El precio es que el
+          comportamiento por omisión es silencioso, y un visitante que debería tratar el tipo
+          nuevo puede ignorarlo sin que el compilador diga nada. Se cambia seguridad en
+          compilación por comodidad.
+    \item \textbf{Un visitante base abstracto con un \texttt{visitPorDefecto}}, la variante
+          conocida como \textit{Default Visitor}: el mismo compromiso, concentrado en una
+          clase que los demás heredan.
+    \item \textbf{Dejar la interfaz sin valores por omisión}: el compilador señala uno por uno
+          los $V$ visitantes que hay que revisar. Es el camino caro y el único seguro; con $V$
+          grande sigue siendo el correcto cuando el tipo nuevo cambia la semántica de las
+          operaciones existentes.
+\end{itemize}
+
+\textbf{4. Aparecen costes que la métrica no mide.} Contar archivos modificados es una buena
+aproximación al riesgo, pero deja fuera tres cosas que con $V$ grande se vuelven dominantes:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Descubribilidad.} Con cincuenta operaciones, leer \texttt{CuentaAhorro} ya
+          no dice qué se puede hacer con una cuenta de ahorro: hay que buscar los cincuenta
+          visitantes. La respuesta a ``qué sabe hacer este objeto'' deja de estar en el
+          objeto.
+    \item \textbf{Duplicación entre visitantes.} Recorridos, acumuladores y validaciones se
+          repiten y hay que factorizarlos en visitantes base, o el ahorro de modificaciones se
+          paga en código repetido.
+    \item \textbf{Pruebas.} La matriz $T \times V$ crece con $V$: con $T = 4$ y $V = 20$ son
+          ochenta combinaciones. Conviene una tabla de casos parametrizada antes que una
+          prueba por método.
+\end{itemize}
+
+\subsection*{Una nota sobre la alternativa moderna}
+
+La asimetría que obliga a elegir no es una ley del diseño orientado a objetos, sino una
+consecuencia del despacho simple. Con tipos sellados y \textit{switch} exhaustivo sobre
+patrones, disponibles como característica definitiva desde Java 21, una operación nueva es una
+función nueva, con cero modificaciones, y un tipo nuevo hace \emph{fallar la compilación} en
+todos los \textit{switch} que lo ignoran, de modo que el compilador enumera exactamente los
+sitios a revisar. El compromiso sigue existiendo, pero el eje caro deja de ser silencioso.
+
+Esta implementación usa Java 17, donde el \textit{switch} sobre patrones era aún una
+característica en vista previa, así que Visitor sigue siendo la forma canónica de obtener
+despacho doble con comprobación en tiempo de compilación. Vale la pena decirlo porque fija el
+límite del argumento: se eligió Visitor por el perfil de crecimiento del problema y por las
+herramientas del lenguaje disponible, no porque sea una verdad permanente.
+
+\subsection*{Conclusión para el problema del banco}
+
+Los tipos de cuenta están fijados en cuatro por el enunciado y las operaciones se declaran
+explícitamente crecientes: $V \gg T$ con $T$ estable. Bajo esa condición, la comparación no
+está reñida. Visitor cuesta cero modificaciones por operación nueva, frente a cinco, y la
+medición sobre el repositorio confirma la cifra. El riesgo asumido queda nombrado: si
+apareciera un quinto tipo de cuenta, el coste serían $V+1$ modificaciones, rebajado a una sola
+por los métodos \texttt{default} del inciso (c), al precio de que el compilador deje de avisar
+de los visitantes que habría que revisar.
+
+\fussy
