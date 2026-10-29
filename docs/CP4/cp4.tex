@@ -43,7 +43,36 @@
     {\normalsize Curso 2026--2027}
 \end{center}
 
-\input{preguntas/pregunta_7.tex}
-\input{preguntas/pregunta_12.tex}
+\section{Ejercicio 7: Sistema de Home Theater}
 
+\vspace{0.5cm}
+
+\textbf{Problema:} Un sistema de \textit{home theater} tiene múltiples componentes complejos (
+    \texttt{Amplificador}, 
+    \texttt{ReproductorDVD},
+    \texttt{Proyector},
+    \texttt{Pantalla}, 
+    \texttt{Luces}). Los usuarios encuentran difícil operar todos estos componentes por separado para actividades comunes como \`\`ver una película''.
+
+    \vspace{0.3cm}
+\textbf{Restricción:} El Facade debe poder configurarse desde un archivo YAML para definir secuencias de actividades.
+\input{preguntas/pregunta 7/inciso_a.tex}
+\input{preguntas/pregunta 7/inciso_b.tex}
+\input{preguntas/pregunta 7/inciso_c.tex}
+\input{preguntas/pregunta 7/inciso_d.tex}
+
+\vspace{0.5cm}
+\newpage
+\section*{12. Sistema de Procesamiento de Transacciones Bancarias}
+
+\textbf{Problema:} Un banco necesita procesar diferentes tipos de transacciones (depósito, retiro, transferencia, pago de servicios) sobre distintas cuentas (ahorro, corriente, inversión). Cada transacción debe poder ejecutarse, revertirse (rollback) y auditarse. El sistema debe permitir añadir nuevas operaciones (ej. "congelar cuenta", "calcular intereses") sin modificar las clases de las cuentas ni de las transacciones existentes. Además, algunas operaciones deben poder ejecutarse en paralelo sobre diferentes cuentas, pero manteniendo consistencia cuando afectan a la misma cuenta.
+
+\vspace{0.3cm}
+
+\textbf{Restricción:} Las operaciones deben poder ejecutarse en paralelo sobre diferentes cuentas (considera concurrencia y estado mutable del Visitor).
+
+\input{preguntas/pregunta 12/inciso_a.tex}
+\input{preguntas/pregunta 12/inciso_b.tex}
+\input{preguntas/pregunta 12/inciso_c.tex}
+\input{preguntas/pregunta 12/inciso_d.tex}
 \end{document}
