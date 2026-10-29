@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.api.routes import (
     activity,
     activity_type,
+    activity_validation,
     assignment,
     auth,
     authorization,
@@ -28,6 +29,7 @@ api_router.include_router(package.router)
 api_router.include_router(category.router)
 api_router.include_router(user.router)
 api_router.include_router(activity.router)
+api_router.include_router(activity_validation.router)
 api_router.include_router(activity_type.router)
 api_router.include_router(travel_group.router)
 api_router.include_router(itinerary.router)
