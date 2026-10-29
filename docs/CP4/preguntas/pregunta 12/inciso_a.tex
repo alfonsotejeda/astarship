@@ -1,1 +1,250 @@
 \section{Inciso a)}
+
+\textit{Identifica el patrón de diseño más adecuado, justifica tu selección basándote en las
+características del problema y explica la propuesta de solución considerando las clases que
+intervienen y las relaciones entre ellas. ¿Por qué no usar Strategy o polimorfismo simple?}
+
+\vspace{0.4cm}
+
+\subsection*{Patrón seleccionado}
+
+El patrón adecuado es \textbf{Visitor} (Visitante), patrón de comportamiento del catálogo
+\textit{Gang of Four}. Su intención declarada es: \textit{representar una operación que se
+ejecuta sobre los elementos de una estructura de objetos, permitiendo definir nuevas operaciones
+sin modificar las clases de los elementos sobre los que opera}. Esa intención es, palabra por
+palabra, el requisito central del enunciado.
+
+\subsection*{Justificación a partir de las características del problema}
+
+El problema presenta dos ejes de variación independientes, y la decisión de diseño depende por
+completo de la velocidad relativa con que crece cada uno:
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{lp{6.6cm}l}
+        \toprule
+        \textbf{Eje} & \textbf{Elementos} & \textbf{Evolución} \\
+        \midrule
+        Tipos de elemento & CuentaAhorro, CuentaCorriente, CuentaInversión, CuentaEmpresarial
+                          & Estable \\
+        Operaciones       & Ejecutar, Revertir, Auditar, congelar cuenta, calcular intereses, \ldots
+                          & Crece \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+El enunciado fija el eje de los tipos de cuenta (son cuatro y no se anuncian más) y declara
+explícitamente abierto el eje de las operaciones (``debe permitir añadir nuevas operaciones
+sin modificar las clases de las cuentas ni de las transacciones existentes''). Esto es el
+\textbf{principio Open/Closed} enunciado sobre el eje de las operaciones: el sistema debe estar
+abierto a la extensión por operaciones y cerrado a la modificación de los elementos.
+
+Se trata de una instancia del \textit{expression problem}: con herencia convencional resulta
+barato añadir \emph{tipos} nuevos y caro añadir \emph{operaciones} nuevas; Visitor invierte
+exactamente ese balance. Expresado con la métrica de ``número de cambios'' que el problema
+propone, y siendo $T$ el número de tipos de cuenta y $V$ el número de operaciones:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Operación nueva con Visitor:} 1 clase nueva, 0 modificaciones.
+          Con métodos en cada elemento: $T$ clases modificadas más la interfaz, es decir
+          $T+1$ modificaciones.
+    \item \textbf{Tipo de cuenta nuevo con Visitor:} 1 clase nueva más $V+1$ modificaciones
+          (todos los visitantes y su interfaz). Con métodos en cada elemento: 1 clase nueva.
+\end{itemize}
+
+Visitor es por tanto la elección correcta \emph{porque} en este dominio se cumple $V \gg T$ y
+$V$ crece mientras $T$ permanece fijo. Si la relación fuera la inversa, el patrón sería una
+mala decisión: la justificación no es el patrón en abstracto, sino el perfil de evolución del
+sistema.
+
+A esto se añade el \textbf{principio de responsabilidad única}: si las operaciones vivieran
+dentro de las cuentas, la clase CuentaAhorro acabaría conociendo las reglas de auditoría, el
+cálculo de intereses, las políticas de congelación y la emisión de reportes. Con Visitor, cada
+operación queda en una sola clase cohesiva, legible, testeable y versionable como unidad.
+
+\subsection*{Mecanismo: el doble despacho}
+
+El punto técnico que justifica el patrón es el siguiente: el comportamiento requerido no
+depende de un tipo, sino de un \textbf{par} $(\textit{tipo de cuenta},\ \textit{tipo de
+operación})$. Ejecutar sobre una cuenta de inversión no es lo mismo que ejecutar sobre una de
+ahorro, ni que auditar sobre una de inversión. Se necesita entonces resolver en tiempo de
+ejecución los tipos dinámicos de \emph{dos} participantes: \textbf{despacho múltiple}.
+
+Los lenguajes orientados a objetos de uso corriente (Java, C\#, C++, Python, TypeScript) solo
+ofrecen \textbf{despacho simple}: el método ejecutado depende únicamente del tipo dinámico del
+receptor, mientras los parámetros se resuelven estáticamente. Visitor simula el despacho doble
+encadenando dos despachos simples:
+
+\begin{verbatim}
+interface ElementoContable {
+    <R> R accept(VisitanteOperacion<R> v);
+}
+
+final class CuentaAhorro implements ElementoContable {
+    public <R> R accept(VisitanteOperacion<R> v) {
+        return v.visitAhorro(this);   // 2do despacho
+    }
+}
+
+interface VisitanteOperacion<R> {
+    R visitAhorro(CuentaAhorro c);
+    R visitCorriente(CuentaCorriente c);
+    R visitInversion(CuentaInversion c);
+    R visitEmpresarial(CuentaEmpresarial c);
+}
+\end{verbatim}
+
+La llamada \texttt{cuenta.accept(visitante)} resuelve en el primer despacho el tipo concreto de
+la cuenta; ya dentro de \texttt{CuentaAhorro.accept}, el receptor \texttt{this} tiene tipo
+estático CuentaAhorro, de modo que la selección de \texttt{visitAhorro} es inmediata y el
+segundo despacho resuelve el tipo concreto de la operación. El método \texttt{accept} no
+implementa lógica de negocio: su única función es revelar el tipo del elemento.
+
+De aquí se sigue un criterio de verificación del diseño: \textbf{si en la implementación
+aparece un \texttt{switch} o un \texttt{instanceof} sobre tipos de cuenta, el patrón no está
+aplicado}. Eliminar ese \textit{type switch} es precisamente lo que aporta Visitor.
+
+\subsection*{Por qué no polimorfismo simple}
+
+El polimorfismo simple (métodos \texttt{ejecutar()}, \texttt{revertir()}, \texttt{auditar()}
+declarados en la jerarquía de cuentas) resuelve un solo eje, y es el eje equivocado:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item Cada operación nueva obliga a modificar las cuatro clases de cuenta y su interfaz
+          común, violando Open/Closed justo donde el enunciado exige extensibilidad.
+    \item Concentra en la cuenta responsabilidades heterogéneas (auditoría, intereses,
+          congelación), violando la responsabilidad única.
+    \item Dispersa cada operación entre $T$ archivos: la lógica de auditoría deja de existir
+          como unidad y no puede leerse, probarse ni modificarse de forma aislada.
+\end{itemize}
+
+\subsection*{Por qué no Strategy}
+
+Strategy también encapsula un algoritmo en un objeto, de ahí la confusión; pero su semántica es
+distinta en cuatro aspectos decisivos:
+
+\begin{enumerate}[leftmargin=1.2cm]
+    \item \textbf{Strategy varía \emph{cómo} se hace algo; Visitor varía \emph{sobre qué tipo}
+          se hace.} Strategy parametriza un contexto con algoritmos intercambiables de la misma
+          firma, y cada algoritmo trata su entrada como un único tipo uniforme.
+    \item \textbf{Strategy no ofrece doble despacho.} Al recibir una Cuenta genérica, cada
+          estrategia tendría que preguntar por su clase concreta, reintroduciendo el
+          \textit{type switch} que el requisito de extensibilidad obliga a eliminar.
+    \item \textbf{En Strategy el cliente elige el algoritmo} como grado de libertad en tiempo
+          de ejecución. Aquí no existe tal elección: el comportamiento de ``ejecutar'' sobre
+          una cuenta de ahorro está determinado por el tipo de cuenta, no por una preferencia
+          del cliente.
+    \item \textbf{Strategy no recorre estructuras de objetos.} El patrón elegido debe
+          integrarse con Composite e Iterator (incisos siguientes) para operar sobre grupos de
+          cuentas y acumular resultados a lo largo de una jerarquía; Visitor lo hace de forma
+          natural mediante la propagación del \texttt{accept}, mientras Strategy no contempla
+          recorridos.
+\end{enumerate}
+
+\subsection*{Propuesta de solución: clases y relaciones}
+
+\textbf{Jerarquía de elementos} (cerrada y estable):
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \texttt{ElementoContable}: interfaz con la única operación
+          \texttt{accept(VisitanteOperacion)}.
+    \item \texttt{CuentaAhorro}, \texttt{CuentaCorriente}, \texttt{CuentaInversion},
+          \texttt{CuentaEmpresarial}: implementan \texttt{accept} con una sola línea que invoca
+          el método de visita correspondiente.
+    \item \texttt{GrupoCuentas}: nodo compuesto que implementa la misma interfaz y propaga el
+          \texttt{accept} a sus hijos (desarrollado en el inciso c).
+\end{itemize}
+
+\textbf{Jerarquía de visitantes} (abierta, es la que crece):
+
+\sloppy
+\begin{itemize}[leftmargin=1.2cm]
+    \item \texttt{VisitanteOperacion<R>}: interfaz con un método de visita por tipo concreto de
+          cuenta y un tipo de retorno genérico \texttt{R}.
+    \item \texttt{EjecutarTransaccionVisitor}, \texttt{RevertirTransaccionVisitor},
+          \texttt{AuditarTransaccionVisitor}: las tres operaciones exigidas, cada una con
+          comportamiento propio por tipo de cuenta.
+    \item \texttt{CongelarCuentaVisitor}, \texttt{CalcularInteresesVisitor}: operaciones futuras
+          que se incorporan como clases nuevas, sin modificar ninguna cuenta.
+\end{itemize}
+\fussy
+
+\textbf{Ubicación del parámetro de la operación.} La \texttt{Transaccion} concreta (depósito,
+retiro, transferencia, pago de servicios) no viaja en la firma de \texttt{accept}, sino en el
+estado del visitante concreto, construido como
+\texttt{new EjecutarTransaccionVisitor(transaccion)}. Así la interfaz de los elementos
+permanece invariante ante cualquier operación nueva, que es la propiedad que se quiere
+preservar. Como contrapartida, el visitante tiene estado mutable, y de ahí surge la restricción
+de concurrencia tratada a continuación.
+
+\textbf{Relaciones.} El patrón introduce una dependencia cíclica a nivel de tipos que le es
+intrínseca: los elementos dependen de la interfaz \texttt{VisitanteOperacion} y los visitantes
+dependen de los tipos concretos de elemento. El cliente conoce la estructura de cuentas y el
+visitante concreto, e inicia el proceso con \texttt{elemento.accept(visitante)}; ninguna otra
+clase conoce el emparejamiento entre tipo de cuenta y operación.
+
+\subsection*{Restricción: concurrencia y estado mutable del visitante}
+
+Conviene separar dos problemas que suelen confundirse.
+
+\textbf{(1) Estado mutable del visitante.} Como el visitante transporta datos (la transacción,
+acumuladores de auditoría), compartir una única instancia entre hilos produce una condición de
+carrera. Soluciones, de preferible a tolerable:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Visitante sin estado que devuelve resultado}: los métodos de visita retornan
+          un valor inmutable de tipo \texttt{R} en lugar de acumular en un campo. Un visitante
+          puro es paralelizable sin sincronización y sus resultados parciales se combinan por
+          reducción (esquema \textit{fork-join} o \textit{map-reduce}). Es la opción correcta.
+    \item \textbf{Confinamiento por hilo}: una instancia de visitante por recorrido o por hilo,
+          combinando los resultados al final.
+    \item Si la acumulación compartida es inevitable, usar acumuladores concurrentes
+          (\texttt{LongAdder}, colecciones concurrentes). Sincronizar el visitante completo
+          serializaría los recorridos y anularía el paralelismo exigido.
+\end{itemize}
+
+\textbf{(2) Atomicidad y consistencia por cuenta.} La exclusión mutua no pertenece al
+visitante, sino al elemento: la cuenta es la unidad de consistencia del dominio y es ella quien
+protege sus invariantes. En consecuencia:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Bloqueo por cuenta} (\textit{lock striping}: un cerrojo por identificador de
+          cuenta en un mapa concurrente) o \textbf{control optimista} con número de versión y
+          reintento mediante comparación e intercambio. Con cualquiera de los dos, las
+          operaciones sobre cuentas distintas progresan en paralelo y las que afectan a la
+          misma cuenta se serializan, que es exactamente lo que pide el enunciado.
+    \item \textbf{Transferencia entre dos cuentas:} al requerir dos cerrojos aparece riesgo de
+          \textit{deadlock}. Se evita imponiendo un orden total de adquisición (por
+          identificador ascendente) o un bloqueo en dos fases con tiempo límite.
+    \item \textbf{Separación de responsabilidades:} para que el visitante no mezcle lógica de
+          negocio con lógica transaccional, el control de la transacción puede introducirse como
+          un \textbf{decorador} del visitante (\texttt{VisitanteTransaccional}), que abre la
+          transacción, delega en el visitante envuelto y confirma o revierte según el resultado.
+    \item \textbf{Orden FIFO por cuenta:} si además se exige orden de llegada, una cola por
+          cuenta (modelo de actores o \textit{single writer} por partición) convierte la
+          serialización en una propiedad estructural del diseño en lugar de depender de
+          cerrojos.
+\end{itemize}
+
+\subsection*{Observación sobre la combinación con otros patrones}
+
+El enunciado pide ejecutar, \emph{revertir} y auditar. El \textit{rollback} y la traza de
+auditoría corresponden conceptualmente a \textbf{Command} (encapsular la petición con
+\texttt{ejecutar}/\texttt{deshacer} y registrarla en un \textit{log}) y a \textbf{Memento}
+(conservar el estado previo de la cuenta). Visitor es la respuesta al eje ``añadir operaciones
+sin modificar los elementos''; en un diseño completo ambos coexisten: el visitante aporta el
+comportamiento polimórfico según el tipo de cuenta, y el \textit{command} define la unidad
+transaccional reversible y auditable.
+
+\subsection*{Limitaciones del patrón elegido}
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item Un tipo de cuenta nuevo obliga a modificar la interfaz de visitante y todas sus
+          implementaciones. El patrón apuesta a que la jerarquía de elementos es cerrada.
+    \item \texttt{accept} debilita el encapsulamiento: la cuenta debe exponer al visitante los
+          datos que este necesita (saldo, movimientos), lo que puede ensanchar su interfaz
+          pública.
+    \item Añade indirección. Para un sistema con dos operaciones estables, Visitor sería
+          sobreingeniería; aquí se justifica únicamente por el requisito explícito de
+          extensibilidad en el eje de las operaciones.
+\end{itemize}
