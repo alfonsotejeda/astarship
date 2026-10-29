@@ -5,6 +5,7 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.activity_validation import ActivityValidation
 from app.models.itinerary_composition import ItineraryComposition
 from app.models.status import ReviewStatus, status_enum
 
@@ -27,3 +28,6 @@ class Activity(Base):
     category_id: Mapped[int | None]
     user_id: Mapped[int | None]
     compositions: Mapped[list[ItineraryComposition]] = relationship(cascade="all, delete-orphan")
+    validations: Mapped[list[ActivityValidation]] = relationship(
+        cascade="all, delete-orphan"
+    )
