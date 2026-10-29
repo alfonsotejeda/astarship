@@ -1,0 +1,164 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\pagestyle{empty}
+
+\begin{document}
+
+\vspace*{1.5cm}
+
+\begin{center}
+    {\huge \textbf{Clase Práctica 4}}
+    
+    \vspace{1.2cm}
+    
+    {\large \textbf{Equipo: HAVING Fe}}
+    
+    \vspace{0.8cm}
+    
+    \begin{table}[h!]
+        \centering
+        \begin{tabular}{lc}
+            \toprule
+            \textbf{Integrante} & \textbf{Grupo} \\
+            \midrule
+            Reynaldo Guillermo Capdevila Reyes & C312 \\
+            Miguel Andrés Cazorla Zamora & C312 \\
+            Adrián Estévez Álvarez & C312 \\
+            Kamila Reinoso Asín & C311 \\
+            Eric Reyes Milián & C312 \\
+            Alfonso Tejeda Rodríguez & C312 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    
+    \vspace{2.5cm}
+    
+    {\normalsize Curso 2026--2027}
+\end{center}
+
+\newpage
+
+\section*{Ejercicio 7: Sistema de Home Theater}
+
+\subsection*{Enunciado del Problema}
+Un sistema de home theater tiene múltiples componentes complejos (Amplificador, ReproductorDVD, Proyector, Pantalla, Luces). Los usuarios encuentran difícil operar todos estos componentes por separado para actividades comunes como ``ver una película''.
+
+\paragraph{Restricción:} El Facade debe poder configurarse desde un archivo YAML para definir secuencias de actividades.
+
+\subsection*{Resolución}
+
+\begin{enumerate}[leftmargin=*, label=\textbf{Inciso \alph*)}]
+    \item \textbf{Identificación, Justificación y Selección del Patrón:}
+    \begin{itemize}[leftmargin=1.5em]
+        \item \textbf{Patrón de diseño seleccionado:} \\
+        \textit{[Copiar aquí el patrón seleccionado]}
+        
+        \item \textbf{Justificación basada en el problema:} \\
+        \textit{[Copiar aquí la justificación]}
+        
+        \item \textbf{Clases intervinientes y relaciones:} \\
+        \textit{[Copiar aquí las clases que intervienen y sus relaciones]}
+        
+        \item \textbf{¿Por qué no usar Mediator o un simple método estático?:} \\
+        \textit{[Copiar aquí la justificación de por qué no Mediator o método estático]}
+    \end{itemize}
+
+    \item \textbf{Implementación y Carga Dinámica desde YAML:}
+    \begin{itemize}[leftmargin=1.5em]
+        \item \textbf{Implementación con 6 componentes y 3 actividades (VerPelícula, EscucharMúsica, JugarVideojuego):} \\
+        \textit{[Copiar aquí el código o diseño de la solución]}
+        
+        \item \textbf{Restricción (Carga de secuencias de actividades desde archivo YAML):} \\
+        \textit{[Copiar aquí la explicación/código de cómo se leen las secuencias desde YAML]}
+    \end{itemize}
+
+    \item \textbf{Análisis de Extensibilidad y Flexibilidad:}
+    \begin{itemize}[leftmargin=1.5em]
+        \item \textbf{¿Qué pasa si se quiere añadir una nueva actividad sin modificar la clase principal?:} \\
+        \textit{[Copiar aquí la respuesta]}
+        
+        \item \textbf{Resolución integrando Command o Strategy:} \\
+        \textit{[Copiar aquí la propuesta de solución con Command o Strategy]}
+    \end{itemize}
+
+    \item \textbf{Integración con otros Patrones (Singleton y Observer):}
+    \begin{itemize}[leftmargin=1.5em]
+        \item \textbf{Integración con Singleton para el Facade:} \\
+        \textit{[Copiar aquí la solución con Singleton]}
+        
+        \item \textbf{Integración con Observer para notificar cambios de estado de componentes:} \\
+        \textit{[Copiar aquí la solución con Observer]}
+    \end{itemize}
+\end{enumerate}
+
+\vspace{0.8cm}
+\hrule
+\vspace{0.8cm}
+
+\section*{Ejercicio 12: Sistema de Procesamiento de Transacciones Bancarias}
+
+\subsection*{Enunciado del Problema}
+Un banco necesita procesar diferentes tipos de transacciones (depósito, retiro, transferencia, pago de servicios) sobre distintas cuentas (ahorro, corriente, inversión). Cada transacción debe poder ejecutarse, revertirse (rollback) y auditarse. El sistema debe permitir añadir nuevas operaciones (ej. ``congelar cuenta'', ``calcular intereses'') sin modificar las clases de las cuentas ni de las transacciones existentes. Además, algunas operaciones deben poder ejecutarse en paralelo sobre diferentes cuentas, pero manteniendo consistencia cuando afectan a la misma cuenta.
+
+\paragraph{Restricción:} Las operaciones deben poder ejecutarse en paralelo sobre diferentes cuentas (considera concurrencia y estado mutable del Visitor). Además, el sistema debe garantizar que las transacciones sobre una misma cuenta sean atómicas y consistentes (¿cómo lo resuelves con el patrón elegido?).
+
+\subsection*{Resolución}
+
+\begin{enumerate}[leftmargin=*, label=\textbf{Inciso \alph*)}]
+    \item \textbf{Identificación, Justificación y Selección del Patrón:}
+    \begin{itemize}[leftmargin=1.5em]
+        \item \textbf{Patrón de diseño seleccionado:} \\
+        \textit{[Copiar aquí el patrón seleccionado]}
+        
+        \item \textbf{Justificación basada en el problema:} \\
+        \textit{[Copiar aquí la justificación]}
+        
+        \item \textbf{Clases intervinientes y relaciones:} \\
+        \textit{[Copiar aquí las clases intervinientes y sus relaciones]}
+        
+        \item \textbf{¿Por qué no usar Strategy o polimorfismo simple?:} \\
+        \textit{[Copiar aquí por qué no Strategy o polimorfismo simple]}
+    \end{itemize}
+
+    \item \textbf{Implementación, Concurrencia y Atomicidad:}
+    \begin{itemize}[leftmargin=1.5em]
+        \item \textbf{Implementación (4 tipos de cuentas y 3 operaciones):} \\
+        \textit{[Copiar aquí el código o pseudocódigo de la implementación]}
+        
+        \item \textbf{Restricción (Ejecución en paralelo, estado mutable y thread-safety):} \\
+        \textit{[Copiar aquí cómo se maneja la ejecución paralela y el estado mutable]}
+        
+        \item \textbf{Restricción (Atomicidad y consistencia en transacciones sobre una misma cuenta):} \\
+        \textit{[Copiar aquí la estrategia de sincronización/bloqueo utilizada]}
+    \end{itemize}
+
+    \item \textbf{Integración con otros Patrones (Composite e Iterator):}
+    \begin{itemize}[leftmargin=1.5em]
+        \item \textbf{Integración con Composite (Grupos de cuentas / Sucursales):} \\
+        \textit{[Copiar aquí la estructura Composite y su impacto al ejecutar operaciones]}
+        
+        \item \textbf{Integración con Iterator (Recorrido de transacciones):} \\
+        \textit{[Copiar aquí la explicación/código del Iterator]}
+    \end{itemize}
+
+    \item \textbf{Comparativa y Análisis con Métrica de Cambios:}
+    \begin{itemize}[leftmargin=1.5em]
+        \item \textbf{Visitor vs. añadir métodos a cada elemento:} \\
+        \textit{[Copiar aquí la comparación]}
+        
+        \item \textbf{Métrica de ``número de cambios por nueva operación'' vs. ``número de cambios por nuevo elemento'':} \\
+        \textit{[Copiar aquí el análisis de la métrica]}
+        
+        \item \textbf{¿Qué pasa si el número de operaciones crece mucho más rápido que los tipos de cuenta?:} \\
+        \textit{[Copiar aquí la respuesta justificada en la métrica]}
+    \end{itemize}
+\end{enumerate}
+
+\end{document}
