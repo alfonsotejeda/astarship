@@ -29,4 +29,15 @@ public final class CalcularInteresesVisitor implements VisitanteOperacion<Long> 
     public Long visitEmpresarial(CuentaEmpresarial c) {
         return c.saldo() * 120 / 10_000L;
     }
+
+    /** Monoide (0, +): asociativo, luego el recorrido del grupo es paralelizable. */
+    @Override
+    public Long neutro() {
+        return 0L;
+    }
+
+    @Override
+    public Long combinar(Long acumulado, Long siguiente) {
+        return acumulado + siguiente;
+    }
 }
