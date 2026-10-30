@@ -16,6 +16,24 @@ ejecuta sobre los elementos de una estructura de objetos, permitiendo definir nu
 sin modificar las clases de los elementos sobre los que opera}. Esa intención es, palabra por
 palabra, el requisito central del enunciado.
 
+\subsubsection*{Lectura del enunciado}
+
+Antes de buscar un patrón conviene contestar cuatro preguntas sobre el problema, porque de
+ellas sale la decisión y no del catálogo:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{¿Qué objetos existen?} Cuentas de cuatro tipos, transacciones de cuatro
+          tipos y operaciones sobre las cuentas.
+    \item \textbf{¿Qué varía?} Dos cosas a la vez: el tipo de cuenta y la operación. El
+          comportamiento depende del \emph{par}, no de uno de los dos.
+    \item \textbf{¿Qué exige el enunciado que no cambie?} Las clases de las cuentas y de las
+          transacciones, al añadir operaciones nuevas. Está dicho con esas palabras.
+    \item \textbf{¿Qué se anuncia para el futuro?} Operaciones nuevas, nombrando dos
+          (``congelar cuenta'', ``calcular intereses''). Ningún tipo de cuenta nuevo.
+\end{itemize}
+
+La cuarta respuesta es la que decide: lo que crece son las operaciones.
+
 \subsubsection*{Justificación a partir de las características del problema}
 
 El problema presenta dos ejes de variación independientes, y la decisión de diseño depende por
@@ -63,6 +81,107 @@ A esto se añade el \textbf{principio de responsabilidad única}: si las operaci
 dentro de las cuentas, la clase CuentaAhorro acabaría conociendo las reglas de auditoría, el
 cálculo de intereses, las políticas de congelación y la emisión de reportes. Con Visitor, cada
 operación queda en una sola clase cohesiva, legible, testeable y versionable como unidad.
+
+\subsubsection*{La solución ingenua, y qué rompe}
+
+Conviene escribir primero la solución sin patrón, porque nombra con precisión el problema que
+hay que resolver. Sería un procesador que pregunta por el tipo de cuenta:
+
+{\small
+\begin{verbatim}
+public class ProcesadorTransacciones
+{
+    public ResultadoOperacion Ejecutar(Cuenta c, Transaccion t)
+    {
+        if (c is CuentaAhorro a)
+        {
+            if (a.Saldo + t.Delta < 0) { /* rechazar */ }
+            // ... regla del ahorro
+        }
+        else if (c is CuentaCorriente co)
+        {
+            // ... regla del sobregiro
+        }
+        else if (c is CuentaInversion inv)
+        {
+            // ... regla de la penalizacion
+        }
+        // y si aparece un tipo nuevo, aqui no pasa nada:
+        // cae al final y devuelve en silencio
+    }
+
+    // y la MISMA cascada, otra vez, en Revertir() y en Auditar()
+}
+\end{verbatim}
+}
+
+Funciona. Lo que no hace es resistir el crecimiento que el enunciado anuncia:
+
+\begin{enumerate}[leftmargin=1.2cm]
+    \item \textbf{La cascada se repite $V$ veces.} Cada operación nueva vuelve a escribir la
+          misma estructura de preguntas, y las $V$ cascadas hay que mantenerlas sincronizadas
+          a mano.
+    \item \textbf{Un tipo nuevo obliga a revisar las $V$ cascadas}, y el compilador no dice
+          cuáles: no hay ningún sitio donde esté escrito que esa lista deba estar completa.
+    \item \textbf{El fallo es silencioso.} Olvidar una rama compila y se comporta como si la
+          operación no aplicara. En un sistema bancario eso es dinero que no se mueve sin que
+          nadie se entere.
+    \item \textbf{Acoplamiento al conjunto de clases concretas.} El procesador conoce las
+          cuatro cuentas; cualquier cambio en la jerarquía lo alcanza.
+    \item \textbf{La comprobación de tipo sustituye al despacho.} Es trabajo que el lenguaje
+          ya sabe hacer, hecho a mano y peor.
+\end{enumerate}
+
+Conviene ser justo con ella: con dos tipos y dos operaciones estables, esta solución es la
+correcta y cualquier patrón sería sobreingeniería. Lo que la descalifica aquí no es su forma,
+es el perfil de crecimiento del problema.
+
+\subsubsection*{Qué patrón resuelve esto}
+
+Visto así, el problema es ``añadir operaciones a una jerarquía cerrada sin tocarla''. Los
+candidatos razonables y su veredicto:
+
+\begin{table}[h!]
+    \centering
+    \small
+    \begin{tabular}{p{2.9cm}p{12.1cm}}
+        \toprule
+        \textbf{Patrón} & \textbf{¿Sirve para este problema?} \\
+        \midrule
+        Strategy & \textbf{No:} varía \emph{cómo} se hace algo, no \emph{sobre qué tipo}. Sin
+                   doble despacho, cada estrategia tendría que preguntar por la clase concreta
+                   y volvería la cascada. Se detalla más abajo. \\
+        \addlinespace
+        Template Method & \textbf{No:} fija el esqueleto de un algoritmo y delega los pasos en
+                          las subclases, de modo que el comportamiento sigue viviendo en el
+                          elemento. Es la solución del eje equivocado. \\
+        \addlinespace
+        State & \textbf{No:} el comportamiento cambia con el \emph{estado} del objeto, no con
+                su tipo. Serviría para ``cuenta activa, congelada, cerrada'', que es otro
+                problema. \\
+        \addlinespace
+        Command & \textbf{Parcial:} aporta la unidad reversible y auditable que piden
+                  ``revertir'' y ``auditar'', pero no el despacho por tipo de cuenta. Se
+                  combina con el elegido, no lo sustituye. \\
+        \addlinespace
+        Decorator & \textbf{Parcial:} permite envolver una operación, y de hecho se usa para
+                    el control transaccional de la restricción final. No resuelve el despacho
+                    por tipo. \\
+        \addlinespace
+        Observer & \textbf{No:} notifica cambios a interesados; no añade operaciones a una
+                   jerarquía. \\
+        \addlinespace
+        \textbf{Visitor} & \textbf{Sí:} define operaciones nuevas sobre los elementos de una
+                           estructura sin modificar sus clases, resolviendo en tiempo de
+                           ejecución el par (tipo de cuenta, operación). \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Cuando un enunciado dice ``añadir operaciones sin modificar las clases existentes'' y el
+comportamiento depende de dos tipos a la vez, el patrón que suena es Visitor. Las dos
+alternativas que el enunciado nombra expresamente se tratan con detalle en los dos apartados
+siguientes.
 
 \subsubsection*{Mecanismo: el doble despacho}
 
@@ -141,7 +260,7 @@ distinta en cuatro aspectos decisivos:
     \item \textbf{Strategy no recorre estructuras de objetos.} El patrón elegido debe
           integrarse con Composite e Iterator (incisos siguientes) para operar sobre grupos de
           cuentas y acumular resultados a lo largo de una jerarquía; Visitor lo hace de forma
-          natural mediante la propagación del \texttt{accept}, mientras Strategy no contempla
+          natural mediante la propagación del \texttt{Accept}, mientras Strategy no contempla
           recorridos.
 \end{enumerate}
 
@@ -173,6 +292,65 @@ distinta en cuatro aspectos decisivos:
 \end{itemize}
 \fussy
 
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[
+        font=\small,
+        caja/.style={draw, rounded corners=2pt, align=center, inner sep=4pt},
+        iface/.style={caja, fill=black!5},
+        implementa/.style={draw, dashed, -{Triangle[open, length=3mm, width=2.5mm]}},
+        hereda/.style={draw, -{Triangle[open, length=3mm, width=2.5mm]}},
+        usa/.style={draw, dashed, -{Stealth[length=2mm]}},
+        llamada/.style={draw, -{Stealth[length=2mm]}},
+        nota/.style={font=\footnotesize\itshape}
+    ]
+
+    \node[iface] (elem) at (0,0)
+        {\textit{«interface»}\\\texttt{IElementoContable}\\[2pt]
+         \footnotesize\texttt{R Accept<R>(v)}};
+    \node[iface] (vis) at (9.6,0)
+        {\textit{«interface»}\\\texttt{IVisitanteOperacion<R>}\\[2pt]
+         \footnotesize\texttt{R VisitAhorro(c)}, \ldots};
+
+    \draw[llamada] ([yshift=4mm]elem.east) -- ([yshift=4mm]vis.west)
+        node[midway, above, nota] {1.\ \texttt{Accept(v)}};
+    \draw[llamada] ([yshift=-4mm]vis.west) -- ([yshift=-4mm]elem.east)
+        node[midway, below, nota] {2.\ \texttt{VisitAhorro(this)}};
+
+    \node[caja] (cuenta) at (-1.5,-2.3) {\texttt{Cuenta}\\\footnotesize abstracta};
+    \node[caja] (grupo) at (2.3,-2.3)
+        {\texttt{GrupoCuentas}\\\footnotesize «Composite»};
+    \node[caja] (hojas) at (0.4,-4.6)
+        {\texttt{CuentaAhorro}\quad\texttt{CuentaCorriente}\\
+         \texttt{CuentaInversion}\quad\texttt{CuentaEmpresarial}};
+
+    \draw[implementa] (cuenta.north) -- ([xshift=-8mm]elem.south);
+    \draw[implementa] (grupo.north) -- ([xshift=8mm]elem.south);
+    \draw[hereda] (hojas.north) -- (cuenta.south);
+
+    \node[caja] (ops) at (9.6,-3.0)
+        {\texttt{EjecutarTransaccionVisitor}\\\texttt{RevertirTransaccionVisitor}\\
+         \texttt{AuditarTransaccionVisitor}\\[3pt]
+         \footnotesize\itshape añadidos después, sin tocar ninguna cuenta:\\[1pt]
+         \texttt{CalcularInteresesVisitor}\\\texttt{ExportarCsvVisitor}};
+
+    \draw[implementa] (ops.north) -- (vis.south);
+
+    \node[caja] (deco) at (9.6,2.4)
+        {\texttt{VisitanteTransaccional<R>}\\[1pt]
+         \footnotesize «Decorator»: envuelve a otro visitante\\[-1pt]
+         \footnotesize y toma el cerrojo de la cuenta};
+    \draw[implementa] (deco.south) -- (vis.north);
+
+    \node[caja] (cliente) at (0,2.4) {Cliente};
+    \draw[usa] (cliente.south) -- (elem.north);
+    \draw[usa] (cliente.east) -- (deco.west);
+
+    \end{tikzpicture}
+    \caption{Las dos jerarquías y el ciclo del doble despacho. El eje izquierdo está
+    cerrado; el derecho es el que crece.}
+\end{figure}
+
 \textbf{Ubicación del parámetro de la operación.} La \texttt{Transaccion} concreta (depósito,
 retiro, transferencia, pago de servicios) no viaja en la firma de \texttt{Accept}, sino en el
 estado del visitante concreto, construido como
@@ -187,9 +365,12 @@ dependen de los tipos concretos de elemento. El cliente conoce la estructura de 
 visitante concreto, e inicia el proceso con \texttt{elemento.Accept(visitante)}; ninguna otra
 clase conoce el emparejamiento entre tipo de cuenta y operación.
 
-\subsubsection*{Restricción: concurrencia y estado mutable del visitante}
+\subsubsection*{La restricción, vista desde el diseño}
 
-Conviene separar dos problemas que suelen confundirse.
+La restricción del enunciado toca al patrón elegido, así que conviene anticiparla aquí,
+separando dos problemas que suelen confundirse. El tratamiento completo, con los mecanismos
+implementados, la evidencia de ejecución y los límites de la garantía, está en la sección
+\textit{Restricción final}.
 
 \textbf{(1) Estado mutable del visitante.} Como el visitante transporta datos (la transacción,
 acumuladores de auditoría), compartir una única instancia entre hilos produce una condición de
@@ -234,7 +415,7 @@ protege sus invariantes. En consecuencia:
 
 El enunciado pide ejecutar, \emph{revertir} y auditar. El \textit{rollback} y la traza de
 auditoría corresponden conceptualmente a \textbf{Command} (encapsular la petición con
-\texttt{ejecutar}/\texttt{deshacer} y registrarla en un \textit{log}) y a \textbf{Memento}
+\texttt{Ejecutar}/\texttt{Deshacer} y registrarla en un \textit{log}) y a \textbf{Memento}
 (conservar el estado previo de la cuenta). Visitor es la respuesta al eje ``añadir operaciones
 sin modificar los elementos''; en un diseño completo ambos coexisten: el visitante aporta el
 comportamiento polimórfico según el tipo de cuenta, y el \textit{command} define la unidad
@@ -245,7 +426,7 @@ transaccional reversible y auditable.
 \begin{itemize}[leftmargin=1.2cm]
     \item Un tipo de cuenta nuevo obliga a modificar la interfaz de visitante y todas sus
           implementaciones. El patrón apuesta a que la jerarquía de elementos es cerrada.
-    \item \texttt{accept} debilita el encapsulamiento: la cuenta debe exponer al visitante los
+    \item \texttt{Accept} debilita el encapsulamiento: la cuenta debe exponer al visitante los
           datos que este necesita (saldo, movimientos), lo que puede ensanchar su interfaz
           pública.
     \item Añade indirección. Para un sistema con dos operaciones estables, Visitor sería
