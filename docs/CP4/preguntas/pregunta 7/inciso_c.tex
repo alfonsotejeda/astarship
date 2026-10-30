@@ -1,3 +1,335 @@
 \phantomsection
 \addcontentsline{toc}{subsection}{Inciso c)}
 \subsection*{Inciso c)}
+
+% Seccion con nombres de clase largos, que no se parten con guion.
+\sloppy
+
+\textit{Analiza: ¿Qué pasa si se quiere añadir una nueva actividad sin modificar el Facade?
+¿Cómo lo resuelves con Command o Strategy?}
+
+\vspace{0.4cm}
+
+\subsubsection*{La pregunta tiene una trampa, y conviene desactivarla primero}
+
+Tal como está escrita, la pregunta admite una respuesta tramposa: ``no se puede, porque abrir
+la fachada es modificarla''. Es cierto y es inútil. La pregunta con contenido es otra:
+
+\begin{quote}
+¿Cuánto cuesta la \emph{primera} actividad nueva, y cuánto cuestan las \emph{siguientes}?
+\end{quote}
+
+Esa sí tiene una respuesta medible, y es la que se contesta aquí: la primera cuesta una
+modificación, la que abre la fachada; a partir de ahí, cero.
+
+\subsubsection*{Qué pasa si no se hace nada}
+
+Sin ningún arreglo, cada actividad nueva es un método más en \texttt{HomeTheaterFacade}:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Se viola el principio Open/Closed} en el único punto del diseño que debería
+          ser estable. La fachada es lo que todos los clientes importan.
+    \item \textbf{Cada actividad recompila a todos los clientes}, porque cambia la clase de
+          la que dependen.
+    \item \textbf{La fachada crece sin límite} y se acerca al objeto dios que el inciso (a)
+          ya anunciaba como su forma de degenerar.
+    \item \textbf{Nadie fuera del equipo puede añadir actividades.} Si el cine se vende como
+          producto, un instalador no puede definir ``modo fiesta'' sin tocar el código
+          fuente.
+\end{itemize}
+
+Nótese que las tres actividades del enunciado \emph{no} tienen este problema: son el núcleo
+de la fachada y está bien que vivan en ella con nombre propio. El problema aparece con la
+cuarta, la quinta y la que pida el cliente el mes que viene.
+
+\subsubsection*{Command: la actividad como objeto}
+
+Command convierte cada actividad en un objeto con su propio ciclo de vida. La fachada deja de
+conocer las actividades una por una y pasa a conocer el \emph{concepto} de actividad:
+
+{\small
+\begin{verbatim}
+public interface IActividad
+{
+    string Nombre { get; }
+    void Ejecutar();
+    void Deshacer();
+}
+\end{verbatim}
+}
+
+Y la fachada gana, de una sola vez, el registro y el despacho:
+
+{\small
+\begin{verbatim}
+private readonly Dictionary<string, IActividad> _actividades =
+    new(StringComparer.OrdinalIgnoreCase);
+
+private IActividad? _ultima;
+
+public void Registrar(IActividad actividad)
+    => _actividades[actividad.Nombre] = actividad;
+
+public void Ejecutar(string nombre)
+{
+    if (!_actividades.TryGetValue(nombre, out IActividad? actividad))
+    {
+        throw new KeyNotFoundException(
+            "No hay ninguna actividad registrada con el nombre \""
+            + nombre + "\"");
+    }
+
+    _ultima = actividad;
+    actividad.Ejecutar();
+}
+
+public void DeshacerUltima()
+{
+    _ultima?.Deshacer();
+    _ultima = null;
+}
+\end{verbatim}
+}
+
+Tres decisiones de esa implementación que no son obvias:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{La actividad recibe los componentes, no la fachada.}
+          \texttt{ActividadKaraoke} se construye con el amplificador, el dvd, el proyector,
+          la pantalla y las luces. Si recibiera la fachada se crearía un ciclo entre las dos
+          y, peor, la actividad quedaría limitada a lo que la fachada ya sabe hacer.
+    \item \textbf{Un nombre no registrado falla fuerte.} Lanzar es mejor que no hacer nada:
+          un nombre mal escrito es un error del cliente, y una sala que se queda a oscuras
+          sin decir por qué es peor que una excepción.
+    \item \textbf{\texttt{Deshacer} no es decorativo.} Es lo que Command aporta sobre una
+          simple lambda, y aquí tiene sentido literal: apagar el cine \emph{es} deshacer la
+          actividad que se encendió.
+\end{itemize}
+
+\subsubsection*{La medición}
+
+La afirmación ``a partir de ahí, cero'' no se afirma: se mide sobre este repositorio. La
+segunda actividad se añadió en un \textit{commit} aislado a propósito:
+
+{\small
+\begin{verbatim}
+$ git show --stat --format="%h %s" cb5c20d
+cb5c20d docs(cp4): agrega una segunda actividad como experimento del inciso (c)
+
+ .../CP4/codigo/ejercicio7/ActividadModoFiesta.cs | 45 ++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+\end{verbatim}
+}
+
+\begin{table}[h!]
+    \centering
+    \small
+    \begin{tabular}{p{5.4cm}p{2.6cm}p{2.6cm}p{3.0cm}}
+        \toprule
+        \textbf{Cambio} & \textbf{Archivos nuevos} & \textbf{Modificados}
+        & \textbf{Sin Command} \\
+        \midrule
+        Abrir la fachada (una sola vez) & 2 & 1 & --- \\
+        \addlinespace
+        Primera actividad nueva (karaoke) & 1 & 0 & 1 modificado \\
+        \addlinespace
+        Segunda actividad nueva (fiesta) & 1 & \textbf{0} & 1 modificado \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+El cálculo es sencillo: con $A$ actividades añadidas, el enfoque sin patrón modifica la
+fachada $A$ veces y Command una sola. La inversión se amortiza en la primera.
+
+\subsubsection*{Strategy: responde otra pregunta}
+
+Strategy también mete un objeto donde antes había código fijo, de ahí que el enunciado los
+nombre juntos. Pero no sirve para lo que la pregunta pide:
+
+{\small
+\begin{verbatim}
+public interface IPerfilSala
+{
+    string Nombre { get; }
+    int LucesPelicula { get; }
+    int VolumenPelicula { get; }
+    bool EnvolventePelicula { get; }
+}
+
+// en la fachada:
+public IPerfilSala Perfil { get; set; } = new PerfilEstandar();
+
+public void VerPelicula(string titulo)
+{
+    _luces.Atenuar(Perfil.LucesPelicula);
+    ...
+    _amplificador.PonerVolumen(Perfil.VolumenPelicula);
+    ...
+}
+\end{verbatim}
+}
+
+Con \texttt{PerfilNocturno}, la misma película se ve con las luces al 5\%, el volumen a 3 y
+sin envolvente. Lo que cambió no es \emph{qué} sabe hacer la sala, sino \emph{cómo} lo hace:
+la secuencia sigue teniendo los mismos once pasos.
+
+\begin{table}[h!]
+    \centering
+    \small
+    \begin{tabular}{p{3.4cm}p{5.4cm}p{5.4cm}}
+        \toprule
+        & \textbf{Command} & \textbf{Strategy} \\
+        \midrule
+        Qué varía & \emph{qué} se hace: la actividad completa & \emph{cómo} se hace una
+                    actividad que ya existe \\
+        \addlinespace
+        Unidad & una actividad con sus pasos & un conjunto de parámetros o un algoritmo \\
+        \addlinespace
+        Cuántas conviven & todas a la vez, en un registro & una a la vez, la seleccionada \\
+        \addlinespace
+        Deshacer & sí, es parte del patrón & no tiene sentido \\
+        \addlinespace
+        ¿Responde a la pregunta del inciso? & \textbf{Sí} & \textbf{No}, resuelve un
+                    problema vecino \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+La conclusión no es que Strategy sobre, sino que las dos preguntas son distintas y en este
+diseño conviven sin estorbarse: Command abrió el catálogo de actividades y Strategy
+parametrizó una de ellas.
+
+\subsubsection*{El precio de abrir la fachada, dicho sin adornos}
+
+Abrir la fachada no sale gratis, y conviene que quede escrito:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Los nombres pasan a ser cadenas.} \texttt{cine.VerPelicula("Blade Runner")}
+          lo comprueba el compilador; \texttt{cine.Ejecutar("karaoke")} no. Se cambia
+          seguridad en compilación por extensibilidad en ejecución. Es el mismo compromiso
+          que el ejercicio 12 discute con los miembros por omisión, y tiene el mismo olor.
+    \item \textbf{La fachada se parece más a un despachador.} Llevado al extremo, una
+          fachada cuya única operación es \texttt{Ejecutar(string)} ha dejado de simplificar:
+          el cliente vuelve a necesitar saber qué nombres existen.
+    \item \textbf{Por eso la implementación conserva las dos vías.} Las tres actividades del
+          enunciado siguen siendo métodos con nombre y firma propia, que es lo que una
+          fachada debe ofrecer; el registro es la puerta para lo que venga después. Elegir
+          una sola de las dos vías habría sido más puro y peor.
+\end{itemize}
+
+\subsubsection*{Evidencia de ejecución}
+
+Salida literal de \texttt{DemoExtension}:
+
+{\footnotesize
+\begin{verbatim}
+1. Command: una actividad nueva, escrita sin tocar la fachada
+-------------------------------------------------------------
+  cine.Registrar(new ActividadKaraoke(...));
+  actividades registradas: karaoke
+
+  cine.Ejecutar("karaoke");
+    luces         atenuadas al 70%
+    pantalla      bajada
+    proyector     encendido
+    proyector     entrada -> dvd
+    amplificador  encendido
+    amplificador  entrada -> dvd
+    amplificador  modo estereo
+    amplificador  volumen 8
+    dvd           encendido
+    dvd           reproduciendo "Lista de karaoke"
+
+2. Deshacer: lo que Command aporta sobre una simple lambda
+----------------------------------------------------------
+  cine.DeshacerUltima();
+    dvd           detenido
+    dvd           apagado
+    amplificador  apagado
+    proyector     apagado
+    pantalla      subida
+    luces         al 100%
+
+3. Un nombre que no existe falla fuerte, no en silencio
+-------------------------------------------------------
+  No hay ninguna actividad registrada con el nombre "ver-la-tele"
+
+4. Strategy: la MISMA actividad, otros parametros
+-------------------------------------------------
+  perfil estandar (el del inciso b):
+    luces         atenuadas al 10%
+    pantalla      bajada
+    proyector     encendido
+    proyector     entrada -> dvd
+    proyector     formato 16:9
+    amplificador  encendido
+    amplificador  entrada -> dvd
+    amplificador  modo envolvente
+    amplificador  volumen 7
+    dvd           encendido
+    dvd           reproduciendo "Blade Runner"
+    dvd           detenido
+    dvd           apagado
+    amplificador  apagado
+    proyector     apagado
+    pantalla      subida
+    luces         al 100%
+
+  cine.Perfil = new PerfilNocturno();
+    luces         atenuadas al 5%
+    pantalla      bajada
+    proyector     encendido
+    proyector     entrada -> dvd
+    proyector     formato 16:9
+    amplificador  encendido
+    amplificador  entrada -> dvd
+    amplificador  modo estereo
+    amplificador  volumen 3
+    dvd           encendido
+    dvd           reproduciendo "Blade Runner"
+    dvd           detenido
+    dvd           apagado
+    amplificador  apagado
+    proyector     apagado
+    pantalla      subida
+    luces         al 100%
+
+5. La segunda actividad nueva ya no costo ninguna modificacion
+--------------------------------------------------------------
+  actividades registradas: karaoke, modo-fiesta
+
+  cine.Ejecutar("modo-fiesta");
+    luces         atenuadas al 80%
+    amplificador  encendido
+    amplificador  entrada -> dvd
+    amplificador  modo envolvente
+    amplificador  volumen 10
+    dvd           encendido
+    dvd           reproduciendo "Lista de fiesta"
+    dvd           detenido
+    dvd           apagado
+    amplificador  apagado
+    luces         al 100%
+
+6. Las dos preguntas no son la misma
+------------------------------------
+  Command cambio QUE sabe hacer la sala: karaoke no existia.
+  Strategy cambio COMO hace algo que ya sabia: la pelicula
+  sigue teniendo los mismos once pasos, con otros valores.
+\end{verbatim}
+}
+
+\subsubsection*{Cómo ejecutarlo}
+
+{\small
+\begin{verbatim}
+cd docs/CP4/codigo/ejercicio7
+dotnet run -- extension
+\end{verbatim}
+}
+
+La salida de \texttt{dotnet run -- demo}, la del inciso (b), no cambió ni un carácter al
+introducir Strategy: \texttt{PerfilEstandar} reproduce exactamente los valores que estaban
+escritos a mano.
+
+\fussy

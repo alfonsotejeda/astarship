@@ -51,7 +51,15 @@ public static class DemoExtension
         cine.VerPelicula("Blade Runner");
         cine.TerminarPelicula();
 
-        Titulo("5. Las dos preguntas no son la misma");
+        Titulo("5. La segunda actividad nueva ya no costo ninguna modificacion");
+        cine.Registrar(new ActividadModoFiesta(amplificador, dvd, luces));
+        Console.WriteLine("  actividades registradas: " + string.Join(", ", cine.Actividades));
+        Console.WriteLine();
+        Console.WriteLine("  cine.Ejecutar(\"modo-fiesta\");");
+        cine.Ejecutar("modo-fiesta");
+        cine.DeshacerUltima();
+
+        Titulo("6. Las dos preguntas no son la misma");
         Console.WriteLine("  Command cambio QUE sabe hacer la sala: karaoke no existia.");
         Console.WriteLine("  Strategy cambio COMO hace algo que ya sabia: la pelicula");
         Console.WriteLine("  sigue teniendo los mismos once pasos, con otros valores.");
