@@ -13,26 +13,28 @@ ejecución de operaciones sobre grupos?}
 
 \subsubsection*{Composite: el grupo es un elemento más}
 
-\texttt{GrupoCuentas} implementa \texttt{ElementoContable}, de modo que una sucursal se visita
+\texttt{GrupoCuentas} implementa \texttt{IElementoContable}, de modo que una sucursal se visita
 con la misma llamada que una cuenta suelta. El grupo no sabe qué operación se le aplica: solo
 propaga la visita a sus hijos y combina los resultados parciales.
 
 {\small
 \begin{verbatim}
-public final class GrupoCuentas implements ElementoContable,
-        Iterable<Movimiento> {
+public sealed class GrupoCuentas : IElementoContable,
+                                  IEnumerable<Movimiento>
+{
+    private ImmutableList<IElementoContable> _hijos =
+        ImmutableList<IElementoContable>.Empty;
 
-    private final List<ElementoContable> hijos =
-            new CopyOnWriteArrayList<>();
-
-    @Override
-    public <R> R accept(VisitanteOperacion<R> v) {
-        R acumulado = v.neutro();
-        for (ElementoContable hijo : hijos) {
-            R parcial = hijo.accept(v);
-            acumulado = acumulado == null
-                    ? parcial : v.combinar(acumulado, parcial);
+    public R Accept<R>(IVisitanteOperacion<R> v)
+    {
+        R acumulado = v.Neutro();
+        foreach (IElementoContable hijo in Hijos)
+        {
+            R parcial = hijo.Accept(v);
+            acumulado = acumulado is null
+                ? parcial : v.Combinar(acumulado, parcial);
         }
+
         return acumulado;
     }
 }
@@ -41,7 +43,7 @@ public final class GrupoCuentas implements ElementoContable,
 
 El reparto de responsabilidades queda nítido: \textbf{el compuesto decide el recorrido} y
 \textbf{el visitante decide la operación y cómo se agregan los resultados}. Con esto, el
-cliente escribe \texttt{elemento.accept(v)} sin saber si detrás hay una cuenta o un árbol de
+cliente escribe \texttt{elemento.Accept(v)} sin saber si detrás hay una cuenta o un árbol de
 cuatro niveles, que es justamente el propósito de Composite.
 
 \subsubsection*{El peaje que el Composite le cobra al Visitor}
@@ -50,34 +52,32 @@ Añadir el compuesto significa añadir un \emph{tipo de elemento}, y eso es exac
 Visitor hace caro. Había dos caminos:
 
 \begin{enumerate}[leftmargin=1.2cm]
-    \item \textbf{El clásico del catálogo GoF:} declarar \texttt{visitGrupo(GrupoCuentas)} en
+    \item \textbf{El clásico del catálogo GoF:} declarar \texttt{VisitGrupo(GrupoCuentas)} en
           la interfaz del visitante. Da al visitante el control del recorrido (puede podar
           ramas, cambiar el orden o tratar el grupo como una unidad), pero obliga a
           implementar ese método en los $V$ visitantes existentes.
     \item \textbf{El adoptado aquí:} el recorrido vive en el compuesto y la interfaz del
-          visitante solo gana dos métodos \texttt{default}, \texttt{combinar} y
-          \texttt{neutro}, con comportamiento razonable por omisión. Los cuatro visitantes ya
+          visitante solo gana dos miembros con implementación por omisión, \texttt{Combinar} y
+          \texttt{Neutro}, con comportamiento razonable. Los cuatro visitantes ya
           escritos siguieron compilando sin un solo cambio.
 \end{enumerate}
 
 {\small
 \begin{verbatim}
-public interface VisitanteOperacion<R> {
+public interface IVisitanteOperacion<R>
+{
     // ... los cuatro metodos de visita del inciso (b)
 
-    default R combinar(R acumulado, R siguiente) {
-        return siguiente;
-    }
+    R Combinar(R acumulado, R siguiente) => siguiente;
 
-    default R neutro() {
-        return null;
-    }
+    R Neutro() => default!;
 }
 \end{verbatim}
 }
 
-Conviene decirlo sin adornos: la interfaz del visitante \emph{sí} se tocó. Los métodos
-\texttt{default} de Java bajan el coste de $V$ modificaciones a una sola, pero no lo anulan, y
+Conviene decirlo sin adornos: la interfaz del visitante \emph{sí} se tocó. Los miembros de
+interfaz por omisión de C\# 8, equivalentes a los métodos \texttt{default} de Java, bajan el
+coste de $V$ modificaciones a una sola, pero no lo anulan, y
 la contrapartida es que el visitante pierde el control del recorrido. Esta es la asimetría que
 el inciso (d) cuantifica, observada aquí en un caso real.
 
@@ -100,38 +100,51 @@ paralelo. Las tres operaciones se comportan de forma distinta a este respecto:
           atomicidad.
 \end{itemize}
 
+\textbf{El decorador tiene que delegar la combinación.} Un detalle fácil de pasar por alto:
+\texttt{VisitanteTransaccional} envuelve a otro visitante, y si se queda con la implementación
+por omisión de \texttt{Combinar}, un grupo visitado a través del decorador devolvería solo el
+último resultado parcial en lugar de la suma. El decorador debe reenviar al visitante envuelto
+\emph{todos} los miembros de la interfaz, también \texttt{Combinar} y \texttt{Neutro}. El
+error no se manifiesta con las operaciones cuya combinación es justamente la de por omisión,
+que es lo que lo vuelve traicionero.
+
 \subsubsection*{Iterator: recorrer las transacciones}
 
-\texttt{Cuenta} implementa \texttt{Iterable<Movimiento>}, así que el cliente recorre los
+\texttt{Cuenta} implementa \texttt{IEnumerable<Movimiento>}, así que el cliente recorre los
 asientos sin conocer la estructura interna y sin que la cuenta ceda su lista:
 
 {\small
 \begin{verbatim}
-public abstract class Cuenta implements ElementoContable,
-        Iterable<Movimiento> {
+public abstract class Cuenta : IElementoContable,
+                              IEnumerable<Movimiento>
+{
+    private ImmutableList<Movimiento> _historial =
+        ImmutableList<Movimiento>.Empty;
 
-    private final List<Movimiento> historial =
-            new CopyOnWriteArrayList<>();
+    internal void Registrar(Movimiento m) =>
+        ImmutableInterlocked.Update(ref _historial,
+            (lista, asiento) => lista.Add(asiento), m);
 
-    @Override
-    public Iterator<Movimiento> iterator() {
-        return historial.iterator();   // instantanea, no bloquea
-    }
+    public IEnumerator<Movimiento> GetEnumerator() =>
+        ((IEnumerable<Movimiento>)Historial).GetEnumerator();
 }
 \end{verbatim}
 }
 
-La elección de la estructura interna no es neutral frente a la restricción de concurrencia. Al
-ser una lista \textit{copy-on-write}, el iterador trabaja sobre una instantánea: no lanza
-\texttt{ConcurrentModificationException} aunque otro hilo registre asientos durante el
-recorrido, y no bloquea a quien escribe. El precio es que el recorrido es
+La elección de la estructura interna no es neutral frente a la restricción de concurrencia. El
+historial es una lista inmutable que se publica reemplazando la referencia de forma atómica
+(\textit{copy-on-write}), de modo que quien recorre trabaja sobre una instantánea: el
+recorrido no se invalida aunque otro hilo registre asientos mientras dura, y no bloquea a
+quien escribe. El precio es que el recorrido es
 \textit{weakly consistent}: puede no ver los asientos añadidos después de empezar. Para una
 auditoría es la garantía correcta, y es mejor que la alternativa de sostener el cerrojo de la
 cuenta durante todo el recorrido.
 
 Para el árbol, \texttt{IteradorMovimientosGrupo} aplana la jerarquía en profundidad con una
-pila explícita, sin materializar una lista con todos los movimientos. Así
-\texttt{GrupoCuentas} también es \texttt{Iterable<Movimiento>} y la uniformidad entre hoja y
+pila explícita, sin materializar una lista con todos los movimientos. Está escrito a mano
+porque así se ve el patrón del catálogo; en C\# lo normal sería un método con
+\texttt{yield return}, que el compilador convierte en esta misma máquina de estados perezosa.
+Así \texttt{GrupoCuentas} también es \texttt{IEnumerable<Movimiento>} y la uniformidad entre hoja y
 compuesto se mantiene en los dos ejes: se visita igual y se recorre igual.
 
 \subsubsection*{Cómo afecta el Composite a la ejecución de operaciones sobre grupos}
@@ -141,7 +154,7 @@ La pregunta del inciso tiene cinco respuestas, y solo la primera es gratis.
 \textbf{1. El cliente se simplifica.} Una sola llamada sirve para una cuenta, una sucursal o el
 banco entero. Las operaciones del inciso (b) funcionaron sobre el árbol sin modificarse.
 
-\textbf{2. El alcance deja de ser constante.} \texttt{accept} sobre una hoja es una operación;
+\textbf{2. El alcance deja de ser constante.} \texttt{Accept} sobre una hoja es una operación;
 sobre un grupo son $N$. Una operación cara deja de ser inocente cuando el cliente ya no ve
 cuántas cuentas hay debajo, y conviene prever poda o límites de profundidad.
 
@@ -159,19 +172,26 @@ distintos:
 
 {\small
 \begin{verbatim}
-public static <R> R atomica(GrupoCuentas grupo,
-                            VisitanteOperacion<R> v) {
-    List<Cuenta> cuentas = hojas(grupo);  // ordenadas por id
+public static R Atomica<R>(GrupoCuentas grupo,
+                           IVisitanteOperacion<R> v)
+{
+    List<Cuenta> cuentas = Hojas(grupo);  // ordenadas por id
     int tomados = 0;
-    try {
-        for (Cuenta c : cuentas) {
-            c.cerrojo().lock();
-            tomados++;
+    try
+    {
+        foreach (Cuenta c in cuentas)
+        {
+            Monitor.Enter(c.Cerrojo);     // lock no sirve:
+            tomados++;                    // son N cerrojos
         }
-        return grupo.accept(v);
-    } finally {
-        for (int i = tomados - 1; i >= 0; i--) {
-            cuentas.get(i).cerrojo().unlock();
+
+        return grupo.Accept(v);
+    }
+    finally
+    {
+        for (int i = tomados - 1; i >= 0; i--)
+        {
+            Monitor.Exit(cuentas[i].Cerrojo);
         }
     }
 }
@@ -208,6 +228,7 @@ Salida literal de \texttt{DemoComposite}:
 
 {\small
 \begin{verbatim}
+
 1. La estructura: hojas y compuestos tras la misma interfaz
 -----------------------------------------------------------
   + Banco
@@ -240,7 +261,7 @@ Salida literal de \texttt{DemoComposite}:
 4. Iterator: transacciones de una cuenta y de todo el arbol
 -----------------------------------------------------------
   movimientos de EMP-001:
-    P1         PAGO_SERVICIOS    -15,000.00  reportable al regulador
+    P1         PagoServicios     -15,000.00  reportable al regulador
   recorrido aplanado del arbol: 5 asientos, salidas por 76,700.00
 
 5. Alcance de la atomicidad al operar sobre un grupo
@@ -276,7 +297,7 @@ contara visitas tendría que decidir si los grupos cuentan, y la interfaz no le 
 plantearse la pregunta. Es la clase de ambigüedad que conviene documentar en el contrato del
 visitante.
 
-\textbf{El recorrido del compuesto es recursivo.} \texttt{accept} desciende por la pila de
+\textbf{El recorrido del compuesto es recursivo.} \texttt{Accept} desciende por la pila de
 llamadas, de modo que una jerarquía patológicamente profunda la desbordaría. El iterador, en
 cambio, está escrito con una pila explícita y no tiene ese límite: una asimetría a tener
 presente si las jerarquías crecen.

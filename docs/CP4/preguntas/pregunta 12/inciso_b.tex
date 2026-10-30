@@ -16,12 +16,13 @@ cuenta.}
 \subsubsection*{Qué se implementó}
 
 La implementación completa, compilable y ejecutable, está en
-\texttt{docs/CP4/codigo/ejercicio12/} (Java 17, sin dependencias externas). Comprende las
+\texttt{docs/CP4/codigo/ejercicio12/} (C\# 12 sobre .NET 8, sin dependencias
+externas). Comprende las
 cuatro cuentas, las tres operaciones como visitantes concretos y la infraestructura que exige
 la restricción de concurrencia:
 
 \begin{itemize}[leftmargin=1.2cm]
-    \item \textbf{Elementos:} \texttt{ElementoContable} (interfaz con \texttt{accept}),
+    \item \textbf{Elementos:} \texttt{IElementoContable} (interfaz con \texttt{Accept}),
           \texttt{Cuenta} (clase base con el saldo, el cerrojo propio y el historial) y las
           cuatro cuentas concretas.
     \item \textbf{Operaciones:} \texttt{EjecutarTransaccionVisitor},
@@ -78,22 +79,23 @@ resultado.
 
 {\small
 \begin{verbatim}
-public interface ElementoContable {
-    <R> R accept(VisitanteOperacion<R> v);
+public interface IElementoContable
+{
+    R Accept<R>(IVisitanteOperacion<R> v);
 }
 
-public final class CuentaAhorro extends Cuenta {
-    @Override
-    public <R> R accept(VisitanteOperacion<R> v) {
-        return v.visitAhorro(this);        // 2do despacho
-    }
+public sealed class CuentaAhorro : Cuenta
+{
+    public override R Accept<R>(IVisitanteOperacion<R> v)
+        => v.VisitAhorro(this);            // 2do despacho
 }
 
-public interface VisitanteOperacion<R> {
-    R visitAhorro(CuentaAhorro c);
-    R visitCorriente(CuentaCorriente c);
-    R visitInversion(CuentaInversion c);
-    R visitEmpresarial(CuentaEmpresarial c);
+public interface IVisitanteOperacion<R>
+{
+    R VisitAhorro(CuentaAhorro c);
+    R VisitCorriente(CuentaCorriente c);
+    R VisitInversion(CuentaInversion c);
+    R VisitEmpresarial(CuentaEmpresarial c);
 }
 \end{verbatim}
 }
@@ -102,7 +104,7 @@ El parámetro de tipo \texttt{R} no es decorativo: permite que el visitante \emp
 resultado en lugar de acumularlo en un campo, que es la propiedad que lo hace utilizable en
 paralelo. \texttt{EjecutarTransaccionVisitor} devuelve \texttt{ResultadoOperacion},
 \texttt{AuditarTransaccionVisitor} devuelve \texttt{InformeAuditoria} y
-\texttt{CalcularInteresesVisitor} devuelve \texttt{Long}, todos con la misma interfaz de
+\texttt{CalcularInteresesVisitor} devuelve \texttt{long}, todos con la misma interfaz de
 elemento.
 
 \subsubsection*{Una operación, cuatro comportamientos}
@@ -112,34 +114,41 @@ cuenta vive en la operación y no en las cuentas:
 
 {\small
 \begin{verbatim}
-private final Transaccion t;    // el parametro viaja en el visitante
+private readonly Transaccion _t;   // el parametro viaja en el visitante
 
-@Override
-public ResultadoOperacion visitAhorro(CuentaAhorro c) {
-    if (c.saldo() + t.delta() < 0) {
-        return ResultadoOperacion.rechazada(c,
-                "el ahorro no admite sobregiro");
+public ResultadoOperacion VisitAhorro(CuentaAhorro c)
+{
+    if (c.Saldo + _t.Delta < 0)
+    {
+        return ResultadoOperacion.Rechazada(c,
+            "el ahorro no admite sobregiro");
     }
+
     long cargos = 0L;
-    if (t.tipo() == TipoTransaccion.RETIRO) {
-        c.contarRetiro(1);
-        if (c.retirosDelMes() > CuentaAhorro.LIMITE_RETIROS_MES) {
-            cargos = CuentaAhorro.COMISION_EXCESO;
+    if (_t.Tipo == TipoTransaccion.Retiro)
+    {
+        c.ContarRetiro(1);
+        if (c.RetirosDelMes > CuentaAhorro.LimiteRetirosMes)
+        {
+            cargos = CuentaAhorro.ComisionExceso;
         }
     }
-    c.aplicar(t.delta() - cargos);
+
+    c.Aplicar(_t.Delta - cargos);
     ...
 }
 
-@Override
-public ResultadoOperacion visitInversion(CuentaInversion c) {
+public ResultadoOperacion VisitInversion(CuentaInversion c)
+{
     long cargos = 0L;
-    if (t.tipo() != TipoTransaccion.DEPOSITO) {
-        cargos = t.montoCentavos()
-                * CuentaInversion.PENALIZACION_BPS / 10_000L;
-        c.acumularPenalizacion(cargos);
+    if (_t.Tipo != TipoTransaccion.Deposito)
+    {
+        cargos = _t.MontoCentavos
+            * CuentaInversion.PenalizacionBps / 10_000L;
+        c.AcumularPenalizacion(cargos);
     }
-    c.aplicar(t.delta() - cargos);
+
+    c.Aplicar(_t.Delta - cargos);
     ...
 }
 \end{verbatim}
@@ -157,27 +166,25 @@ sincronización, como hace \texttt{Demo}. \texttt{EjecutarTransaccionVisitor} s�
 (la transacción), pero es inmutable y se crea uno por operación.
 
 \textbf{2. El cerrojo vive en la cuenta, no en el visitante.} Cada \texttt{Cuenta} lleva su
-\texttt{ReentrantLock} porque la cuenta es la unidad de consistencia del dominio. El decorador
+propio objeto de cerrojo, que se toma con \texttt{lock}, porque la cuenta es la unidad de
+consistencia del dominio. El decorador
 lo toma y lo libera, de modo que ningún visitante concreto sabe que existen cerrojos:
 
 {\small
 \begin{verbatim}
-public final class VisitanteTransaccional<R>
-        implements VisitanteOperacion<R> {
+public sealed class VisitanteTransaccional<R>
+    : IVisitanteOperacion<R>
+{
+    private readonly IVisitanteOperacion<R> _interno;
 
-    private final VisitanteOperacion<R> interno;
+    public R VisitAhorro(CuentaAhorro c)
+        => BajoCerrojo(c, () => _interno.VisitAhorro(c));
 
-    @Override
-    public R visitAhorro(CuentaAhorro c) {
-        return bajoCerrojo(c, () -> interno.visitAhorro(c));
-    }
-
-    private R bajoCerrojo(Cuenta c, Supplier<R> accion) {
-        c.cerrojo().lock();
-        try {
-            return accion.get();
-        } finally {
-            c.cerrojo().unlock();
+    private static R BajoCerrojo(Cuenta c, Func<R> accion)
+    {
+        lock (c.Cerrojo)
+        {
+            return accion();
         }
     }
 }
@@ -193,13 +200,15 @@ identificador ascendente, nunca en el orden en que llegan los argumentos:
 
 {\small
 \begin{verbatim}
-Cuenta primera = origen.id().compareTo(destino.id()) <= 0
-        ? origen : destino;
-Cuenta segunda = primera == origen ? destino : origen;
-primera.cerrojo().lock();
-try {
-    segunda.cerrojo().lock();
-    ...
+Cuenta primera = string.CompareOrdinal(origen.Id, destino.Id) <= 0
+    ? origen : destino;
+Cuenta segunda = ReferenceEquals(primera, origen) ? destino : origen;
+
+lock (primera.Cerrojo)
+{
+    lock (segunda.Cerrojo)
+    {
+        ...
 \end{verbatim}
 }
 
@@ -210,6 +219,7 @@ las partes 7 y 8, la restricción de concurrencia.
 
 {\footnotesize
 \begin{verbatim}
+
 1. Misma transaccion, cuatro comportamientos (EjecutarTransaccion)
 ------------------------------------------------------------------
 Retiro de 300.00 sobre cada cuenta:
@@ -264,8 +274,8 @@ Pago de servicios de 15,000.00 en empresarial:
 --------------------------------------------------
   con decorador transaccional: esperado 20,000.00, obtenido 20,000.00
   atomico y consistente: true
-  sin decorador:               esperado 20,000.00, obtenido 5,440.00
-  actualizaciones perdidas:    14,560.00
+  sin decorador:               esperado 20,000.00, obtenido 3,390.00
+  actualizaciones perdidas:    16,610.00
 
 8. Restriccion: paralelismo sobre cuentas DISTINTAS
 ---------------------------------------------------
@@ -273,7 +283,7 @@ Pago de servicios de 15,000.00 en empresarial:
   PAR-COR     saldo=  10,000.00 correcto=true
   PAR-INV     saldo=  10,000.00 correcto=true
   PAR-EMP     saldo=  10,000.00 correcto=true
-  16 hilos sobre 4 cuentas, sin contencion entre ellas: 10 ms
+  16 hilos sobre 4 cuentas, sin contencion entre ellas: 5 ms
 \end{verbatim}
 }
 
@@ -283,7 +293,7 @@ escribir el saldo deja de ser atómica. La cifra concreta de pérdida cambia en 
 porque depende del entrelazado de los hilos: es un error no determinista, que es justamente lo
 que lo hace peligroso. Para que la carrera se manifieste de forma visible en cada corrida, la
 clase \texttt{Cuenta} amplía a propósito la ventana entre la lectura y la escritura mediante un
-\texttt{Thread.yield()} activado solo en esa prueba.
+\texttt{Thread.Yield()} activado solo en esa prueba.
 
 \subsubsection*{Dos observaciones que salieron del experimento}
 
@@ -306,11 +316,12 @@ atributos nuevos.
 {\small
 \begin{verbatim}
 cd docs/CP4/codigo/ejercicio12
-javac -d /tmp/ej12 *.java
-java -cp /tmp/ej12 Demo
+dotnet run -- demo
 \end{verbatim}
 }
 
-Compila sin advertencias con \texttt{javac -Xlint:all} en OpenJDK 17.
+Compila sin un solo aviso con \texttt{TreatWarningsAsErrors} y nivel de aviso 9999 sobre
+.NET 8. Las otras dos demostraciones son \texttt{dotnet run -- composite} y
+\texttt{dotnet run -- metricas}.
 
 \fussy
