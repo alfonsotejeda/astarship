@@ -1,1 +1,306 @@
-\section{Inciso a)}
+\phantomsection
+\addcontentsline{toc}{subsection}{Inciso a)}
+\subsection*{Inciso a)}
+
+% Seccion con nombres de clase largos, que no se parten con guion.
+\sloppy
+
+\textit{Identifica el patrón de diseño más adecuado, justifica tu selección basándote en las
+características del problema y explica la propuesta de solución considerando las clases que
+intervienen y las relaciones entre ellas. ¿Por qué no usar Mediator o un simple método
+estático?}
+
+\vspace{0.4cm}
+
+\subsubsection*{Lectura del enunciado}
+
+Cuatro preguntas antes de abrir el catálogo, porque la decisión sale de ellas:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{¿Qué objetos existen?} Seis componentes independientes
+          (\texttt{Amplificador}, \texttt{ReproductorDvd}, \texttt{ConsolaJuegos},
+          \texttt{Proyector}, \texttt{Pantalla}, \texttt{Luces}) y un cliente que quiere
+          hacer tres cosas.
+    \item \textbf{¿Dónde está la dificultad?} No en los componentes, que funcionan. En que
+          una actividad corriente exige once llamadas a seis objetos distintos
+          \emph{en un orden que nadie ha escrito}.
+    \item \textbf{¿Qué pide el enunciado que no cambie?} Nada lo dice con esas palabras,
+          pero los componentes se describen como ``complejos'' y preexistentes: la solución
+          no debería obligar a reescribirlos.
+    \item \textbf{¿Qué se anuncia para después?} Actividades nuevas sin tocar la solución
+          (inciso c), notificaciones desde los componentes (inciso d) y secuencias definidas
+          en un archivo (restricción).
+\end{itemize}
+
+La segunda respuesta es la que decide. El problema no es de \emph{comportamiento} ni de
+\emph{creación}: es que el conocimiento sobre cómo se usa el subsistema está repartido por
+todos sus clientes.
+
+\subsubsection*{Patrón seleccionado}
+
+El patrón adecuado es \textbf{Facade} (Fachada), patrón estructural del catálogo
+\textit{Gang of Four}. Su intención declarada es: \textit{proporcionar una interfaz unificada
+para un conjunto de interfaces de un subsistema, definiendo una interfaz de más alto nivel que
+hace al subsistema más fácil de usar}. Esa frase es el enunciado con otras palabras.
+
+\subsubsection*{Justificación a partir de las características del problema}
+
+Tres rasgos del problema apuntan al mismo sitio:
+
+\begin{enumerate}[leftmargin=1.2cm]
+    \item \textbf{La complejidad es de uso, no de implementación.} Ningún componente es
+          difícil por sí mismo: \texttt{Pantalla} baja y sube. Lo difícil es la
+          \emph{coreografía}, y una coreografía no tiene dónde vivir si no se le da una
+          clase.
+    \item \textbf{La dependencia tiene una sola dirección.} El cliente necesita al
+          subsistema; el subsistema no necesita al cliente ni se necesita a sí mismo: la
+          pantalla no consulta al amplificador. Esa asimetría es exactamente la que Facade
+          supone, y es lo que lo separa de Mediator.
+    \item \textbf{Hay un vocabulario del dominio que el código no nombra.} ``Ver una
+          película'' existe para el usuario y no existe en el sistema. La fachada no es una
+          utilidad técnica: es el sitio donde ese vocabulario se vuelve código.
+\end{enumerate}
+
+Conviene añadir el criterio de diseño que respalda la elección: el
+\textbf{principio de mínimo conocimiento}, o ley de Deméter. Antes, el cliente conversa con
+seis objetos y conoce el orden entre ellos; después, conversa con uno. El acoplamiento no
+desaparece, se \emph{concentra}: queda un único punto que conoce el subsistema, y ese punto
+es el que hay que tocar cuando el subsistema cambie.
+
+\subsubsection*{La solución ingenua, y qué rompe}
+
+La solución sin patrón es el cliente haciendo el trabajo:
+
+{\small
+\begin{verbatim}
+// En cada sitio desde donde alguien quiera ver una pelicula:
+luces.Atenuar(10);
+pantalla.Bajar();
+proyector.Encender();
+proyector.Entrada("dvd");
+proyector.Formato("16:9");
+amplificador.Encender();
+amplificador.Entrada("dvd");
+amplificador.ModoEnvolvente(true);
+amplificador.PonerVolumen(7);
+dvd.Encender();
+dvd.Reproducir("Blade Runner");
+\end{verbatim}
+}
+
+Funciona, y por eso es tentadora. Lo que rompe:
+
+\begin{enumerate}[leftmargin=1.2cm]
+    \item \textbf{El conocimiento se duplica.} La secuencia se repite en cada cliente: el
+          mando, la aplicación del móvil, la rutina de la noche. Once líneas por tres
+          clientes y tres actividades son noventa y nueve ocasiones de equivocarse.
+    \item \textbf{El orden no está escrito en ningún sitio.} Encender el proyector antes de
+          bajar la pantalla no da un error de compilación: da una proyección sobre la pared.
+          Es un requisito real que vive solo en la cabeza de quien escribió el cliente.
+    \item \textbf{Un cambio en el subsistema alcanza a todos los clientes.} Si el
+          amplificador nuevo exige fijar la entrada antes de encenderse, hay que buscar
+          todas las copias.
+    \item \textbf{El cliente depende de seis clases} en lugar de una, y de los detalles de
+          cada una: los nombres de las entradas, los rangos de volumen, los formatos.
+    \item \textbf{No hay dónde colgar lo que viene después.} Sin un objeto que represente la
+          actividad, los incisos (c) y (d) y la restricción no tienen sujeto: no se puede
+          configurar desde un archivo una secuencia que no existe como dato.
+\end{enumerate}
+
+Y la nota justa: con un solo cliente y una sola actividad, estas once líneas son la solución
+correcta y cualquier patrón sería sobreingeniería. Lo que las descalifica aquí es lo que el
+enunciado añade a continuación.
+
+\subsubsection*{Qué patrón resuelve esto}
+
+El problema es ``dar una interfaz simple a un conjunto de objetos que ya funcionan, sin
+tocarlos''. Los candidatos razonables, con su veredicto:
+
+\begin{table}[h!]
+    \centering
+    \small
+    \begin{tabular}{p{2.9cm}p{12.1cm}}
+        \toprule
+        \textbf{Patrón} & \textbf{¿Sirve para este problema?} \\
+        \midrule
+        Adapter & \textbf{No:} convierte una interfaz en \emph{otra} que el cliente ya
+                  espera, normalmente de una sola clase. No simplifica un conjunto ni
+                  inventa operaciones nuevas. Se confunde con Facade porque los dos
+                  envuelven, pero la intención es distinta: adaptar no es simplificar. \\
+        \addlinespace
+        Proxy & \textbf{No:} mantiene \emph{la misma} interfaz y controla el acceso a ella.
+                Aquí la interfaz nueva es justamente el punto. \\
+        \addlinespace
+        Mediator & \textbf{No:} coordina la colaboración entre objetos que se comunican
+                   \emph{entre sí}. Aquí no se comunican. Se detalla más abajo. \\
+        \addlinespace
+        Builder & \textbf{No:} construye paso a paso un objeto complejo. Suena por lo de
+                  ``paso a paso'', pero lo que se construye aquí no es un objeto: es una
+                  secuencia de órdenes sobre objetos que ya existen. \\
+        \addlinespace
+        Command & \textbf{Parcial:} convierte cada actividad en un objeto, que es lo que
+                  hace falta para añadir actividades sin tocar la fachada. Es la respuesta
+                  del inciso (c), y se combina con el elegido en lugar de sustituirlo. \\
+        \addlinespace
+        Template Method & \textbf{No:} fija el esqueleto de un algoritmo y deja los pasos a
+                          las subclases. Las tres actividades no comparten esqueleto: usan
+                          componentes distintos en órdenes distintos. \\
+        \addlinespace
+        \textbf{Facade} & \textbf{Sí:} define una interfaz de alto nivel sobre el
+                          subsistema, con un método por actividad del dominio, sin modificar
+                          ningún componente. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsubsection*{Por qué no Mediator}
+
+Los dos patrones ponen un objeto en el medio, de ahí la confusión. Se diferencian en cuatro
+puntos decisivos:
+
+\begin{enumerate}[leftmargin=1.2cm]
+    \item \textbf{Topología.} Mediator resuelve una maraña $N \leftrightarrow N$: colegas
+          que se conocen entre sí y a los que se desacopla haciéndolos hablar a través de un
+          intermediario. Facade resuelve un acceso $1 \rightarrow N$: un cliente externo
+          frente a un subsistema cuyos miembros \emph{no} se hablan. En este problema la
+          pantalla no consulta al amplificador, ni las luces al proyector. La maraña que
+          Mediator deshace aquí no existe.
+    \item \textbf{Quién se modifica.} En Mediator cada colega guarda una referencia al
+          mediador y le notifica sus eventos, de modo que \textbf{hay que modificar los seis
+          componentes}. Facade no toca ninguno. Dado que el enunciado los describe como
+          componentes complejos que ya existen, esa diferencia no es de estilo.
+    \item \textbf{Dirección del flujo.} En Facade las órdenes van hacia dentro y el
+          subsistema no responde. Cuando sí se quiera que un componente avise de algo, el
+          patrón correcto no es Mediator sino \textbf{Observer}, que es exactamente lo que
+          pide el inciso (d): notificar cambios de estado sin que el componente sepa a quién.
+    \item \textbf{Qué le queda al cliente.} Un mediador que se limita a reenviar mensajes no
+          le ahorra nada: el cliente seguiría pidiendo la película paso a paso. Lo que el
+          problema necesita es una operación nueva de alto nivel, y eso es Facade.
+\end{enumerate}
+
+Dicho esto, la frontera es real: una fachada que empezara a recibir eventos de los
+componentes y a reaccionar coordinándolos \emph{se estaría convirtiendo} en un mediador. El
+inciso (d) roza ese límite y conviene no cruzarlo sin decirlo.
+
+\subsubsection*{Por qué no un simple método estático}
+
+Un \texttt{static void VerPelicula(...)} haría lo mismo en la primera versión. Deja de hacerlo
+en cuanto el enunciado sigue:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{No tiene estado.} La fachada guarda las referencias a los seis
+          componentes. El método estático tendría que recibirlos como seis parámetros en
+          cada llamada, devolviéndole al cliente justo el conocimiento que se le quería
+          quitar, o leerlos de variables globales.
+    \item \textbf{No es sustituible.} No se puede inyectar una fachada de mentira en una
+          prueba, ni montar dos salas con componentes distintos. Un método estático no se
+          implementa: se llama.
+    \item \textbf{No es polimórfico.} No admite una variante ``sala premium'' ni un
+          decorador que registre lo que se hace. Con un objeto, las dos cosas son naturales.
+    \item \textbf{No se puede configurar.} La restricción final pide definir las secuencias
+          en un archivo YAML. Un método estático lleva la secuencia escrita en su cuerpo;
+          un objeto puede recibirla al construirse. La restricción, por sí sola, descarta la
+          opción.
+    \item \textbf{No tiene ciclo de vida.} El inciso (d) pide que la fachada sea un
+          Singleton; un método estático no se instancia, así que no hay instancia que
+          controlar, ni forma de inicializarla con lo que haga falta.
+\end{itemize}
+
+Otra vez, en honor a la verdad: para un cine único, con tres actividades fijas y sin pruebas,
+el método estático bastaría. Lo que lo descalifica no es el purismo, son los incisos
+siguientes.
+
+\subsubsection*{Propuesta de solución: clases y relaciones}
+
+\textbf{El subsistema} (seis componentes, no se modifican):
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \texttt{IComponente}: contrato mínimo con \texttt{Nombre} y \texttt{Estado}, que
+          sirve para la traza y para el Observer del inciso (d).
+    \item \texttt{ComponenteBase}: clase base con el estado y el registro de lo que ocurre.
+    \item \texttt{Amplificador}, \texttt{ReproductorDvd}, \texttt{ConsolaJuegos},
+          \texttt{Proyector}, \texttt{Pantalla} y \texttt{Luces}, cada uno con sus
+          operaciones propias y tipadas.
+\end{itemize}
+
+\textbf{La fachada} (una clase, el único punto que conoce la coreografía):
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \texttt{HomeTheaterFacade}: recibe los seis componentes al construirse y publica
+          un método por actividad: \texttt{VerPelicula}, \texttt{TerminarPelicula},
+          \texttt{EscucharMusica} y \texttt{JugarVideojuego}.
+\end{itemize}
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}[
+        font=\small,
+        caja/.style={draw, rounded corners=2pt, align=center, inner sep=4pt},
+        iface/.style={caja, fill=black!5},
+        usa/.style={draw, -{Stealth[length=2mm]}},
+        implementa/.style={draw, dashed, -{Triangle[open, length=3mm, width=2.5mm]}},
+        nota/.style={font=\footnotesize\itshape}
+    ]
+
+    \node[caja] (cliente) at (0,0) {Cliente\\\footnotesize (mando, app, rutina)};
+    \node[caja] (facade) at (5.2,0)
+        {\texttt{HomeTheaterFacade}\\[2pt]
+         \footnotesize\texttt{VerPelicula(titulo)}\\[-1pt]
+         \footnotesize\texttt{EscucharMusica(lista)}\\[-1pt]
+         \footnotesize\texttt{JugarVideojuego(juego)}};
+
+    \draw[usa] (cliente.east) -- node[midway, above, nota] {1 llamada} (facade.west);
+
+    \node[caja] (c1) at (10.8,1.9) {\texttt{Amplificador}};
+    \node[caja] (c2) at (10.8,1.0) {\texttt{ReproductorDvd}};
+    \node[caja] (c3) at (10.8,0.1) {\texttt{ConsolaJuegos}};
+    \node[caja] (c4) at (10.8,-0.8) {\texttt{Proyector}};
+    \node[caja] (c5) at (10.8,-1.7) {\texttt{Pantalla}};
+    \node[caja] (c6) at (10.8,-2.6) {\texttt{Luces}};
+
+    \foreach \c in {c1,c2,c3,c4,c5,c6} {
+        \draw[usa] (facade.east) -- (\c.west);
+    }
+
+    \node[iface] (icomp) at (10.8,3.1) {\textit{«interface»}\\\texttt{IComponente}};
+    \draw[implementa] (c1.north) -- (icomp.south);
+
+    \node[nota, align=center] at (5.2,-2.4)
+        {las seis flechas van en un solo sentido:\\el subsistema no conoce a la fachada};
+
+    \end{tikzpicture}
+    \caption{La fachada concentra el conocimiento del orden. La dependencia va en una sola
+    dirección, y por eso ningún componente se modifica.}
+\end{figure}
+
+\textbf{Relaciones.} La fachada \emph{conoce} a los seis componentes y los seis
+\emph{ignoran} que existe. No hay herencia entre ellos ni entre la fachada y nada: Facade es
+un patrón de composición pura. El cliente depende de la fachada, y puede además seguir
+dependiendo de un componente concreto si lo necesita.
+
+\subsubsection*{Lo que el patrón no hace, dicho antes de que se note}
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{No encapsula el subsistema.} Los componentes siguen siendo públicos y
+          accesibles. Es deliberado y está en el catálogo: la fachada es un atajo, no una
+          aduana. Quien necesite algo que ella no ofrece, baja un nivel. La parte 5 de la
+          demostración lo enseña.
+    \item \textbf{No reduce el acoplamiento total, lo concentra.} Si el amplificador cambia
+          su interfaz, hay exactamente un archivo que corregir; pero hay que corregirlo.
+    \item \textbf{Puede degenerar.} Una fachada que acumula métodos hasta volverse el único
+          sitio donde pasan cosas es un objeto dios. El inciso (c) ataca justamente esa
+          deriva.
+    \item \textbf{No añade comportamiento.} Cada paso ya existía. Lo que aporta es el orden,
+          que es conocimiento, no código nuevo.
+\end{itemize}
+
+\subsubsection*{Observación sobre la combinación con otros patrones}
+
+Los incisos siguientes no cambian de patrón: lo completan. \textbf{Command} convierte cada
+actividad en un objeto, de modo que añadir una no obligue a modificar la fachada (inciso c).
+\textbf{Singleton} controla que haya una sola fachada por sala y \textbf{Observer} permite que
+los componentes avisen de sus cambios de estado sin saber quién escucha (inciso d). La
+restricción final cierra el círculo: si una actividad es un objeto construible, su secuencia
+puede venir de un archivo en lugar de estar escrita en el código.
+
+\fussy

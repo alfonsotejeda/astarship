@@ -6,6 +6,8 @@
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta}
 
 \pagestyle{empty}
 
@@ -43,27 +45,38 @@
     {\normalsize Curso 2026--2027}
 \end{center}
 
-\section{Ejercicio 7: Sistema de Home Theater}
+\phantomsection
+\addcontentsline{toc}{section}{Ejercicio 7: Sistema de Home Theater}
+\section*{Ejercicio 7: Sistema de Home Theater}
 
 \vspace{0.5cm}
+
+% Los nombres de componente van en \texttt y no se parten con guion: se
+% prefiere estirar los espacios antes que desbordar el margen.
+\sloppy
 
 \textbf{Problema:} Un sistema de \textit{home theater} tiene múltiples componentes complejos (
     \texttt{Amplificador}, 
     \texttt{ReproductorDVD},
     \texttt{Proyector},
     \texttt{Pantalla}, 
-    \texttt{Luces}). Los usuarios encuentran difícil operar todos estos componentes por separado para actividades comunes como \`\`ver una película''.
+    \texttt{Luces}). Los usuarios encuentran difícil operar todos estos componentes por separado para actividades comunes como ``ver una película''.
 
     \vspace{0.3cm}
 \textbf{Restricción:} El Facade debe poder configurarse desde un archivo YAML para definir secuencias de actividades.
+
+\fussy
 \input{preguntas/pregunta 7/inciso_a.tex}
 \input{preguntas/pregunta 7/inciso_b.tex}
 \input{preguntas/pregunta 7/inciso_c.tex}
 \input{preguntas/pregunta 7/inciso_d.tex}
+\input{preguntas/pregunta 7/restriccion.tex}
 
 \vspace{0.5cm}
 \newpage
-\section*{12. Sistema de Procesamiento de Transacciones Bancarias}
+\phantomsection
+\addcontentsline{toc}{section}{Ejercicio 12: Sistema de Procesamiento de Transacciones Bancarias}
+\section*{Ejercicio 12: Sistema de Procesamiento de Transacciones Bancarias}
 
 \textbf{Problema:} Un banco necesita procesar diferentes tipos de transacciones (depósito, retiro, transferencia, pago de servicios) sobre distintas cuentas (ahorro, corriente, inversión). Cada transacción debe poder ejecutarse, revertirse (rollback) y auditarse. El sistema debe permitir añadir nuevas operaciones (ej. "congelar cuenta", "calcular intereses") sin modificar las clases de las cuentas ni de las transacciones existentes. Además, algunas operaciones deben poder ejecutarse en paralelo sobre diferentes cuentas, pero manteniendo consistencia cuando afectan a la misma cuenta.
 
@@ -75,4 +88,5 @@
 \input{preguntas/pregunta 12/inciso_b.tex}
 \input{preguntas/pregunta 12/inciso_c.tex}
 \input{preguntas/pregunta 12/inciso_d.tex}
+\input{preguntas/pregunta 12/restriccion.tex}
 \end{document}
