@@ -54,19 +54,19 @@ def test_delete_activity_removes_it(client):
     assert client.get(f"/api/activities/{created['id']}").status_code == 404
 
 
-def test_update_activity_changes_status(client):
+def test_update_activity_ignores_status(client):
     created = client.post("/api/activities", json={"name": "Hiking", "effort_level": 3}).json()
 
-    response = client.patch(f"/api/activities/{created['id']}", json={"status": "rejected"})
+    response = client.patch(f"/api/activities/{created['id']}", json={"status": "approved"})
 
     assert response.status_code == 200
-    assert response.json()["status"] == "rejected"
+    assert response.json()["status"] == "pending"
 
 
-def test_list_activities_filters_by_status(client):
+def test_list_activities_filters_by_status(client, approve_activity):
     approved = client.post("/api/activities", json={"name": "A", "effort_level": 1}).json()
     client.post("/api/activities", json={"name": "B", "effort_level": 1})
-    client.patch(f"/api/activities/{approved['id']}", json={"status": "approved"})
+    approve_activity(approved["id"])
 
     response = client.get("/api/activities", params={"status": "approved"})
 
