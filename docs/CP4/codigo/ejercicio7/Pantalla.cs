@@ -11,4 +11,7 @@ public sealed class Pantalla : ComponenteBase
     public void Bajar() => Registrar("bajada", "bajada");
 
     public void Subir() => Registrar("subida", "subida");
+
+    /// <summary>Una pantalla motorizada no consume una vez colocada.</summary>
+    protected override bool EstaEncendido(string estado) => false;
 }
