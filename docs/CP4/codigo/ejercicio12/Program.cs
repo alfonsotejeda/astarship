@@ -8,6 +8,7 @@ namespace Ejercicio12;
 ///
 ///   dotnet run -- demo        inciso (b): 4 tipos x 3 operaciones y la restriccion
 ///   dotnet run -- composite   inciso (c): Composite e Iterator
+///   dotnet run -- metricas    inciso (d): las cinco operaciones sobre un arbol intacto
 /// </summary>
 public static class Program
 {
@@ -22,8 +23,11 @@ public static class Program
             case "composite":
                 DemoComposite.Run();
                 return 0;
+            case "metricas":
+                DemoMetricas.Run();
+                return 0;
             default:
-                Console.Error.WriteLine("Uso: dotnet run -- [demo|composite]");
+                Console.Error.WriteLine("Uso: dotnet run -- [demo|composite|metricas]");
                 return 1;
         }
     }
