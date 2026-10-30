@@ -17,6 +17,7 @@ from app.api.routes import (
     proportion_category,
     proportion_type,
     travel_group,
+    itinerary_validation,
     user,
 )
 
@@ -37,3 +38,4 @@ api_router.include_router(proportion_type.router)
 api_router.include_router(itinerary_composition.router)
 api_router.include_router(membership.router)
 api_router.include_router(authorization.router)
+api_router.include_router(itinerary_validation.router)
