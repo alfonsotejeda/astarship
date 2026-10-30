@@ -45,19 +45,27 @@
     {\normalsize Curso 2026--2027}
 \end{center}
 
-\section{Ejercicio 7: Sistema de Home Theater}
+\phantomsection
+\addcontentsline{toc}{section}{Ejercicio 7: Sistema de Home Theater}
+\section*{Ejercicio 7: Sistema de Home Theater}
 
 \vspace{0.5cm}
+
+% Los nombres de componente van en \texttt y no se parten con guion: se
+% prefiere estirar los espacios antes que desbordar el margen.
+\sloppy
 
 \textbf{Problema:} Un sistema de \textit{home theater} tiene múltiples componentes complejos (
     \texttt{Amplificador}, 
     \texttt{ReproductorDVD},
     \texttt{Proyector},
     \texttt{Pantalla}, 
-    \texttt{Luces}). Los usuarios encuentran difícil operar todos estos componentes por separado para actividades comunes como \`\`ver una película''.
+    \texttt{Luces}). Los usuarios encuentran difícil operar todos estos componentes por separado para actividades comunes como ``ver una película''.
 
     \vspace{0.3cm}
 \textbf{Restricción:} El Facade debe poder configurarse desde un archivo YAML para definir secuencias de actividades.
+
+\fussy
 \input{preguntas/pregunta 7/inciso_a.tex}
 \input{preguntas/pregunta 7/inciso_b.tex}
 \input{preguntas/pregunta 7/inciso_c.tex}
