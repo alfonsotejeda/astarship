@@ -13,6 +13,7 @@ from app.models import (  # noqa: F401
     assignment,
     authorization,
     category,
+    coverage,
     itinerary,
     itinerary_composition,
     membership,
@@ -20,13 +21,11 @@ from app.models import (  # noqa: F401
     proportion_category,
     proportion_type,
     travel_group,
-)
-from app.models.user import (  # noqa: F401
     admin,
     guide,
     operations_manager,
     tourist,
-    user,
+    user
 )
 
 config = context.config
