@@ -202,9 +202,9 @@ carrera. Soluciones, de preferible a tolerable:
           reducción (esquema \textit{fork-join} o \textit{map-reduce}). Es la opción correcta.
     \item \textbf{Confinamiento por hilo}: una instancia de visitante por recorrido o por hilo,
           combinando los resultados al final.
-    \item Si la acumulación compartida es inevitable, usar acumuladores concurrentes
-          (\texttt{Interlocked.Add}, colecciones concurrentes). Sincronizar el visitante completo
-          serializaría los recorridos y anularía el paralelismo exigido.
+    \item Si la acumulación compartida es inevitable, usar contadores atómicos
+          (\texttt{Interlocked}) o colecciones concurrentes. Sincronizar el visitante
+          completo serializaría los recorridos y anularía el paralelismo exigido.
 \end{itemize}
 
 \textbf{(2) Atomicidad y consistencia por cuenta.} La exclusión mutua no pertenece al
