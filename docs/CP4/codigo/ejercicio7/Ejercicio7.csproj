@@ -13,4 +13,9 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- La restriccion final: el archivo de secuencias viaja junto al ejecutable. -->
+    <Content Include="actividades.yaml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
