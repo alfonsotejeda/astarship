@@ -1,4 +1,6 @@
-\section{Inciso c)}
+\phantomsection
+\addcontentsline{toc}{subsection}{Inciso c)}
+\subsection*{Inciso c)}
 
 % Seccion con muchos nombres de clase largos, que no se parten con guion.
 \sloppy
@@ -9,7 +11,7 @@ ejecución de operaciones sobre grupos?}
 
 \vspace{0.4cm}
 
-\subsection*{Composite: el grupo es un elemento más}
+\subsubsection*{Composite: el grupo es un elemento más}
 
 \texttt{GrupoCuentas} implementa \texttt{ElementoContable}, de modo que una sucursal se visita
 con la misma llamada que una cuenta suelta. El grupo no sabe qué operación se le aplica: solo
@@ -42,7 +44,7 @@ El reparto de responsabilidades queda nítido: \textbf{el compuesto decide el re
 cliente escribe \texttt{elemento.accept(v)} sin saber si detrás hay una cuenta o un árbol de
 cuatro niveles, que es justamente el propósito de Composite.
 
-\subsection*{El peaje que el Composite le cobra al Visitor}
+\subsubsection*{El peaje que el Composite le cobra al Visitor}
 
 Añadir el compuesto significa añadir un \emph{tipo de elemento}, y eso es exactamente lo que
 Visitor hace caro. Había dos caminos:
@@ -79,7 +81,7 @@ Conviene decirlo sin adornos: la interfaz del visitante \emph{sí} se tocó. Los
 la contrapartida es que el visitante pierde el control del recorrido. Esta es la asimetría que
 el inciso (d) cuantifica, observada aquí en un caso real.
 
-\subsection*{La combinación tiene que ser asociativa}
+\subsubsection*{La combinación tiene que ser asociativa}
 
 Si los resultados parciales se agregan, la función que los agrega debe ser asociativa, porque
 de otro modo el resultado dependería del orden del recorrido y el grupo no podría visitarse en
@@ -98,7 +100,7 @@ paralelo. Las tres operaciones se comportan de forma distinta a este respecto:
           atomicidad.
 \end{itemize}
 
-\subsection*{Iterator: recorrer las transacciones}
+\subsubsection*{Iterator: recorrer las transacciones}
 
 \texttt{Cuenta} implementa \texttt{Iterable<Movimiento>}, así que el cliente recorre los
 asientos sin conocer la estructura interna y sin que la cuenta ceda su lista:
@@ -132,7 +134,7 @@ pila explícita, sin materializar una lista con todos los movimientos. Así
 \texttt{GrupoCuentas} también es \texttt{Iterable<Movimiento>} y la uniformidad entre hoja y
 compuesto se mantiene en los dos ejes: se visita igual y se recorre igual.
 
-\subsection*{Cómo afecta el Composite a la ejecución de operaciones sobre grupos}
+\subsubsection*{Cómo afecta el Composite a la ejecución de operaciones sobre grupos}
 
 La pregunta del inciso tiene cinco respuestas, y solo la primera es gratis.
 
@@ -200,7 +202,7 @@ dan el mismo total. Con un visitante que acumulara en un campo, el mismo recorri
 condición de carrera: el Composite multiplica tanto el paralelismo disponible como el daño de
 un visitante mal diseñado.
 
-\subsection*{Evidencia de ejecución}
+\subsubsection*{Evidencia de ejecución}
 
 Salida literal de \texttt{DemoComposite}:
 
@@ -267,7 +269,7 @@ La prueba 3 incluye una comprobación que vale la pena mirar: el interés del no
 con la suma de los intereses de las hojas calculados por separado, lo que verifica que la
 reducción del compuesto no pierde ni duplica hojas.
 
-\subsection*{Dos limitaciones del arreglo}
+\subsubsection*{Dos limitaciones del arreglo}
 
 \textbf{La visita deja de corresponderse una a una con los elementos.} Un visitante que
 contara visitas tendría que decidir si los grupos cuentan, y la interfaz no le obliga a

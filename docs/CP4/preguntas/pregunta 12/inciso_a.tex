@@ -1,4 +1,6 @@
-\section{Inciso a)}
+\phantomsection
+\addcontentsline{toc}{subsection}{Inciso a)}
+\subsection*{Inciso a)}
 
 \textit{Identifica el patrón de diseño más adecuado, justifica tu selección basándote en las
 características del problema y explica la propuesta de solución considerando las clases que
@@ -6,7 +8,7 @@ intervienen y las relaciones entre ellas. ¿Por qué no usar Strategy o polimorf
 
 \vspace{0.4cm}
 
-\subsection*{Patrón seleccionado}
+\subsubsection*{Patrón seleccionado}
 
 El patrón adecuado es \textbf{Visitor} (Visitante), patrón de comportamiento del catálogo
 \textit{Gang of Four}. Su intención declarada es: \textit{representar una operación que se
@@ -14,7 +16,7 @@ ejecuta sobre los elementos de una estructura de objetos, permitiendo definir nu
 sin modificar las clases de los elementos sobre los que opera}. Esa intención es, palabra por
 palabra, el requisito central del enunciado.
 
-\subsection*{Justificación a partir de las características del problema}
+\subsubsection*{Justificación a partir de las características del problema}
 
 El problema presenta dos ejes de variación independientes, y la decisión de diseño depende por
 completo de la velocidad relativa con que crece cada uno:
@@ -62,7 +64,7 @@ dentro de las cuentas, la clase CuentaAhorro acabaría conociendo las reglas de 
 cálculo de intereses, las políticas de congelación y la emisión de reportes. Con Visitor, cada
 operación queda en una sola clase cohesiva, legible, testeable y versionable como unidad.
 
-\subsection*{Mecanismo: el doble despacho}
+\subsubsection*{Mecanismo: el doble despacho}
 
 El punto técnico que justifica el patrón es el siguiente: el comportamiento requerido no
 depende de un tipo, sino de un \textbf{par} $(\textit{tipo de cuenta},\ \textit{tipo de
@@ -104,7 +106,7 @@ De aquí se sigue un criterio de verificación del diseño: \textbf{si en la imp
 aparece un \texttt{switch} o un \texttt{instanceof} sobre tipos de cuenta, el patrón no está
 aplicado}. Eliminar ese \textit{type switch} es precisamente lo que aporta Visitor.
 
-\subsection*{Por qué no polimorfismo simple}
+\subsubsection*{Por qué no polimorfismo simple}
 
 El polimorfismo simple (métodos \texttt{ejecutar()}, \texttt{revertir()}, \texttt{auditar()}
 declarados en la jerarquía de cuentas) resuelve un solo eje, y es el eje equivocado:
@@ -118,7 +120,7 @@ declarados en la jerarquía de cuentas) resuelve un solo eje, y es el eje equivo
           como unidad y no puede leerse, probarse ni modificarse de forma aislada.
 \end{itemize}
 
-\subsection*{Por qué no Strategy}
+\subsubsection*{Por qué no Strategy}
 
 Strategy también encapsula un algoritmo en un objeto, de ahí la confusión; pero su semántica es
 distinta en cuatro aspectos decisivos:
@@ -141,7 +143,7 @@ distinta en cuatro aspectos decisivos:
           recorridos.
 \end{enumerate}
 
-\subsection*{Propuesta de solución: clases y relaciones}
+\subsubsection*{Propuesta de solución: clases y relaciones}
 
 \textbf{Jerarquía de elementos} (cerrada y estable):
 
@@ -183,7 +185,7 @@ dependen de los tipos concretos de elemento. El cliente conoce la estructura de 
 visitante concreto, e inicia el proceso con \texttt{elemento.accept(visitante)}; ninguna otra
 clase conoce el emparejamiento entre tipo de cuenta y operación.
 
-\subsection*{Restricción: concurrencia y estado mutable del visitante}
+\subsubsection*{Restricción: concurrencia y estado mutable del visitante}
 
 Conviene separar dos problemas que suelen confundirse.
 
@@ -226,7 +228,7 @@ protege sus invariantes. En consecuencia:
           cerrojos.
 \end{itemize}
 
-\subsection*{Observación sobre la combinación con otros patrones}
+\subsubsection*{Observación sobre la combinación con otros patrones}
 
 El enunciado pide ejecutar, \emph{revertir} y auditar. El \textit{rollback} y la traza de
 auditoría corresponden conceptualmente a \textbf{Command} (encapsular la petición con
@@ -236,7 +238,7 @@ sin modificar los elementos''; en un diseño completo ambos coexisten: el visita
 comportamiento polimórfico según el tipo de cuenta, y el \textit{command} define la unidad
 transaccional reversible y auditable.
 
-\subsection*{Limitaciones del patrón elegido}
+\subsubsection*{Limitaciones del patrón elegido}
 
 \begin{itemize}[leftmargin=1.2cm]
     \item Un tipo de cuenta nuevo obliga a modificar la interfaz de visitante y todas sus
