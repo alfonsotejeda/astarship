@@ -1,1 +1,282 @@
 \section{Inciso c)}
+
+% Seccion con muchos nombres de clase largos, que no se parten con guion.
+\sloppy
+
+\textit{Integra con Composite para manejar grupos de cuentas (ej. ``Cuentas de una sucursal'')
+y con Iterator para recorrer las transacciones de una cuenta. ¿Cómo afecta el Composite a la
+ejecución de operaciones sobre grupos?}
+
+\vspace{0.4cm}
+
+\subsection*{Composite: el grupo es un elemento más}
+
+\texttt{GrupoCuentas} implementa \texttt{ElementoContable}, de modo que una sucursal se visita
+con la misma llamada que una cuenta suelta. El grupo no sabe qué operación se le aplica: solo
+propaga la visita a sus hijos y combina los resultados parciales.
+
+{\small
+\begin{verbatim}
+public final class GrupoCuentas implements ElementoContable,
+        Iterable<Movimiento> {
+
+    private final List<ElementoContable> hijos =
+            new CopyOnWriteArrayList<>();
+
+    @Override
+    public <R> R accept(VisitanteOperacion<R> v) {
+        R acumulado = v.neutro();
+        for (ElementoContable hijo : hijos) {
+            R parcial = hijo.accept(v);
+            acumulado = acumulado == null
+                    ? parcial : v.combinar(acumulado, parcial);
+        }
+        return acumulado;
+    }
+}
+\end{verbatim}
+}
+
+El reparto de responsabilidades queda nítido: \textbf{el compuesto decide el recorrido} y
+\textbf{el visitante decide la operación y cómo se agregan los resultados}. Con esto, el
+cliente escribe \texttt{elemento.accept(v)} sin saber si detrás hay una cuenta o un árbol de
+cuatro niveles, que es justamente el propósito de Composite.
+
+\subsection*{El peaje que el Composite le cobra al Visitor}
+
+Añadir el compuesto significa añadir un \emph{tipo de elemento}, y eso es exactamente lo que
+Visitor hace caro. Había dos caminos:
+
+\begin{enumerate}[leftmargin=1.2cm]
+    \item \textbf{El clásico del catálogo GoF:} declarar \texttt{visitGrupo(GrupoCuentas)} en
+          la interfaz del visitante. Da al visitante el control del recorrido (puede podar
+          ramas, cambiar el orden o tratar el grupo como una unidad), pero obliga a
+          implementar ese método en los $V$ visitantes existentes.
+    \item \textbf{El adoptado aquí:} el recorrido vive en el compuesto y la interfaz del
+          visitante solo gana dos métodos \texttt{default}, \texttt{combinar} y
+          \texttt{neutro}, con comportamiento razonable por omisión. Los cuatro visitantes ya
+          escritos siguieron compilando sin un solo cambio.
+\end{enumerate}
+
+{\small
+\begin{verbatim}
+public interface VisitanteOperacion<R> {
+    // ... los cuatro metodos de visita del inciso (b)
+
+    default R combinar(R acumulado, R siguiente) {
+        return siguiente;
+    }
+
+    default R neutro() {
+        return null;
+    }
+}
+\end{verbatim}
+}
+
+Conviene decirlo sin adornos: la interfaz del visitante \emph{sí} se tocó. Los métodos
+\texttt{default} de Java bajan el coste de $V$ modificaciones a una sola, pero no lo anulan, y
+la contrapartida es que el visitante pierde el control del recorrido. Esta es la asimetría que
+el inciso (d) cuantifica, observada aquí en un caso real.
+
+\subsection*{La combinación tiene que ser asociativa}
+
+Si los resultados parciales se agregan, la función que los agrega debe ser asociativa, porque
+de otro modo el resultado dependería del orden del recorrido y el grupo no podría visitarse en
+paralelo. Las tres operaciones se comportan de forma distinta a este respecto:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \texttt{CalcularInteresesVisitor} forma el monoide $(0, +)$: neutro $0$ y suma
+          asociativa. El interés de una sucursal es la suma del de sus cuentas.
+    \item \texttt{AuditarTransaccionVisitor} consolida informes: suma los asientos revisados,
+          concatena los hallazgos etiquetados con su cuenta y se queda con el peor nivel de
+          riesgo, siendo BAJO $<$ MEDIO $<$ ALTO. También asociativa.
+    \item \texttt{EjecutarTransaccionVisitor} \emph{no} tiene combinación natural: ejecutar no
+          produce un valor que agregar, sino un efecto en cada cuenta. Se queda con el
+          comportamiento por omisión y eso es una señal de diseño, no un descuido: las
+          operaciones con efectos no se agregan, se aplican, y su problema es el alcance de la
+          atomicidad.
+\end{itemize}
+
+\subsection*{Iterator: recorrer las transacciones}
+
+\texttt{Cuenta} implementa \texttt{Iterable<Movimiento>}, así que el cliente recorre los
+asientos sin conocer la estructura interna y sin que la cuenta ceda su lista:
+
+{\small
+\begin{verbatim}
+public abstract class Cuenta implements ElementoContable,
+        Iterable<Movimiento> {
+
+    private final List<Movimiento> historial =
+            new CopyOnWriteArrayList<>();
+
+    @Override
+    public Iterator<Movimiento> iterator() {
+        return historial.iterator();   // instantanea, no bloquea
+    }
+}
+\end{verbatim}
+}
+
+La elección de la estructura interna no es neutral frente a la restricción de concurrencia. Al
+ser una lista \textit{copy-on-write}, el iterador trabaja sobre una instantánea: no lanza
+\texttt{ConcurrentModificationException} aunque otro hilo registre asientos durante el
+recorrido, y no bloquea a quien escribe. El precio es que el recorrido es
+\textit{weakly consistent}: puede no ver los asientos añadidos después de empezar. Para una
+auditoría es la garantía correcta, y es mejor que la alternativa de sostener el cerrojo de la
+cuenta durante todo el recorrido.
+
+Para el árbol, \texttt{IteradorMovimientosGrupo} aplana la jerarquía en profundidad con una
+pila explícita, sin materializar una lista con todos los movimientos. Así
+\texttt{GrupoCuentas} también es \texttt{Iterable<Movimiento>} y la uniformidad entre hoja y
+compuesto se mantiene en los dos ejes: se visita igual y se recorre igual.
+
+\subsection*{Cómo afecta el Composite a la ejecución de operaciones sobre grupos}
+
+La pregunta del inciso tiene cinco respuestas, y solo la primera es gratis.
+
+\textbf{1. El cliente se simplifica.} Una sola llamada sirve para una cuenta, una sucursal o el
+banco entero. Las operaciones del inciso (b) funcionaron sobre el árbol sin modificarse.
+
+\textbf{2. El alcance deja de ser constante.} \texttt{accept} sobre una hoja es una operación;
+sobre un grupo son $N$. Una operación cara deja de ser inocente cuando el cliente ya no ve
+cuántas cuentas hay debajo, y conviene prever poda o límites de profundidad.
+
+\textbf{3. La atomicidad no se hereda, y esto es lo central.} El decorador transaccional toma
+el cerrojo de \emph{cada} cuenta al visitarla, así que da atomicidad \textbf{por cuenta} y no
+por grupo. En la prueba 5 de la ejecución se ve el efecto: un retiro de 4\,000,00 aplicado
+sobre el árbol se ejecutó en cuatro cuentas y fue rechazado en \texttt{COR-001} por exceder su
+línea de sobregiro. El grupo quedó \textbf{parcialmente aplicado}. Hay dos salidas, con costes
+distintos:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Tomar todos los cerrojos del grupo}, siempre en orden total por
+          identificador para no abrir la puerta al interbloqueo:
+\end{itemize}
+
+{\small
+\begin{verbatim}
+public static <R> R atomica(GrupoCuentas grupo,
+                            VisitanteOperacion<R> v) {
+    List<Cuenta> cuentas = hojas(grupo);  // ordenadas por id
+    int tomados = 0;
+    try {
+        for (Cuenta c : cuentas) {
+            c.cerrojo().lock();
+            tomados++;
+        }
+        return grupo.accept(v);
+    } finally {
+        for (int i = tomados - 1; i >= 0; i--) {
+            cuentas.get(i).cerrojo().unlock();
+        }
+    }
+}
+\end{verbatim}
+}
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Aceptar la atomicidad por cuenta y compensar}, con el Command del inciso (a)
+          registrando cada aplicación para poder deshacerla si una hoja falla: el esquema de
+          las \textit{sagas}. Escala mucho mejor y renuncia a la consistencia instantánea.
+\end{itemize}
+
+Y una precisión que conviene no pasar por alto: tomar todos los cerrojos da
+\textbf{aislamiento}, no atomicidad. Nadie más opera en esas cuentas mientras dura, pero si la
+operación falla a mitad de camino las aplicaciones anteriores siguen hechas. Para
+todo\,o\,nada hace falta además una pasada de validación previa, o la compensación de la
+segunda vía. El patrón no regala la consistencia; solo la hace expresable.
+
+\textbf{4. El interbloqueo se vuelve una amenaza real.} Dos operaciones de grupo cuyas cuentas
+se solapan pueden tomarse los cerrojos en órdenes opuestos. El orden total por identificador,
+que en el inciso (b) hacía falta solo para las transferencias de dos cuentas, pasa a ser
+obligatorio para cualquier operación de grupo.
+
+\textbf{5. El paralelismo sale gratis, pero solo con visitantes puros.} Como los visitantes
+devuelven su resultado en lugar de acumularlo y la combinación es asociativa, el recorrido se
+reparte entre hilos y se reduce al final. En la prueba 6 el recorrido secuencial y el paralelo
+dan el mismo total. Con un visitante que acumulara en un campo, el mismo recorrido sería una
+condición de carrera: el Composite multiplica tanto el paralelismo disponible como el daño de
+un visitante mal diseñado.
+
+\subsection*{Evidencia de ejecución}
+
+Salida literal de \texttt{DemoComposite}:
+
+{\small
+\begin{verbatim}
+1. La estructura: hojas y compuestos tras la misma interfaz
+-----------------------------------------------------------
+  + Banco
+    + Sucursal Centro
+      - AHO-001     Ahorro      saldo=    4,700.00
+      - COR-001     Corriente   saldo=     -205.00
+      + Banca de empresa
+        - EMP-001     Empresarial saldo=   84,997.50
+        - EMP-002     Empresarial saldo=  240,000.00
+    + Sucursal Este
+      - INV-001     Inversion   saldo=   18,980.00
+
+2. Uniformidad: el mismo visitante sobre una hoja y sobre el arbol
+------------------------------------------------------------------
+  hoja  -> AHO-001     Ahorro      riesgo=BAJO   asientos=  1  sin hallazgos
+  grupo -> GRUPO riesgo=ALTO asientos=5
+           COR-001: sobregiro activo por 205.00
+           EMP-001: 1 operacion reportable
+           EMP-002: 1 operacion reportable
+           INV-001: penalizaciones acumuladas: 20.00
+
+3. Reduccion: un solo visitante, cualquier nivel del arbol
+----------------------------------------------------------
+  Banca de empresa   interes anual = 3,899.97
+  Sucursal Centro    interes anual = 3,923.47
+  Sucursal Este      interes anual = 759.20
+  Banco              interes anual = 4,682.67
+  suma de las hojas por separado = 4,682.67
+
+4. Iterator: transacciones de una cuenta y de todo el arbol
+-----------------------------------------------------------
+  movimientos de EMP-001:
+    P1         PAGO_SERVICIOS    -15,000.00  reportable al regulador
+  recorrido aplanado del arbol: 5 asientos, salidas por 76,700.00
+
+5. Alcance de la atomicidad al operar sobre un grupo
+----------------------------------------------------
+  retiro de 4,000.00 sobre el arbol, cuenta por cuenta:
+    AHO-001         4,700.00 ->       700.00  aplicada
+    COR-001          -205.00 ->      -205.00  RECHAZADA
+    EMP-001        84,997.50 ->    80,997.50  aplicada
+    EMP-002       240,000.00 ->   236,000.00  aplicada
+    INV-001        18,980.00 ->    14,900.00  aplicada
+  comision de 10.00 con todos los cerrojos tomados:
+    AHO-001           700.00 ->       690.00  aplicada
+    COR-001          -205.00 ->      -220.00  aplicada
+    EMP-001        80,997.50 ->    80,985.00  aplicada
+    EMP-002       236,000.00 ->   235,987.50  aplicada
+    INV-001        14,900.00 ->    14,889.80  aplicada
+
+6. Recorrido en paralelo del grupo con reduccion al final
+---------------------------------------------------------
+  secuencial = 4,402.71
+  en paralelo = 4,402.71
+\end{verbatim}
+}
+
+La prueba 3 incluye una comprobación que vale la pena mirar: el interés del nodo raíz coincide
+con la suma de los intereses de las hojas calculados por separado, lo que verifica que la
+reducción del compuesto no pierde ni duplica hojas.
+
+\subsection*{Dos limitaciones del arreglo}
+
+\textbf{La visita deja de corresponderse una a una con los elementos.} Un visitante que
+contara visitas tendría que decidir si los grupos cuentan, y la interfaz no le obliga a
+plantearse la pregunta. Es la clase de ambigüedad que conviene documentar en el contrato del
+visitante.
+
+\textbf{El recorrido del compuesto es recursivo.} \texttt{accept} desciende por la pila de
+llamadas, de modo que una jerarquía patológicamente profunda la desbordaría. El iterador, en
+cambio, está escrito con una pila explícita y no tiene ese límite: una asimetría a tener
+presente si las jerarquías crecen.
+
+\fussy

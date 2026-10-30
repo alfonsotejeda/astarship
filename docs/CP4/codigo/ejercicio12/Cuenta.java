@@ -1,3 +1,4 @@
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
@@ -10,7 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * El cerrojo vive aqui y no en el visitante porque la que debe proteger sus
  * invariantes es la cuenta, no la operacion.
  */
-public abstract class Cuenta implements ElementoContable {
+public abstract class Cuenta implements ElementoContable, Iterable<Movimiento> {
 
     /**
      * Solo para la demostracion de la carrera: amplia a proposito la ventana entre
@@ -58,6 +59,17 @@ public abstract class Cuenta implements ElementoContable {
 
     public List<Movimiento> historial() {
         return List.copyOf(historial);
+    }
+
+    /**
+     * Inciso (c). Iterator sobre las transacciones de la cuenta: el cliente recorre
+     * sin conocer la estructura interna. Al ser una lista copy-on-write, el iterador
+     * trabaja sobre una instantanea: no lanza ConcurrentModificationException aunque
+     * otro hilo siga registrando asientos, y no bloquea a quien escribe.
+     */
+    @Override
+    public Iterator<Movimiento> iterator() {
+        return historial.iterator();
     }
 
     Movimiento buscar(String idTransaccion) {

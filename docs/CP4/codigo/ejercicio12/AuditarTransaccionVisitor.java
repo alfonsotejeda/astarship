@@ -60,10 +60,18 @@ public final class AuditarTransaccionVisitor
             }
         }
         if (reportables > 0) {
-            hallazgos.add(reportables + " operaciones reportables");
+            hallazgos.add(reportables + (reportables == 1
+                    ? " operacion reportable" : " operaciones reportables"));
         }
         return new InformeAuditoria(c.id(), c.etiqueta(),
                 reportables > 0 ? "ALTO" : "BAJO",
                 c.historial().size(), hallazgos);
+    }
+
+    /** Inciso (c): asi se consolida la auditoria de un grupo de cuentas. */
+    @Override
+    public InformeAuditoria combinar(InformeAuditoria acumulado,
+                                     InformeAuditoria siguiente) {
+        return InformeAuditoria.consolidar(acumulado, siguiente);
     }
 }
