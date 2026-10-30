@@ -1,1 +1,314 @@
 \section{Inciso b)}
+
+% Esta seccion cita muchos nombres de clase largos, que no se pueden partir con
+% guion: se prefiere estirar los espacios antes que desbordar el margen.
+\sloppy
+
+\textit{Implementa con 4 tipos de elementos (CuentaAhorro, CuentaCorriente, CuentaInversión,
+CuentaEmpresarial) y 3 operaciones (EjecutarTransacción, RevertirTransacción,
+AuditarTransacción). Cada operación debe comportarse de manera diferente según el tipo de
+cuenta.}
+
+\vspace{0.4cm}
+
+\subsection*{Qué se implementó}
+
+La implementación completa, compilable y ejecutable, está en
+\texttt{docs/CP4/codigo/ejercicio12/} (Java 17, sin dependencias externas). Comprende las
+cuatro cuentas, las tres operaciones como visitantes concretos y la infraestructura que exige
+la restricción de concurrencia:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Elementos:} \texttt{ElementoContable} (interfaz con \texttt{accept}),
+          \texttt{Cuenta} (clase base con el saldo, el cerrojo propio y el historial) y las
+          cuatro cuentas concretas.
+    \item \textbf{Operaciones:} \texttt{EjecutarTransaccionVisitor},
+          \texttt{RevertirTransaccionVisitor} y \texttt{AuditarTransaccionVisitor}, más
+          \texttt{CalcularInteresesVisitor} añadido al final como comprobación empírica de la
+          extensibilidad.
+    \item \textbf{Infraestructura:} \texttt{VisitanteTransaccional} (decorador que toma el
+          cerrojo de la cuenta visitada), \texttt{Transferencia} (orden total de adquisición
+          de dos cerrojos) y \texttt{Demo} (las ocho comprobaciones cuya salida se reproduce
+          más abajo).
+    \item \textbf{Valores inmutables:} \texttt{Transaccion}, \texttt{Movimiento},
+          \texttt{ResultadoOperacion} e \texttt{InformeAuditoria} como \textit{records}.
+\end{itemize}
+
+El dinero se representa en centavos con \texttt{long}, nunca con \texttt{double}, para que las
+comprobaciones de los saldos sean exactas.
+
+\subsection*{Las doce combinaciones}
+
+El enunciado pide que cada operación se comporte de manera diferente según el tipo de cuenta.
+Las reglas implementadas son éstas, para las operaciones EjecutarTransacción,
+RevertirTransacción y AuditarTransacción. Ninguna es cosmética: cada celda cambia el
+resultado.
+
+\begin{table}[h!]
+    \centering
+    \small
+    \begin{tabular}{p{2.1cm}p{3.55cm}p{3.55cm}p{3.55cm}}
+        \toprule
+        \textbf{Cuenta} & \textbf{Ejecutar} & \textbf{Revertir} & \textbf{Auditar} \\
+        \midrule
+        Ahorro & Rechaza cualquier salida que deje el saldo en negativo; cobra 1,50 a partir
+                 del cuarto retiro del mes.
+               & Devuelve el principal, reembolsa la comisión y descuenta el retiro contado.
+               & Riesgo MEDIO y hallazgo si se excedió el límite de retiros del mes. \\
+        \addlinespace
+        Corriente & Admite sobregiro hasta la línea de crédito y cobra 5,00 al usarla.
+                  & Devuelve el principal y reembolsa la comisión de sobregiro.
+                  & Riesgo MEDIO o ALTO según la profundidad del sobregiro frente a la línea. \\
+        \addlinespace
+        Inversión & Toda salida liquida participaciones y paga el 2\% de penalización.
+                  & Devuelve el principal pero retiene la penalización: no es simétrico.
+                  & Riesgo según el peso de las penalizaciones acumuladas sobre el saldo. \\
+        \addlinespace
+        Empresarial & Exige segunda firma desde 50\,000,00 y marca como reportable todo lo que
+                      supere 10\,000,00.
+                    & La reversión misma exige la segunda firma; sin ella se rechaza.
+                    & Cuenta las operaciones que superan el umbral de reporte regulatorio. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection*{El doble despacho en el código}
+
+{\small
+\begin{verbatim}
+public interface ElementoContable {
+    <R> R accept(VisitanteOperacion<R> v);
+}
+
+public final class CuentaAhorro extends Cuenta {
+    @Override
+    public <R> R accept(VisitanteOperacion<R> v) {
+        return v.visitAhorro(this);        // 2do despacho
+    }
+}
+
+public interface VisitanteOperacion<R> {
+    R visitAhorro(CuentaAhorro c);
+    R visitCorriente(CuentaCorriente c);
+    R visitInversion(CuentaInversion c);
+    R visitEmpresarial(CuentaEmpresarial c);
+}
+\end{verbatim}
+}
+
+El parámetro de tipo \texttt{R} no es decorativo: permite que el visitante \emph{devuelva} su
+resultado en lugar de acumularlo en un campo, que es la propiedad que lo hace utilizable en
+paralelo. \texttt{EjecutarTransaccionVisitor} devuelve \texttt{ResultadoOperacion},
+\texttt{AuditarTransaccionVisitor} devuelve \texttt{InformeAuditoria} y
+\texttt{CalcularInteresesVisitor} devuelve \texttt{Long}, todos con la misma interfaz de
+elemento.
+
+\subsection*{Una operación, cuatro comportamientos}
+
+Extracto de \texttt{EjecutarTransaccionVisitor}, donde se ve que la diferencia entre tipos de
+cuenta vive en la operación y no en las cuentas:
+
+{\small
+\begin{verbatim}
+private final Transaccion t;    // el parametro viaja en el visitante
+
+@Override
+public ResultadoOperacion visitAhorro(CuentaAhorro c) {
+    if (c.saldo() + t.delta() < 0) {
+        return ResultadoOperacion.rechazada(c,
+                "el ahorro no admite sobregiro");
+    }
+    long cargos = 0L;
+    if (t.tipo() == TipoTransaccion.RETIRO) {
+        c.contarRetiro(1);
+        if (c.retirosDelMes() > CuentaAhorro.LIMITE_RETIROS_MES) {
+            cargos = CuentaAhorro.COMISION_EXCESO;
+        }
+    }
+    c.aplicar(t.delta() - cargos);
+    ...
+}
+
+@Override
+public ResultadoOperacion visitInversion(CuentaInversion c) {
+    long cargos = 0L;
+    if (t.tipo() != TipoTransaccion.DEPOSITO) {
+        cargos = t.montoCentavos()
+                * CuentaInversion.PENALIZACION_BPS / 10_000L;
+        c.acumularPenalizacion(cargos);
+    }
+    c.aplicar(t.delta() - cargos);
+    ...
+}
+\end{verbatim}
+}
+
+\subsection*{Cómo se cumple la restricción}
+
+La restricción se resolvió con los tres mecanismos anunciados en el inciso (a), ahora
+implementados:
+
+\textbf{1. Visitantes que devuelven en lugar de acumular.}
+\texttt{AuditarTransaccionVisitor} no tiene ni un campo: construye y devuelve un
+\texttt{InformeAuditoria} inmutable. Por eso una sola instancia se comparte entre hilos sin
+sincronización, como hace \texttt{Demo}. \texttt{EjecutarTransaccionVisitor} sí tiene estado
+(la transacción), pero es inmutable y se crea uno por operación.
+
+\textbf{2. El cerrojo vive en la cuenta, no en el visitante.} Cada \texttt{Cuenta} lleva su
+\texttt{ReentrantLock} porque la cuenta es la unidad de consistencia del dominio. El decorador
+lo toma y lo libera, de modo que ningún visitante concreto sabe que existen cerrojos:
+
+{\small
+\begin{verbatim}
+public final class VisitanteTransaccional<R>
+        implements VisitanteOperacion<R> {
+
+    private final VisitanteOperacion<R> interno;
+
+    @Override
+    public R visitAhorro(CuentaAhorro c) {
+        return bajoCerrojo(c, () -> interno.visitAhorro(c));
+    }
+
+    private R bajoCerrojo(Cuenta c, Supplier<R> accion) {
+        c.cerrojo().lock();
+        try {
+            return accion.get();
+        } finally {
+            c.cerrojo().unlock();
+        }
+    }
+}
+\end{verbatim}
+}
+
+Como el cerrojo es por cuenta, las operaciones sobre cuentas distintas no se estorban y las
+que afectan a la misma cuenta se serializan: exactamente lo que pide el enunciado.
+
+\textbf{3. Orden total de adquisición en las transferencias.} Una transferencia toca dos
+cuentas, luego necesita dos cerrojos y aparece riesgo de interbloqueo. Se toman siempre por
+identificador ascendente, nunca en el orden en que llegan los argumentos:
+
+{\small
+\begin{verbatim}
+Cuenta primera = origen.id().compareTo(destino.id()) <= 0
+        ? origen : destino;
+Cuenta segunda = primera == origen ? destino : origen;
+primera.cerrojo().lock();
+try {
+    segunda.cerrojo().lock();
+    ...
+\end{verbatim}
+}
+
+\subsection*{Evidencia de ejecución}
+
+Salida literal de \texttt{Demo}. Las partes 1 a 6 comprueban el comportamiento diferenciado;
+las partes 7 y 8, la restricción de concurrencia.
+
+{\footnotesize
+\begin{verbatim}
+1. Misma transaccion, cuatro comportamientos (EjecutarTransaccion)
+------------------------------------------------------------------
+Retiro de 300.00 sobre cada cuenta:
+  AHO-001     APLICADA  saldo=     700.00 cargos=  0.00  sin cargos
+  COR-001     APLICADA  saldo=    -105.00 cargos=  5.00  comision por sobregiro
+  INV-001     APLICADA  saldo=   9,694.00 cargos=  6.00  penalizacion del 2% no reembolsable
+  EMP-001     APLICADA  saldo= 199,700.00 cargos=  0.00  registrada
+  EMP-002     APLICADA  saldo= 199,700.00 cargos=  0.00  registrada
+
+2. Reglas propias de cada tipo
+------------------------------
+Retiro de 60,000.00 en empresarial:
+  EMP-001     RECHAZADA saldo= 199,700.00 cargos=  0.00  exige doble autorizacion
+  EMP-002     APLICADA  saldo= 139,700.00 cargos=  0.00  reportable al regulador
+Tres retiros mas en ahorro (limite del mes: 3):
+  AHO-001     APLICADA  saldo=     600.00 cargos=  0.00  sin cargos
+  AHO-001     APLICADA  saldo=     500.00 cargos=  0.00  sin cargos
+  AHO-001     APLICADA  saldo=     398.50 cargos=  1.50  comision por exceso de retiros
+Pago de servicios de 15,000.00 en empresarial:
+  EMP-002     APLICADA  saldo= 124,697.50 cargos=  2.50  reportable al regulador
+
+3. RevertirTransaccion: tampoco se revierte igual en cada cuenta
+----------------------------------------------------------------
+  AHO-001     APLICADA  saldo=     698.50 cargos=  0.00  revertida, comision reembolsada
+  COR-001     APLICADA  saldo=     200.00 cargos= -5.00  revertida, sobregiro reembolsado
+  INV-001     APLICADA  saldo=   9,994.00 cargos=  0.00  penalizacion de 6.00 retenida
+  EMP-001     RECHAZADA saldo= 199,700.00 cargos=  0.00  la reversion exige doble firma
+  EMP-002     APLICADA  saldo= 124,997.50 cargos=  0.00  revertida con traza de autorizacion
+
+4. AuditarTransaccion: visitante sin estado, informe inmutable
+--------------------------------------------------------------
+  AHO-001     Ahorro      riesgo=BAJO   asientos=  5  sin hallazgos
+  COR-001     Corriente   riesgo=BAJO   asientos=  2  sin hallazgos
+  INV-001     Inversion   riesgo=MEDIO  asientos=  2  penalizaciones acumuladas: 6.00
+  EMP-001     Empresarial riesgo=BAJO   asientos=  1  sin hallazgos
+  EMP-002     Empresarial riesgo=ALTO   asientos=  4  2 operaciones reportables
+
+5. Operacion nueva sin tocar ninguna cuenta (Open/Closed)
+---------------------------------------------------------
+  AHO-001     Ahorro      interes anual = 3.49
+  COR-001     Corriente   interes anual = 0.00
+  INV-001     Inversion   interes anual = 399.76
+  EMP-001     Empresarial interes anual = 2,396.40
+  EMP-002     Empresarial interes anual = 1,499.97
+
+6. Transferencia: dos cerrojos en orden total por identificador
+---------------------------------------------------------------
+  COR-001     APLICADA  saldo=     150.00 cargos=  0.00  sin cargos
+  origen COR-001 -> 150.00 | destino AHO-001 -> 748.50
+
+7. Restriccion: concurrencia sobre la MISMA cuenta
+--------------------------------------------------
+  con decorador transaccional: esperado 20,000.00, obtenido 20,000.00
+  atomico y consistente: true
+  sin decorador:               esperado 20,000.00, obtenido 5,440.00
+  actualizaciones perdidas:    14,560.00
+
+8. Restriccion: paralelismo sobre cuentas DISTINTAS
+---------------------------------------------------
+  PAR-AHO     saldo=  10,000.00 correcto=true
+  PAR-COR     saldo=  10,000.00 correcto=true
+  PAR-INV     saldo=  10,000.00 correcto=true
+  PAR-EMP     saldo=  10,000.00 correcto=true
+  16 hilos sobre 4 cuentas, sin contencion entre ellas: 10 ms
+\end{verbatim}
+}
+
+En la parte 7, ocho hilos hacen 250 depósitos de 10,00 sobre la misma cuenta. Con el decorador
+el saldo final es exacto; sin él se pierden actualizaciones porque la secuencia leer, sumar y
+escribir el saldo deja de ser atómica. La cifra concreta de pérdida cambia en cada ejecución,
+porque depende del entrelazado de los hilos: es un error no determinista, que es justamente lo
+que lo hace peligroso. Para que la carrera se manifieste de forma visible en cada corrida, la
+clase \texttt{Cuenta} amplía a propósito la ventana entre la lectura y la escritura mediante un
+\texttt{Thread.yield()} activado solo en esa prueba.
+
+\subsection*{Dos observaciones que salieron del experimento}
+
+\textbf{La reversión no es el inverso exacto de la ejecución.} En la cuenta de inversión, el
+retiro de 300,00 cobró 6,00 de penalización y la reversión devolvió el principal pero retuvo
+la penalización: el saldo no vuelve a 10\,000,00 sino a 9\,994,00. Es una regla de negocio
+legítima, y muestra por qué el \textit{rollback} se modela mejor con Command y Memento que
+como una resta: el visitante que revierte necesita saber qué ocurrió, no solo qué se pidió. En
+la implementación lo consigue buscando el asiento en el historial de la cuenta.
+
+\textbf{Visitor protege frente a comportamiento nuevo, no frente a estado nuevo.}
+\texttt{CalcularInteresesVisitor} se añadió sin modificar ninguna cuenta porque calcula a
+partir del estado que las cuentas ya exponen. Una operación como ``congelar cuenta''
+necesitaría un atributo nuevo en el elemento, y entonces sí habría que tocarlo. Conviene
+declararlo: el patrón cierra las clases de los elementos ante operaciones nuevas, no ante
+atributos nuevos.
+
+\subsection*{Cómo compilar y ejecutar}
+
+{\small
+\begin{verbatim}
+cd docs/CP4/codigo/ejercicio12
+javac -d /tmp/ej12 *.java
+java -cp /tmp/ej12 Demo
+\end{verbatim}
+}
+
+Compila sin advertencias con \texttt{javac -Xlint:all} en OpenJDK 17.
+
+\fussy
