@@ -6,6 +6,7 @@ namespace Ejercicio7;
 /// Punto de entrada unico. Las demostraciones del ejercicio se eligen por argumento:
 ///
 ///   dotnet run -- demo        inciso (b): 6 componentes y 3 actividades
+///   dotnet run -- extension   inciso (c): Command y Strategy
 /// </summary>
 public static class Program
 {
@@ -17,8 +18,11 @@ public static class Program
             case "demo":
                 Demo.Run();
                 return 0;
+            case "extension":
+                DemoExtension.Run();
+                return 0;
             default:
-                Console.Error.WriteLine("Uso: dotnet run -- [demo]");
+                Console.Error.WriteLine("Uso: dotnet run -- [demo|extension]");
                 return 1;
         }
     }

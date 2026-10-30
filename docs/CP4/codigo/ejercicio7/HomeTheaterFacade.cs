@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Ejercicio7;
 
 /// <summary>
@@ -23,6 +26,16 @@ public sealed class HomeTheaterFacade
     private readonly Pantalla _pantalla;
     private readonly Luces _luces;
 
+    /// <summary>
+    /// Inciso (c). El registro de actividades: la UNICA modificacion que hubo que
+    /// hacerle a esta clase para que admita actividades nuevas. A partir de aqui, una
+    /// actividad mas cuesta un archivo nuevo y cero modificaciones.
+    /// </summary>
+    private readonly Dictionary<string, IActividad> _actividades =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private IActividad? _ultima;
+
     public HomeTheaterFacade(
         Amplificador amplificador,
         ReproductorDvd dvd,
@@ -39,18 +52,24 @@ public sealed class HomeTheaterFacade
         _luces = luces;
     }
 
-    /// <summary>Actividad 1 de 3. Diez pasos que el cliente no tiene que conocer.</summary>
+    /// <summary>
+    /// Inciso (c), Strategy: el perfil decide los parametros de la pelicula, no su
+    /// secuencia. Cambiar de perfil no anade ni quita pasos; cambia el como.
+    /// </summary>
+    public IPerfilSala Perfil { get; set; } = new PerfilEstandar();
+
+    /// <summary>Actividad 1 de 3. Once pasos que el cliente no tiene que conocer.</summary>
     public void VerPelicula(string titulo)
     {
-        _luces.Atenuar(10);
+        _luces.Atenuar(Perfil.LucesPelicula);
         _pantalla.Bajar();
         _proyector.Encender();
         _proyector.Entrada("dvd");
         _proyector.Formato("16:9");
         _amplificador.Encender();
         _amplificador.Entrada("dvd");
-        _amplificador.ModoEnvolvente(true);
-        _amplificador.PonerVolumen(7);
+        _amplificador.ModoEnvolvente(Perfil.EnvolventePelicula);
+        _amplificador.PonerVolumen(Perfil.VolumenPelicula);
         _dvd.Encender();
         _dvd.Reproducir(titulo);
     }
@@ -91,5 +110,37 @@ public sealed class HomeTheaterFacade
         _amplificador.PonerVolumen(9);
         _consola.Encender();
         _consola.CargarJuego(juego);
+    }
+
+    /// <summary>
+    /// Inciso (c). Registra una actividad escrita fuera de esta clase. El cliente que
+    /// la escribe decide su nombre; la fachada solo la guarda.
+    /// </summary>
+    public void Registrar(IActividad actividad) => _actividades[actividad.Nombre] = actividad;
+
+    /// <summary>Lo que la sala sabe hacer ahora mismo, sin recompilar la fachada.</summary>
+    public IEnumerable<string> Actividades => _actividades.Keys;
+
+    /// <summary>
+    /// Ejecuta una actividad registrada. Falla fuerte y claro si no existe: un nombre
+    /// mal escrito es un error del cliente, no una actividad que no hace nada.
+    /// </summary>
+    public void Ejecutar(string nombre)
+    {
+        if (!_actividades.TryGetValue(nombre, out IActividad? actividad))
+        {
+            throw new KeyNotFoundException(
+                "No hay ninguna actividad registrada con el nombre \"" + nombre + "\"");
+        }
+
+        _ultima = actividad;
+        actividad.Ejecutar();
+    }
+
+    /// <summary>Lo que Command aporta sobre una lambda: deshacer lo ultimo hecho.</summary>
+    public void DeshacerUltima()
+    {
+        _ultima?.Deshacer();
+        _ultima = null;
     }
 }
