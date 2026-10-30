@@ -7,6 +7,7 @@ namespace Ejercicio7;
 ///
 ///   dotnet run -- demo        inciso (b): 6 componentes y 3 actividades
 ///   dotnet run -- extension   inciso (c): Command y Strategy
+///   dotnet run -- integracion inciso (d): Singleton y Observer
 /// </summary>
 public static class Program
 {
@@ -21,8 +22,11 @@ public static class Program
             case "extension":
                 DemoExtension.Run();
                 return 0;
+            case "integracion":
+                DemoIntegracion.Run();
+                return 0;
             default:
-                Console.Error.WriteLine("Uso: dotnet run -- [demo|extension]");
+                Console.Error.WriteLine("Uso: dotnet run -- [demo|extension|integracion]");
                 return 1;
         }
     }
