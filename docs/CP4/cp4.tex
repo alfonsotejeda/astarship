@@ -63,7 +63,9 @@
 
 \vspace{0.5cm}
 \newpage
-\section*{12. Sistema de Procesamiento de Transacciones Bancarias}
+\phantomsection
+\addcontentsline{toc}{section}{Ejercicio 12: Sistema de Procesamiento de Transacciones Bancarias}
+\section*{Ejercicio 12: Sistema de Procesamiento de Transacciones Bancarias}
 
 \textbf{Problema:} Un banco necesita procesar diferentes tipos de transacciones (depósito, retiro, transferencia, pago de servicios) sobre distintas cuentas (ahorro, corriente, inversión). Cada transacción debe poder ejecutarse, revertirse (rollback) y auditarse. El sistema debe permitir añadir nuevas operaciones (ej. "congelar cuenta", "calcular intereses") sin modificar las clases de las cuentas ni de las transacciones existentes. Además, algunas operaciones deben poder ejecutarse en paralelo sobre diferentes cuentas, pero manteniendo consistencia cuando afectan a la misma cuenta.
 

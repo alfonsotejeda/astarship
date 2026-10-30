@@ -1,4 +1,6 @@
-\section{Inciso d)}
+\phantomsection
+\addcontentsline{toc}{subsection}{Inciso d)}
+\subsection*{Inciso d)}
 
 % Seccion con nombres de clase largos, que no se parten con guion.
 \sloppy
@@ -10,7 +12,7 @@ tipos de cuenta?}
 
 \vspace{0.4cm}
 
-\subsection*{Las dos alternativas son la misma matriz, descompuesta de dos maneras}
+\subsubsection*{Las dos alternativas son la misma matriz, descompuesta de dos maneras}
 
 El comportamiento que el sistema debe implementar es una matriz de $T \times V$ celdas: $T$
 tipos de cuenta por $V$ operaciones. En esta implementación son $T = 4$ y $V = 5$, es decir
@@ -31,7 +33,7 @@ cerrado a modificación}: el eje que se corta en unidades es el que se puede ext
 tocar nada. Esto es el \textit{expression problem}, y no tiene solución gratuita en un
 lenguaje con despacho simple: lo que se gana en un eje se paga en el otro.
 
-\subsection*{Las dos métricas}
+\subsubsection*{Las dos métricas}
 
 Para que la métrica signifique algo hay que distinguir dos cosas que no cuestan lo mismo:
 \textbf{añadir} un archivo nuevo, que no puede romper lo que ya funciona, y
@@ -62,7 +64,7 @@ enunciado cuenta, por tanto, archivos modificados:
 La tabla es perfectamente simétrica, y en esa simetría está todo el argumento: no hay una
 opción mejor, hay una opción adecuada a cada perfil de crecimiento.
 
-\subsection*{Medición sobre esta implementación}
+\subsubsection*{Medición sobre esta implementación}
 
 Las dos cifras no se afirman, se midieron sobre el propio repositorio.
 
@@ -131,7 +133,7 @@ Archivos de elemento modificados para lograrlo: 0
 \end{verbatim}
 }
 
-\subsection*{Cuándo conviene cada uno}
+\subsubsection*{Cuándo conviene cada uno}
 
 El criterio de decisión se puede enunciar en una frase: \textbf{el eje que se cierra debe ser
 el que no va a crecer}, y si alguno de los dos lo van a extender terceros, ése es el que hay
@@ -168,7 +170,7 @@ operaciones de negocio viven en visitantes. La pregunta correcta ante cada opera
 patrón usar, sino si esa operación define al elemento o si es una política externa que lo
 consulta.
 
-\subsection*{Qué pasa si las operaciones crecen mucho más rápido que los tipos}
+\subsubsection*{Qué pasa si las operaciones crecen mucho más rápido que los tipos}
 
 Es la situación del enunciado, $V \gg T$ con $T$ fijo, y tiene cuatro consecuencias.
 
@@ -218,7 +220,7 @@ aproximación al riesgo, pero deja fuera tres cosas que con $V$ grande se vuelve
           prueba por método.
 \end{itemize}
 
-\subsection*{Una nota sobre la alternativa moderna}
+\subsubsection*{Una nota sobre la alternativa moderna}
 
 La asimetría que obliga a elegir no es una ley del diseño orientado a objetos, sino una
 consecuencia del despacho simple. Con tipos sellados y \textit{switch} exhaustivo sobre
@@ -233,7 +235,7 @@ despacho doble con comprobación en tiempo de compilación. Vale la pena decirlo
 límite del argumento: se eligió Visitor por el perfil de crecimiento del problema y por las
 herramientas del lenguaje disponible, no porque sea una verdad permanente.
 
-\subsection*{Conclusión para el problema del banco}
+\subsubsection*{Conclusión para el problema del banco}
 
 Los tipos de cuenta están fijados en cuatro por el enunciado y las operaciones se declaran
 explícitamente crecientes: $V \gg T$ con $T$ estable. Bajo esa condición, la comparación no

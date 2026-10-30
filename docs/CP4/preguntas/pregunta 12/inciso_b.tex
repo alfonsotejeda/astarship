@@ -1,4 +1,6 @@
-\section{Inciso b)}
+\phantomsection
+\addcontentsline{toc}{subsection}{Inciso b)}
+\subsection*{Inciso b)}
 
 % Esta seccion cita muchos nombres de clase largos, que no se pueden partir con
 % guion: se prefiere estirar los espacios antes que desbordar el margen.
@@ -11,7 +13,7 @@ cuenta.}
 
 \vspace{0.4cm}
 
-\subsection*{Qué se implementó}
+\subsubsection*{Qué se implementó}
 
 La implementación completa, compilable y ejecutable, está en
 \texttt{docs/CP4/codigo/ejercicio12/} (Java 17, sin dependencias externas). Comprende las
@@ -37,7 +39,7 @@ la restricción de concurrencia:
 El dinero se representa en centavos con \texttt{long}, nunca con \texttt{double}, para que las
 comprobaciones de los saldos sean exactas.
 
-\subsection*{Las doce combinaciones}
+\subsubsection*{Las doce combinaciones}
 
 El enunciado pide que cada operación se comporte de manera diferente según el tipo de cuenta.
 Las reglas implementadas son éstas, para las operaciones EjecutarTransacción,
@@ -72,7 +74,7 @@ resultado.
     \end{tabular}
 \end{table}
 
-\subsection*{El doble despacho en el código}
+\subsubsection*{El doble despacho en el código}
 
 {\small
 \begin{verbatim}
@@ -103,7 +105,7 @@ paralelo. \texttt{EjecutarTransaccionVisitor} devuelve \texttt{ResultadoOperacio
 \texttt{CalcularInteresesVisitor} devuelve \texttt{Long}, todos con la misma interfaz de
 elemento.
 
-\subsection*{Una operación, cuatro comportamientos}
+\subsubsection*{Una operación, cuatro comportamientos}
 
 Extracto de \texttt{EjecutarTransaccionVisitor}, donde se ve que la diferencia entre tipos de
 cuenta vive en la operación y no en las cuentas:
@@ -143,7 +145,7 @@ public ResultadoOperacion visitInversion(CuentaInversion c) {
 \end{verbatim}
 }
 
-\subsection*{Cómo se cumple la restricción}
+\subsubsection*{Cómo se cumple la restricción}
 
 La restricción se resolvió con los tres mecanismos anunciados en el inciso (a), ahora
 implementados:
@@ -201,7 +203,7 @@ try {
 \end{verbatim}
 }
 
-\subsection*{Evidencia de ejecución}
+\subsubsection*{Evidencia de ejecución}
 
 Salida literal de \texttt{Demo}. Las partes 1 a 6 comprueban el comportamiento diferenciado;
 las partes 7 y 8, la restricción de concurrencia.
@@ -283,7 +285,7 @@ que lo hace peligroso. Para que la carrera se manifieste de forma visible en cad
 clase \texttt{Cuenta} amplía a propósito la ventana entre la lectura y la escritura mediante un
 \texttt{Thread.yield()} activado solo en esa prueba.
 
-\subsection*{Dos observaciones que salieron del experimento}
+\subsubsection*{Dos observaciones que salieron del experimento}
 
 \textbf{La reversión no es el inverso exacto de la ejecución.} En la cuenta de inversión, el
 retiro de 300,00 cobró 6,00 de penalización y la reversión devolvió el principal pero retuvo
@@ -299,7 +301,7 @@ necesitaría un atributo nuevo en el elemento, y entonces sí habría que tocarl
 declararlo: el patrón cierra las clases de los elementos ante operaciones nuevas, no ante
 atributos nuevos.
 
-\subsection*{Cómo compilar y ejecutar}
+\subsubsection*{Cómo compilar y ejecutar}
 
 {\small
 \begin{verbatim}
