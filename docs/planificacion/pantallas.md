@@ -114,8 +114,19 @@ src/
 ├── pages/        una carpeta por página (§5.1): ActivitiesPage/, ItinerariesPage/, TripPage/…
 ├── hooks/        hooks compartidos (useMediaQuery…)
 ├── lib/          cliente de la API, hooks de react-query, exportar PDF, formato de fechas y números
+│   └── api/        un archivo por recurso (packages.ts, activities.ts…): tipos del contrato, llamadas y hooks
+├── mocks/        backend falso mientras no existan los endpoints de §6
+│   ├── data/       las «tablas» de ejemplo, sacadas de los artboards
+│   ├── handlers/   un archivo por recurso con sus rutas (`GET /packages`…)
+│   └── router.ts   reúne los handlers; `request()` lo usa si `VITE_USE_MOCKS=true`
 └── styles/       tokens.css (copiado del Design System), index.css
 ```
+
+**Datos de las páginas:** una página nunca trae datos escritos a mano. Pide todo con los
+hooks de `lib/api/<recurso>.ts`, cuyos tipos siguen la respuesta del backend (snake_case).
+Mientras el endpoint no exista, se añade su handler en `mocks/handlers/` con los datos del
+artboard en `mocks/data/`. Con `VITE_USE_MOCKS=true` (por defecto en `.env.development`) la
+app responde desde ahí; cuando el backend lo implemente, se pone a `false` y la página no cambia.
 
 **Convenciones:**
 - Los colores, espacios y radios **siempre** con las variables de `tokens.css`, nunca un hex suelto.
