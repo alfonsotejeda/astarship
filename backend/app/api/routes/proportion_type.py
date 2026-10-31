@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.rules import require_itinerary_author
 from app.db.session import get_db
 from app.models.proportion_type import ProportionType
 from app.schemas.proportion_type import (
@@ -52,6 +53,7 @@ def list_proportion_types(
     "/{activity_type_code}",
     response_model=ProportionTypeRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_itinerary_author)],
 )
 def create_proportion_type(
     itinerary_id: int,
@@ -76,7 +78,11 @@ def create_proportion_type(
     )
 
 
-@router.patch("/{activity_type_code}", response_model=ProportionTypeRead)
+@router.patch(
+    "/{activity_type_code}",
+    response_model=ProportionTypeRead,
+    dependencies=[Depends(require_itinerary_author)],
+)
 def update_proportion_type(
     itinerary_id: int,
     activity_type_code: str,
@@ -88,7 +94,11 @@ def update_proportion_type(
     return proportion_type_service.update_proportion_type(db, proportion_type, data)
 
 
-@router.delete("/{activity_type_code}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{activity_type_code}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_itinerary_author)],
+)
 def delete_proportion_type(
     itinerary_id: int, activity_type_code: str, db: Session = Depends(get_db)
 ) -> None:
