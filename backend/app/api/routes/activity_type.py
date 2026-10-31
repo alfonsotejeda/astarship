@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import require_admin
 from app.db.session import get_db
 from app.schemas.activity_type import ActivityTypeCreate, ActivityTypeRead, ActivityTypeUpdate
 from app.services import activity_type as activity_type_service
@@ -32,7 +33,12 @@ def get_activity_type(code: str, db: Session = Depends(get_db)) -> ActivityTypeR
     return _get_activity_type_or_404(db, code)
 
 
-@router.post("", response_model=ActivityTypeRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ActivityTypeRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
+)
 def create_activity_type(
     data: ActivityTypeCreate, db: Session = Depends(get_db)
 ) -> ActivityTypeRead:
@@ -40,7 +46,7 @@ def create_activity_type(
     return activity_type_service.create_activity_type(db, data)
 
 
-@router.patch("/{code}", response_model=ActivityTypeRead)
+@router.patch("/{code}", response_model=ActivityTypeRead, dependencies=[Depends(require_admin)])
 def update_activity_type(
     code: str, data: ActivityTypeUpdate, db: Session = Depends(get_db)
 ) -> ActivityTypeRead:
@@ -49,7 +55,9 @@ def update_activity_type(
     return activity_type_service.update_activity_type(db, activity_type, data)
 
 
-@router.delete("/{code}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{code}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)]
+)
 def delete_activity_type(code: str, db: Session = Depends(get_db)) -> None:
     """Delete an activity type."""
     activity_type = _get_activity_type_or_404(db, code)

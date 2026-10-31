@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.rules import require_itinerary_author
 from app.db.session import get_db
 from app.models.proportion_category import ProportionCategory
 from app.schemas.proportion_category import (
@@ -52,6 +53,7 @@ def list_proportion_categories(
     "/{category_id}",
     response_model=ProportionCategoryRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_itinerary_author)],
 )
 def create_proportion_category(
     itinerary_id: int,
@@ -74,7 +76,11 @@ def create_proportion_category(
     )
 
 
-@router.patch("/{category_id}", response_model=ProportionCategoryRead)
+@router.patch(
+    "/{category_id}",
+    response_model=ProportionCategoryRead,
+    dependencies=[Depends(require_itinerary_author)],
+)
 def update_proportion_category(
     itinerary_id: int,
     category_id: int,
@@ -86,7 +92,11 @@ def update_proportion_category(
     return proportion_category_service.update_proportion_category(db, proportion_category, data)
 
 
-@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{category_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_itinerary_author)],
+)
 def delete_proportion_category(
     itinerary_id: int, category_id: int, db: Session = Depends(get_db)
 ) -> None:

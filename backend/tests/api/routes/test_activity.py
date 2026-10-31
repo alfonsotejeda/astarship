@@ -2,12 +2,37 @@
 
 from datetime import date
 
+import pytest
 
-def test_create_activity_returns_201(client):
-    response = client.post(
-        "/api/activities",
-        json={"name": "Hiking", "effort_level": 3},
-    )
+
+@pytest.fixture
+def guide_id(client):
+    """Id of a guide that describes the activities of a test."""
+    return client.post(
+        "/api/users",
+        json={
+            "name": "Gil",
+            "role": "guide",
+            "email": "gil@example.com",
+            "password": "x",
+            "specialty": "History",
+        },
+    ).json()["id"]
+
+
+@pytest.fixture
+def as_guide(as_user, guide_id):
+    """Context manager that makes the client call as the test guide."""
+    return lambda: as_user(guide_id)
+
+
+def _create(client, as_guide, name="Hiking", effort_level=3):
+    with as_guide():
+        return client.post("/api/activities", json={"name": name, "effort_level": effort_level})
+
+
+def test_create_activity_returns_201(client, as_guide):
+    response = _create(client, as_guide)
 
     assert response.status_code == 201
     body = response.json()
@@ -17,8 +42,14 @@ def test_create_activity_returns_201(client):
     assert body["creation_date"] == date.today().isoformat()
 
 
-def test_list_activities_includes_created_activity(client):
-    client.post("/api/activities", json={"name": "Hiking", "effort_level": 3})
+def test_create_activity_returns_403_for_non_guide(client):
+    response = client.post("/api/activities", json={"name": "Hiking", "effort_level": 3})
+
+    assert response.status_code == 403
+
+
+def test_list_activities_includes_created_activity(client, as_guide):
+    _create(client, as_guide)
 
     response = client.get("/api/activities")
 
@@ -32,21 +63,18 @@ def test_get_activity_returns_404_when_missing(client):
     assert response.status_code == 404
 
 
-def test_update_activity_changes_name(client):
-    created = client.post(
-        "/api/activities", json={"name": "Old", "effort_level": 1}
-    ).json()
+def test_update_activity_changes_name(client, as_guide):
+    created = _create(client, as_guide, name="Old", effort_level=1).json()
 
-    response = client.patch(f"/api/activities/{created['id']}", json={"name": "New"})
+    with as_guide():
+        response = client.patch(f"/api/activities/{created['id']}", json={"name": "New"})
 
     assert response.status_code == 200
     assert response.json()["name"] == "New"
 
 
-def test_delete_activity_removes_it(client):
-    created = client.post(
-        "/api/activities", json={"name": "Temp", "effort_level": 1}
-    ).json()
+def test_delete_activity_removes_it(client, as_guide):
+    created = _create(client, as_guide, name="Temp", effort_level=1).json()
 
     response = client.delete(f"/api/activities/{created['id']}")
 
@@ -54,19 +82,30 @@ def test_delete_activity_removes_it(client):
     assert client.get(f"/api/activities/{created['id']}").status_code == 404
 
 
-def test_update_activity_changes_status(client):
-    created = client.post("/api/activities", json={"name": "Hiking", "effort_level": 3}).json()
+def test_delete_activity_returns_403_for_guide(client, as_guide):
+    created = _create(client, as_guide, name="Temp", effort_level=1).json()
 
-    response = client.patch(f"/api/activities/{created['id']}", json={"status": "rejected"})
+    with as_guide():
+        response = client.delete(f"/api/activities/{created['id']}")
+
+    assert response.status_code == 403
+
+
+def test_update_activity_changes_status(client, as_guide):
+    created = _create(client, as_guide).json()
+
+    with as_guide():
+        response = client.patch(f"/api/activities/{created['id']}", json={"status": "rejected"})
 
     assert response.status_code == 200
     assert response.json()["status"] == "rejected"
 
 
-def test_list_activities_filters_by_status(client):
-    approved = client.post("/api/activities", json={"name": "A", "effort_level": 1}).json()
-    client.post("/api/activities", json={"name": "B", "effort_level": 1})
-    client.patch(f"/api/activities/{approved['id']}", json={"status": "approved"})
+def test_list_activities_filters_by_status(client, as_guide):
+    approved = _create(client, as_guide, name="A", effort_level=1).json()
+    _create(client, as_guide, name="B", effort_level=1)
+    with as_guide():
+        client.patch(f"/api/activities/{approved['id']}", json={"status": "approved"})
 
     response = client.get("/api/activities", params={"status": "approved"})
 

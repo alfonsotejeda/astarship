@@ -3,8 +3,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import get_current_user, require_admin
+from app.api.deps.rules import forbid_acting_for_others
 from app.db.session import get_db
 from app.models.assignment import Assignment
+from app.models.user.user import User
 from app.schemas.assignment import AssignmentCreate, AssignmentRead, AssignmentUpdate
 from app.services import assignment as assignment_service
 from app.services import itinerary as itinerary_service
@@ -53,6 +56,7 @@ def list_tourist_assignments(
     "/itineraries/{itinerary_id}/assignments/{tourist_id}",
     response_model=AssignmentRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
 )
 def create_assignment(
     itinerary_id: int, tourist_id: int, data: AssignmentCreate, db: Session = Depends(get_db)
@@ -73,9 +77,14 @@ def create_assignment(
     "/itineraries/{itinerary_id}/assignments/{tourist_id}", response_model=AssignmentRead
 )
 def update_assignment(
-    itinerary_id: int, tourist_id: int, data: AssignmentUpdate, db: Session = Depends(get_db)
+    itinerary_id: int,
+    tourist_id: int,
+    data: AssignmentUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> AssignmentRead:
-    """Update an assignment, typically to advance its status."""
+    """Update an assignment, typically for its tourist to advance its status."""
+    forbid_acting_for_others(user, tourist_id)
     assignment = _get_assignment_or_404(db, itinerary_id, tourist_id)
     return assignment_service.update_assignment(db, assignment, data)
 
@@ -83,6 +92,7 @@ def update_assignment(
 @router.delete(
     "/itineraries/{itinerary_id}/assignments/{tourist_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin)],
 )
 def delete_assignment(itinerary_id: int, tourist_id: int, db: Session = Depends(get_db)) -> None:
     """Remove an itinerary from a tourist."""
