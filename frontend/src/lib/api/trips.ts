@@ -109,30 +109,27 @@ export function useMyAssignment(itineraryId: number) {
 
 type VisitChange = VisitRequest & { activityId: number };
 
-function patchStops<T extends { days?: TripDay[]; trip_days?: TripDay[] }>(data: T, change: VisitChange): T {
-  const patchDays = (days: TripDay[]) =>
-    days.map(day => ({
-      ...day,
-      stops: day.stops.map(stop =>
-        stop.activity_id === change.activityId ? { ...stop, visit_status: change.status, rating: change.rating } : stop,
-      ),
-    }));
-
-  return {
-    ...data,
-    ...(data.days && { days: patchDays(data.days) }),
-    ...(data.trip_days && { trip_days: patchDays(data.trip_days) }),
-  } as T;
+function patchDays(days: TripDay[], change: VisitChange): TripDay[] {
+  return days.map(day => ({
+    ...day,
+    stops: day.stops.map(stop =>
+      stop.activity_id === change.activityId ? { ...stop, visit_status: change.status, rating: change.rating } : stop,
+    ),
+  }));
 }
 
 // The change shows at once; if the API fails, the cached data is restored
 async function applyOptimistic(queryClient: QueryClient, itineraryId: number, change: VisitChange) {
-  const keys = [["me", "today"], ["me", "assignments", itineraryId]];
+  const todayKey = ["me", "today"];
+  const assignmentKey = ["me", "assignments", itineraryId];
+  const keys = [todayKey, assignmentKey];
   await Promise.all(keys.map(queryKey => queryClient.cancelQueries({ queryKey })));
 
   const previous = keys.map(queryKey => [queryKey, queryClient.getQueryData(queryKey)] as const);
-  keys.forEach(queryKey =>
-    queryClient.setQueryData<Today | AssignmentDetail | null>(queryKey, data => (data ? patchStops(data, change) : data)),
+  queryClient.setQueryData<Today | null>(todayKey, data => data && { ...data, days: patchDays(data.days, change) });
+  queryClient.setQueryData<AssignmentDetail>(
+    assignmentKey,
+    data => data && { ...data, trip_days: patchDays(data.trip_days, change) },
   );
   return previous;
 }

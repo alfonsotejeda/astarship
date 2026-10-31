@@ -6,10 +6,10 @@ import { AppShell } from "@/components/AppShell/AppShell";
 import { Button } from "@/components/Button/Button";
 
 const USERS: Record<Role, User> = {
-  guide: { name: "Laura Pérez", role: "guide" },
-  manager: { name: "Marta Rivas", role: "manager" },
-  tourist: { name: "Daniel Ortega", role: "tourist" },
-  admin: { name: "Rosa Fernández", role: "admin" },
+  guide: { id: 1, name: "Laura Pérez", role: "guide" },
+  manager: { id: 2, name: "Marta Rivas", role: "manager" },
+  tourist: { id: 3, name: "Daniel Ortega", role: "tourist" },
+  admin: { id: 4, name: "Rosa Fernández", role: "admin" },
 };
 
 const ROLES = Object.keys(USERS) as Role[];
