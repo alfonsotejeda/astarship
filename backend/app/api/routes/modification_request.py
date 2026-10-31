@@ -5,8 +5,11 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import get_current_user, require_guide, require_tourist
+from app.api.deps.rules import forbid_acting_for_others
 from app.db.session import get_db
 from app.models.modification_request import ModificationRequest
+from app.models.user.user import User
 from app.schemas.modification_request import (
     ModificationRequestCreate,
     ModificationRequestRead,
@@ -70,9 +73,11 @@ def create_modification_request(
     itinerary_id: int,
     tourist_id: int,
     data: ModificationRequestCreate,
+    user: User = Depends(require_tourist),
     db: Session = Depends(get_db),
 ) -> ModificationRequestRead:
     """Request a change in an assignment, handled by the travel group guide by default."""
+    forbid_acting_for_others(user, tourist_id)
     _ensure_assignment_exists(db, itinerary_id, tourist_id)
     guide_id = data.guide_id
     if guide_id is None:
@@ -108,9 +113,11 @@ def update_modification_request(
     guide_id: int,
     request_date: datetime,
     data: ModificationRequestUpdate,
+    user: User = Depends(require_guide),
     db: Session = Depends(get_db),
 ) -> ModificationRequestRead:
     """Update a modification request, typically to advance its status and record its result."""
+    forbid_acting_for_others(user, guide_id)
     modification_request = _get_modification_request_or_404(
         db, itinerary_id, tourist_id, guide_id, request_date
     )
@@ -126,9 +133,11 @@ def delete_modification_request(
     tourist_id: int,
     guide_id: int,
     request_date: datetime,
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> None:
-    """Delete a modification request."""
+    """Delete a modification request; only the tourist that made it or an admin can."""
+    forbid_acting_for_others(user, tourist_id)
     modification_request = _get_modification_request_or_404(
         db, itinerary_id, tourist_id, guide_id, request_date
     )

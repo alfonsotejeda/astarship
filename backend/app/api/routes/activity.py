@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import require_admin, require_guide
 from app.db.session import get_db
 from app.models.status import ReviewStatus
 from app.schemas.activity import ActivityCreate, ActivityRead, ActivityUpdate
@@ -33,13 +34,20 @@ def get_activity(activity_id: int, db: Session = Depends(get_db)) -> ActivityRea
     return _get_activity_or_404(db, activity_id)
 
 
-@router.post("", response_model=ActivityRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ActivityRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_guide)],
+)
 def create_activity(data: ActivityCreate, db: Session = Depends(get_db)) -> ActivityRead:
     """Create a new activity."""
     return activity_service.create_activity(db, data)
 
 
-@router.patch("/{activity_id}", response_model=ActivityRead)
+@router.patch(
+    "/{activity_id}", response_model=ActivityRead, dependencies=[Depends(require_guide)]
+)
 def update_activity(
     activity_id: int, data: ActivityUpdate, db: Session = Depends(get_db)
 ) -> ActivityRead:
@@ -48,7 +56,9 @@ def update_activity(
     return activity_service.update_activity(db, activity, data)
 
 
-@router.delete("/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{activity_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)]
+)
 def delete_activity(activity_id: int, db: Session = Depends(get_db)) -> None:
     """Delete an activity."""
     activity = _get_activity_or_404(db, activity_id)

@@ -3,13 +3,18 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import require_admin
 from app.db.session import get_db
 from app.schemas.membership import MembershipRead
 from app.services import membership as membership_service
 from app.services import travel_group as travel_group_service
 from app.services import user as user_service
 
-router = APIRouter(prefix="/travel-groups/{travel_group_id}/tourists", tags=["memberships"])
+router = APIRouter(
+    prefix="/travel-groups/{travel_group_id}/tourists",
+    tags=["memberships"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 @router.post("/{tourist_id}", response_model=MembershipRead, status_code=status.HTTP_201_CREATED)
