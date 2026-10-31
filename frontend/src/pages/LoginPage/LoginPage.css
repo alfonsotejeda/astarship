@@ -168,6 +168,26 @@
   border-radius: var(--radius-sm);
 }
 
+.login__switch {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  font: var(--type-small);
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.login__switch-action {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
 /* Demo accesses */
 .login__demo {
   display: flex;

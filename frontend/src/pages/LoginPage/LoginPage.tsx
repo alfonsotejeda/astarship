@@ -27,16 +27,40 @@ const ROLE_ICON: Record<User["role"], IconName> = {
   admin: "shield",
 };
 
+type AuthMode = "login" | "register";
+
 export function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
-  const [error, setError] = useState(false);
+  const [mode, setMode] = useState<AuthMode>("login");
+  const [loginError, setLoginError] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const isRegister = mode === "register";
 
   if (user) return <Navigate to={HOME_BY_ROLE[user.role]} replace />;
 
+  function switchMode(next: AuthMode) {
+    setMode(next);
+    setLoginError(false);
+    setPasswordError("");
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    // TODO(#47, #95): call the backend login here and setError(true) if it fails.
+
+    if (isRegister) {
+      const data = new FormData(event.currentTarget);
+      if (data.get("password") !== data.get("confirmPassword")) {
+        setPasswordError("Las contraseñas no coinciden. Vuelve a escribirlas.");
+        const confirmation = event.currentTarget.elements.namedItem("confirmPassword");
+        if (confirmation instanceof HTMLInputElement) confirmation.focus();
+        return;
+      }
+      // TODO(#95): create the account through POST /users and sign the user in.
+      return;
+    }
+
+    // TODO(#47, #95): call the backend login here and setLoginError(true) if it fails.
   }
 
   return (
@@ -121,25 +145,44 @@ export function LoginPage() {
       <main className="login__panel">
         <form
           className="login__form"
+          key={mode}
           onSubmit={handleSubmit}
-          onChange={() => setError(false)}
+          onChange={() => {
+            setLoginError(false);
+            setPasswordError("");
+          }}
         >
           <div className="login__intro">
-            <h2 className="login__title">Inicia sesión</h2>
+            <h2 className="login__title">
+              {isRegister ? "Crea tu cuenta" : "Inicia sesión"}
+            </h2>
             <span className="login__subtitle">
-              Con la cuenta que te dio tu agencia.
+              {isRegister
+                ? "Completa tus datos para empezar a armar itinerarios."
+                : "Con la cuenta que te dio tu agencia."}
             </span>
           </div>
 
-          {error && (
+          {loginError && (
             <Alert tone="bad">
               El correo o la contraseña no coinciden. Revisa las mayúsculas o
               pide a tu administrador que te restablezca la contraseña.
             </Alert>
           )}
 
+          {isRegister && (
+            <Field
+              id="register-name"
+              name="name"
+              label="Nombre"
+              type="text"
+              autoComplete="name"
+              required
+            />
+          )}
+
           <Field
-            id="login-email"
+            id={isRegister ? "register-email" : "login-email"}
             name="email"
             label="Correo"
             type="email"
@@ -147,25 +190,52 @@ export function LoginPage() {
             required
           />
           <Field
-            id="login-password"
+            id={isRegister ? "register-password" : "login-password"}
             name="password"
             label="Contraseña"
             type="password"
-            autoComplete="current-password"
+            autoComplete={isRegister ? "new-password" : "current-password"}
             required
           />
 
-          <div className="login__options">
-            <Checkbox name="keep" label="Mantener la sesión" />
-            {/* TODO: point this at the password-recovery route once it exists. */}
-            <a className="login__link" href="#">
-              ¿Olvidaste la contraseña?
-            </a>
-          </div>
+          {isRegister && (
+            <Field
+              id="register-password-confirm"
+              name="confirmPassword"
+              label="Repite la contraseña"
+              type="password"
+              autoComplete="new-password"
+              error={passwordError || undefined}
+              required
+            />
+          )}
+
+          {!isRegister && (
+            <div className="login__options">
+              <Checkbox name="keep" label="Mantener la sesión" />
+              {/* TODO: point this at the password-recovery route once it exists. */}
+              <a className="login__link" href="#">
+                ¿Olvidaste la contraseña?
+              </a>
+            </div>
+          )}
 
           <Button type="submit" variant="primary" block>
-            Entrar
+            {isRegister ? "Crear cuenta" : "Entrar"}
           </Button>
+
+          <p className="login__switch">
+            <span>
+              {isRegister ? "¿Ya tienes una cuenta?" : "¿No tienes una cuenta?"}
+            </span>
+            <button
+              type="button"
+              className="login__link login__switch-action"
+              onClick={() => switchMode(isRegister ? "login" : "register")}
+            >
+              {isRegister ? "Inicia sesión" : "Crear cuenta"}
+            </button>
+          </p>
 
           <div className="login__demo">
             <span className="login__demo-title">Accesos de demostración</span>
