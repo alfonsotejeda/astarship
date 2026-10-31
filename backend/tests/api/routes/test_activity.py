@@ -26,9 +26,12 @@ def as_guide(as_user, guide_id):
     return lambda: as_user(guide_id)
 
 
-def _create(client, as_guide, name="Hiking", effort_level=3):
+def _create(client, as_guide, name="Hiking", effort_level=3, duration=90):
     with as_guide():
-        return client.post("/api/activities", json={"name": name, "effort_level": effort_level})
+        return client.post(
+            "/api/activities",
+            json={"name": name, "effort_level": effort_level, "duration": duration},
+        )
 
 
 def test_create_activity_returns_201(client, as_guide):
@@ -37,13 +40,29 @@ def test_create_activity_returns_201(client, as_guide):
     assert response.status_code == 201
     body = response.json()
     assert body["name"] == "Hiking"
+    assert body["duration"] == 90
     assert body["category_id"] is None
     assert body["status"] == "pending"
     assert body["creation_date"] == date.today().isoformat()
 
 
+def test_create_activity_returns_422_without_duration(client, as_guide):
+    with as_guide():
+        response = client.post("/api/activities", json={"name": "Hiking", "effort_level": 3})
+
+    assert response.status_code == 422
+
+
+def test_create_activity_returns_422_for_non_positive_duration(client, as_guide):
+    response = _create(client, as_guide, duration=0)
+
+    assert response.status_code == 422
+
+
 def test_create_activity_returns_403_for_non_guide(client):
-    response = client.post("/api/activities", json={"name": "Hiking", "effort_level": 3})
+    response = client.post(
+        "/api/activities", json={"name": "Hiking", "effort_level": 3, "duration": 90}
+    )
 
     assert response.status_code == 403
 
@@ -71,6 +90,16 @@ def test_update_activity_changes_name(client, as_guide):
 
     assert response.status_code == 200
     assert response.json()["name"] == "New"
+
+
+def test_update_activity_changes_duration(client, as_guide):
+    created = _create(client, as_guide).json()
+
+    with as_guide():
+        response = client.patch(f"/api/activities/{created['id']}", json={"duration": 45})
+
+    assert response.status_code == 200
+    assert response.json()["duration"] == 45
 
 
 def test_delete_activity_removes_it(client, as_guide):

@@ -21,7 +21,7 @@ def _create_itinerary(db_session, owners):
 
 def _create_activity(db_session, name="Museum"):
     return activity_service.create_activity(
-        db_session, ActivityCreate(name=name, effort_level=1)
+        db_session, ActivityCreate(name=name, effort_level=1, duration=60)
     )
 
 
