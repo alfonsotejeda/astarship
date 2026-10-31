@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.status import ReviewStatus
 from app.schemas.base import ORMSchema
@@ -13,6 +13,7 @@ class ActivityCreate(BaseModel):
 
     name: str
     effort_level: int
+    duration: int = Field(ge=1)
     activity_type_code: str | None = None
     category_id: int | None = None
     user_id: int | None = None
@@ -23,6 +24,7 @@ class ActivityUpdate(BaseModel):
 
     name: str | None = None
     effort_level: int | None = None
+    duration: int | None = Field(default=None, ge=1)
     status: ReviewStatus | None = None
     activity_type_code: str | None = None
     category_id: int | None = None
@@ -35,6 +37,7 @@ class ActivityRead(ORMSchema):
     id: int
     name: str
     effort_level: int
+    duration: int
     status: ReviewStatus
     creation_date: date
     activity_type_code: str | None
