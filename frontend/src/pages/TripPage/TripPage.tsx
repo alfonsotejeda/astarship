@@ -1,4 +1,25 @@
-// Placeholder: implemented in #102.
+import { Navigate, useLocation, useParams } from "react-router";
+import { useAuth } from "@/app/providers/auth/AuthContext";
+import { HOME_BY_ROLE } from "@/app/providers/auth/roles";
+import { RateView } from "./components/RateView";
+import { TodayView } from "./components/TodayView";
+import { TripsView } from "./components/TripsView";
+import "./TripPage.css";
+
 export function TripPage() {
-  return <h1>Hoy</h1>;
+  const { user } = useAuth();
+  const { id } = useParams();
+  const { pathname } = useLocation();
+
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== "tourist") return <Navigate to={HOME_BY_ROLE[user.role]} replace />;
+
+  if (id !== undefined) {
+    const itineraryId = Number(id);
+    if (!Number.isInteger(itineraryId)) return <Navigate to="/viaje/itinerarios" replace />;
+    return <RateView itineraryId={itineraryId} userId={user.id} />;
+  }
+
+  if (pathname.startsWith("/viaje/itinerarios")) return <TripsView />;
+  return <TodayView userId={user.id} />;
 }
