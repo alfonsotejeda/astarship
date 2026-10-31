@@ -11,7 +11,9 @@ def create_activity(client, as_user, itinerary_owners):
 
     def create(name="Museum") -> int:
         with as_user(itinerary_owners["guide_id"]):
-            response = client.post("/api/activities", json={"name": name, "effort_level": 1})
+            response = client.post(
+                "/api/activities", json={"name": name, "effort_level": 1, "duration": 60}
+            )
         return response.json()["id"]
 
     return create
