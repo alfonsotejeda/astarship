@@ -37,6 +37,10 @@ def get_user(user_id: int, db: Session = Depends(get_db)) -> UserRead:
 @router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(data: UserCreate, db: Session = Depends(get_db)) -> UserRead:
     """Create a new user with the subtype given by its role; public so users can sign up."""
+    if user_service.get_user_by_email(db, data.email) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+        )
     return user_service.create_user(db, data)
 
 
