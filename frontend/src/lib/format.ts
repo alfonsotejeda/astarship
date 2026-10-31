@@ -15,6 +15,19 @@ export function formatDate(value: Date | string): string {
   return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
 
+export function formatShortDate(value: Date | string): string {
+  const date = toDate(value);
+  return `${date.getDate()} ${MONTHS[date.getMonth()]}`;
+}
+
+export function isToday(value: Date | string): boolean {
+  return toDate(value).toDateString() === new Date().toDateString();
+}
+
+export function formatItineraryCode(id: number): string {
+  return `IT-${String(id).padStart(4, "0")}`;
+}
+
 export function formatTime(value: Date | string): string {
   if (typeof value === "string" && /^\d{2}:\d{2}/.test(value)) return value.slice(0, 5);
   const date = toDate(value);
