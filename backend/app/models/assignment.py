@@ -3,9 +3,10 @@
 from datetime import date
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.modification_request import ModificationRequest
 from app.models.status import AssignmentStatus, status_enum
 
 
@@ -27,3 +28,7 @@ class Assignment(Base):
     )
 
     admin_id: Mapped[int] = mapped_column(ForeignKey("admins.id", ondelete="RESTRICT"))
+
+    modification_requests: Mapped[list[ModificationRequest]] = relationship(
+        cascade="all, delete-orphan"
+    )
