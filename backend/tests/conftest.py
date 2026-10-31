@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.deps.auth import get_current_user
+from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
@@ -21,6 +22,11 @@ from app.schemas.user import AdminCreate, GuideCreate
 from app.services import authorization as authorization_service
 from app.services import package as package_service
 from app.services import user as user_service
+
+
+def pytest_configure() -> None:
+    """Hash test passwords with the minimum bcrypt cost; the production one takes ~0.5 s each."""
+    get_settings().bcrypt_rounds = 4
 
 
 @pytest.fixture
