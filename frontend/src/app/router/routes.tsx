@@ -28,6 +28,7 @@ export const router = createBrowserRouter([
       { path: "/valoraciones", element: <RatingsPage /> },
       { path: "/viaje/hoy", element: <TripPage /> },
       { path: "/viaje/itinerarios", element: <TripPage /> },
+      { path: "/viaje/itinerarios/:id", element: <TripPage /> },
       { path: "/viaje/itinerarios/:id/valorar", element: <TripPage /> },
       { path: "/personas", element: <PeoplePage /> },
       { path: "/asignaciones", element: <AssignmentsPage /> },

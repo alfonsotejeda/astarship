@@ -1,16 +1,15 @@
 import { useNavigate } from "react-router";
-import { Button } from "@/components/Button/Button";
 import { EmptyState } from "@/components/EmptyState/EmptyState";
 import { ItineraryCard } from "@/components/ItineraryCard/ItineraryCard";
 import { PageHeader } from "@/components/PageHeader/PageHeader";
 import { Panel } from "@/components/Panel/Panel";
 import { LoadError, LoadingPanel } from "@/components/QueryStatus/QueryStatus";
-import { Rating } from "@/components/Rating/Rating";
 import { useMyAssignments } from "@/lib/api/trips";
-import type { Assignment, AssignmentStatus } from "@/lib/api/trips";
+import type { AssignmentStatus } from "@/lib/api/trips";
 import { formatDateRange, formatItineraryCode } from "@/lib/format";
 import { toEffortCount } from "@/lib/itinerary";
 import { ASSIGNMENT_STATUS } from "../lib/trip";
+import { TripActions } from "./TripActions";
 
 const GROUPS: { status: AssignmentStatus; title: string }[] = [
   { status: "in_progress", title: "En curso" },
@@ -20,34 +19,8 @@ const GROUPS: { status: AssignmentStatus; title: string }[] = [
 
 const SUBTITLE = "Los itinerarios que te asignaron en cada paquete en el que estás inscrito.";
 
-function TripActions({ assignment }: { assignment: Assignment }) {
-  const navigate = useNavigate();
-
-  if (assignment.status === "in_progress") {
-    return (
-      <Button variant="primary" size="sm" onClick={() => navigate("/viaje/hoy")}>
-        Ver hoy
-      </Button>
-    );
-  }
-  if (assignment.status === "assigned") {
-    return (
-      <Button size="sm" onClick={() => navigate("/solicitudes")}>
-        Pedir modificación
-      </Button>
-    );
-  }
-  if (assignment.rating !== null) {
-    return <Rating value={assignment.rating} showValue label="Tu valoración del viaje" />;
-  }
-  return (
-    <Button variant="primary" size="sm" onClick={() => navigate(`/viaje/itinerarios/${assignment.itinerary_id}/valorar`)}>
-      Valorar el viaje
-    </Button>
-  );
-}
-
 export function TripsView() {
+  const navigate = useNavigate();
   const assignments = useMyAssignments();
   const header = <PageHeader title="Mis itinerarios" subtitle={SUBTITLE} />;
 
@@ -112,6 +85,7 @@ export function TripsView() {
                     activities: item.activity_count,
                     effort: toEffortCount(item.effort),
                   }}
+                  onClick={() => navigate(`/viaje/itinerarios/${item.itinerary_id}`)}
                   actions={
                     <div className="trip__card-actions">
                       <span className="trip__mono trip__muted">{formatDateRange(item.start_date, item.end_date)}</span>

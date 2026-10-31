@@ -1,6 +1,7 @@
 import { Navigate, useLocation, useParams } from "react-router";
 import { useAuth } from "@/app/providers/auth/AuthContext";
 import { HOME_BY_ROLE } from "@/app/providers/auth/roles";
+import { DetailView } from "./components/DetailView";
 import { RateView } from "./components/RateView";
 import { TodayView } from "./components/TodayView";
 import { TripsView } from "./components/TripsView";
@@ -17,7 +18,8 @@ export function TripPage() {
   if (id !== undefined) {
     const itineraryId = Number(id);
     if (!Number.isInteger(itineraryId)) return <Navigate to="/viaje/itinerarios" replace />;
-    return <RateView itineraryId={itineraryId} userId={user.id} />;
+    if (pathname.endsWith("/valorar")) return <RateView itineraryId={itineraryId} userId={user.id} />;
+    return <DetailView itineraryId={itineraryId} />;
   }
 
   if (pathname.startsWith("/viaje/itinerarios")) return <TripsView />;
