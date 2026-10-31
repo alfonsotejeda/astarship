@@ -7,7 +7,7 @@ import type { ItineraryReview } from "@/lib/api/itineraries";
 import { formatDate, formatItineraryCode } from "@/lib/format";
 import { ITINERARY_STATUS } from "@/lib/itinerary";
 import { STATUS_LABEL } from "../lib/filters";
-import { LoadError, LoadingPanel } from "./QueryStatus";
+import { LoadError, LoadingPanel } from "@/components/QueryStatus/QueryStatus";
 
 const DAYS = 30;
 

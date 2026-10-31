@@ -22,7 +22,7 @@ import { reviewQueue } from "../lib/queue";
 import { EffortChart } from "./EffortChart";
 import { HistoryPanel } from "./HistoryPanel";
 import { ParamsPanel } from "./ParamsPanel";
-import { LoadError, LoadingPanel } from "./QueryStatus";
+import { LoadError, LoadingPanel } from "@/components/QueryStatus/QueryStatus";
 import { RoutePanel } from "./RoutePanel";
 
 type ToastMessage = { tone: Tone; text: string };

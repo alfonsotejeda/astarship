@@ -4,7 +4,7 @@ import { Tabs } from "@/components/Tabs/Tabs";
 import { useItineraries } from "@/lib/api/itineraries";
 import { reviewQueue } from "../lib/queue";
 import { ItinerariesTable } from "./ItinerariesTable";
-import { LoadError, LoadingPanel } from "./QueryStatus";
+import { LoadError, LoadingPanel } from "@/components/QueryStatus/QueryStatus";
 import { ReviewedTable } from "./ReviewedTable";
 import { ReviewQueue } from "./ReviewQueue";
 

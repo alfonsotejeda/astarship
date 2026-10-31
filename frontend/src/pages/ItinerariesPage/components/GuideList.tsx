@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/PageHeader/PageHeader";
 import { Tabs } from "@/components/Tabs/Tabs";
 import { useItineraries } from "@/lib/api/itineraries";
 import { ItinerariesTable } from "./ItinerariesTable";
-import { LoadError, LoadingPanel } from "./QueryStatus";
+import { LoadError, LoadingPanel } from "@/components/QueryStatus/QueryStatus";
 
 const TITLES: Record<string, string> = {
   todos: "Todos los itinerarios",
