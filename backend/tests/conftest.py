@@ -2,6 +2,7 @@
 
 from collections.abc import Callable, Generator
 from contextlib import AbstractContextManager, contextmanager
+from datetime import date
 
 import pytest
 from fastapi.testclient import TestClient
@@ -17,9 +18,11 @@ from app.main import app
 from app.models.user.admin import Admin
 from app.models.user.user import User
 from app.schemas.authorization import AuthorizationUpsert
+from app.schemas.itinerary import ItineraryCreate
 from app.schemas.package import PackageCreate
 from app.schemas.user import AdminCreate, GuideCreate
 from app.services import authorization as authorization_service
+from app.services import itinerary as itinerary_service
 from app.services import package as package_service
 from app.services import user as user_service
 
@@ -105,13 +108,13 @@ def itinerary_owners(db_session: Session) -> dict[str, int]:
 
 
 @pytest.fixture
-def create_itinerary(client, as_user, itinerary_owners) -> Callable[..., int]:
-    """Return a function that creates an itinerary through the API as its authorized guide."""
+def create_itinerary(db_session: Session, itinerary_owners) -> Callable[..., int]:
+    """Return a function that stores an itinerary of the authorized guide and returns its id."""
 
     def create(activity_count: int = 2) -> int:
-        payload = {"creation_date": "2026-01-01", "activity_count": activity_count}
-        with as_user(itinerary_owners["guide_id"]):
-            response = client.post("/api/itineraries", json={**payload, **itinerary_owners})
-        return response.json()["id"]
+        data = ItineraryCreate(
+            creation_date=date(2026, 1, 1), activity_count=activity_count, **itinerary_owners
+        )
+        return itinerary_service.create_itinerary(db_session, data).id
 
     return create
