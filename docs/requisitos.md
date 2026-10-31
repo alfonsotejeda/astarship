@@ -134,13 +134,13 @@ una deducción nuestra que conviene confirmar.
 |---|---|---|---|
 | RF-19 | Revisar y aprobar o rechazar un itinerario generado, registrando **fecha de validación**, **resultado** y **observaciones**. | Jefe de operaciones | "es quien revisa y aprueba el itinerario generado" + RC-3 |
 | RF-20 | Indicar la confección de otro itinerario bajo sus propios criterios. | Jefe de operaciones | "aunque también puede indicar la confección de otro bajo sus criterios" |
-| RF-21 | Distinguir el estado de un itinerario entre **generado pendiente de validación** y **validado**. | Sistema | Derivado de RF-19 (interpretación) |
+| RF-21 | Distinguir el estado de un itinerario entre **generado pendiente de validación**, **validado** (por un guía), **aprobado** (por el jefe de operaciones) y **rechazado**. | Sistema | Derivado de RF-19 (interpretación) |
 
 ### 3.5 Asignación y recorrido
 
 | ID | Requisito | Actor | Fuente |
 |---|---|---|---|
-| RF-22 | Asignar un itinerario a un turista. | Ver [PA-1](#pa-1-el-administrador-existe-como-actor-del-sistema) | "impedir la asignación doble de itinerarios a los turistas" |
+| RF-22 | Asignar un itinerario a un turista o a todos los miembros de un grupo de viaje. | Administrador ([PA-1](#pa-1-el-administrador-existe-como-actor-del-sistema)) | "impedir la asignación doble de itinerarios a los turistas" |
 | RF-23 | Impedir la asignación doble. | Administrador | Ídem. Ver [PA-3](#pa-3-qué-significa-asignación-doble) |
 | RF-24 | Consultar los itinerarios asignados. | Turista | "los turistas podrán acceder a los itinerarios que le son asignados" |
 | RF-25 | Registrar cada **visita** de un turista a una actividad de un itinerario recorrido. | Turista / Sistema | "el sistema debe garantizar el almacenamiento de cada visita registrada ante un itinerario recorrido" |
@@ -259,6 +259,10 @@ conservan aquí, marcados como tales, para dejar registro de la decisión y de s
 
 ### PA-1. ¿El administrador existe como actor del sistema?
 
+> ✅ **Cerrado.** Sí: se modela como subtipo `Admin` de `User`. Crea los paquetes
+> (`Package.ID_Admin`), valida las actividades nuevas (`ActivityValidation`) y ejecuta RF-22
+> (`Assignment.ID_Admin`). Se mantiene el punto como registro de la decisión.
+
 El enunciado le atribuye dos tareas (RF-06 y RF-23) pero no dice que se almacene ningún dato
 suyo, y ninguna de las seis consultas lo menciona. El equipo decidió el 21 de septiembre
 **no modelarlo como entidad**, con el argumento de que "evitar" e "impedir" son verbos de
@@ -269,6 +273,10 @@ asignación es automática.
 la asignación la hace el sistema, el jefe de operaciones o un guía.
 
 ### PA-2. `Usuario` frente a `Persona` en el MERX
+
+> ✅ **Cerrado.** Se mantiene `User` con especialización total y disjunta en `Admin`,
+> `Guide`, `OperationsManager` y `Tourist`. El rol es el subtipo y no hay entidad de
+> permisos (#151, #152).
 
 El profesor indicó textualmente: *"User no existe en el Merx. En el Merx lo que existe es
 Persona, porque usuario es algo propio de la aplicación y no del modelo conceptual"*. También
@@ -281,11 +289,18 @@ lugar de especializaciones, por extensibilidad.
 
 ### PA-3. ¿Qué significa "asignación doble"?
 
+> ✅ **Cerrado.** Asignación doble es asignar a un mismo turista dos itinerarios del mismo
+> paquete. La llave de `Assignment` solo impide repetir el mismo itinerario; el resto se
+> comprueba al asignar (#52).
+
 Caben dos lecturas: que a un turista se le asigne dos veces el mismo itinerario, o que se le
 asignen itinerarios solapados en el tiempo. **El enunciado no da fechas por paquete ni por
 itinerario**, así que la segunda lectura no se puede comprobar con los datos que pide guardar.
 
 ### PA-4. ¿El itinerario se asigna al turista o al grupo de viaje?
+
+> ✅ **Cerrado.** Se asigna al turista (`Assignment`); asignarlo a un grupo equivale a
+> asignarlo a cada uno de sus miembros.
 
 El enunciado dice "los itinerarios que le son asignados" (al turista), pero también habla de
 grupos de viaje que recorren juntos. Afecta a RF-22 y a RC-6.
@@ -298,10 +313,17 @@ dejarla escrita.
 
 ### PA-6. ¿Un turista pertenece a un grupo o a varios?
 
+> ✅ **Cerrado.** A varios: `Belongs` (Tourist — TravelGroup) es N:M y genera el esquema
+> `Membership(ID_Tourist, ID_TravelGroup)`.
+
 El enunciado dice "grupo de viaje" en singular pero "paquetes turísticos" en plural. Si un
 turista puede ir en varios paquetes, ¿tiene un grupo por paquete?
 
 ### PA-7. ¿Dónde vive la autorización del guía sobre el paquete?
+
+> ✅ **Cerrado.** `Authorization` (CanGenerate, CanValidate) es dato de negocio y vive en el
+> esquema. Los permisos de aplicación son fijos por rol y se comprueban en la aplicación,
+> sin entidad propia (#25, #151).
 
 RF-09 y RN-02 son datos del negocio que el enunciado pide guardar, pero el profesor dijo que
 los permisos no se modelan en el MERX. Hay que distinguir **autorización de negocio** (qué
