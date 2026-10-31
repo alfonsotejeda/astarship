@@ -115,7 +115,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-7) var(--space-5);
-  background-color: #ffffff;
+  background-color: var(--surface-raised);
 }
 
 .login__form {
