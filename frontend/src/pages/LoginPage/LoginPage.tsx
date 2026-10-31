@@ -10,9 +10,12 @@ import { Checkbox } from "@/components/Checkbox/Checkbox";
 import { Field } from "@/components/Field/Field";
 import type { IconName } from "@/components/Icon/icons";
 import Particles from "@/components/Particles/Particles";
+import { createAccount, signIn } from "@/lib/api/auth";
+import type { BackendRole, RegisterRequest } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/client";
 import "./LoginPage.css";
 
-// Mock users until the backend login (#47) and the real form (#95) exist; ids match src/mocks/data/users.ts
+// Demo logins until every screen talks to the backend; ids match src/mocks/data/users.ts
 const MOCK_USERS: User[] = [
   { id: 1, name: "Laura Pérez", role: "guide" },
   { id: 5, name: "Marta Rivas", role: "manager" },
@@ -27,40 +30,114 @@ const ROLE_ICON: Record<User["role"], IconName> = {
   admin: "shield",
 };
 
+const REGISTER_ROLE_OPTIONS = [
+  { value: "tourist", label: ROLE_LABEL.tourist },
+  { value: "guide", label: ROLE_LABEL.guide },
+  { value: "operations_manager", label: ROLE_LABEL.manager },
+  { value: "admin", label: ROLE_LABEL.admin },
+];
+
 type AuthMode = "login" | "register";
+
+function requestErrorMessage(error: unknown, mode: AuthMode): string {
+  if (error instanceof ApiError) {
+    if (mode === "login" && error.status === 401) {
+      return "El correo o la contraseña no coinciden. Revisa las mayúsculas o pide a tu administrador que te restablezca la contraseña.";
+    }
+    if (mode === "register" && error.status === 409) {
+      return "Ya existe una cuenta con ese correo. Inicia sesión con ella.";
+    }
+    if (error.status === 422) {
+      return "Revisa los datos del formulario e inténtalo de nuevo.";
+    }
+    if (error.status === 502 || error.status === 503 || error.status === 504) {
+      return "No se pudo conectar con la API. Comprueba que el backend esté en marcha.";
+    }
+    if (error.status >= 500) {
+      return mode === "register"
+        ? "El servidor no pudo crear la cuenta. Inténtalo de nuevo."
+        : "El servidor no pudo iniciar sesión. Inténtalo de nuevo.";
+    }
+    return error.message;
+  }
+
+  return "No se pudo conectar con el servidor. Comprueba que la API esté en marcha.";
+}
 
 export function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("login");
-  const [loginError, setLoginError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [registerRole, setRegisterRole] = useState<BackendRole>("tourist");
   const isRegister = mode === "register";
 
   if (user) return <Navigate to={HOME_BY_ROLE[user.role]} replace />;
 
   function switchMode(next: AuthMode) {
+    if (submitting) return;
     setMode(next);
-    setLoginError(false);
+    setError(null);
     setPasswordError("");
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) return;
+
+    setError(null);
+    setPasswordError("");
+
+    const data = new FormData(event.currentTarget);
+    const email = String(data.get("email") ?? "").trim();
+    const password = String(data.get("password") ?? "");
 
     if (isRegister) {
-      const data = new FormData(event.currentTarget);
-      if (data.get("password") !== data.get("confirmPassword")) {
+      if (password !== data.get("confirmPassword")) {
         setPasswordError("Las contraseñas no coinciden. Vuelve a escribirlas.");
-        const confirmation = event.currentTarget.elements.namedItem("confirmPassword");
+        const confirmation =
+          event.currentTarget.elements.namedItem("confirmPassword");
         if (confirmation instanceof HTMLInputElement) confirmation.focus();
         return;
       }
-      // TODO(#95): create the account through POST /users and sign the user in.
+
+      const name = String(data.get("name") ?? "").trim();
+      const base = { name, email, password };
+      const payload: RegisterRequest =
+        registerRole === "tourist"
+          ? { ...base, role: "tourist", age: Number(data.get("age")) }
+          : registerRole === "guide"
+            ? {
+                ...base,
+                role: "guide",
+                specialty: String(data.get("specialty") ?? "").trim(),
+              }
+            : { ...base, role: registerRole };
+
+      setSubmitting(true);
+      try {
+        await createAccount(payload);
+        const session = await signIn({ email, password });
+        login(session.user, session.token, true);
+      } catch (requestError) {
+        setError(requestErrorMessage(requestError, "register"));
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
 
-    // TODO(#47, #95): call the backend login here and setLoginError(true) if it fails.
+    setSubmitting(true);
+    try {
+      const session = await signIn({ email, password });
+      login(session.user, session.token, data.get("keep") === "on");
+    } catch (requestError) {
+      setError(requestErrorMessage(requestError, "login"));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -90,7 +167,12 @@ export function LoginPage() {
         </div>
 
         <div className="login__logo">
-          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={36} height={36} />
+          <img
+            src={`${import.meta.env.BASE_URL}favicon.svg`}
+            alt=""
+            width={36}
+            height={36}
+          />
           <span>Astarship</span>
         </div>
 
@@ -99,7 +181,7 @@ export function LoginPage() {
             className="login__route"
             viewBox="0 0 420 120"
             width={420}
-            height={120}
+            height={130}
             aria-hidden="true"
           >
             <path
@@ -129,11 +211,11 @@ export function LoginPage() {
             <circle cx={400} cy={24} r={10} fill="var(--destination)" />
           </svg>
           <h1 className="login__headline">
-            Itinerarios turísticos que se arman solos.
+            El recorrido perfecto, hecho a tu medida.
           </h1>
           <p className="login__lead">
-            Elige las actividades, fija el equilibrio entre tipos, categorías y
-            esfuerzo, y deja que Astarship ordene el recorrido.
+            Tus gustos, tu energía, tu tiempo. Astarship los convierte en el
+            itinerario ideal.{" "}
           </p>
         </div>
 
@@ -148,7 +230,7 @@ export function LoginPage() {
           key={mode}
           onSubmit={handleSubmit}
           onChange={() => {
-            setLoginError(false);
+            setError(null);
             setPasswordError("");
           }}
         >
@@ -163,22 +245,52 @@ export function LoginPage() {
             </span>
           </div>
 
-          {loginError && (
-            <Alert tone="bad">
-              El correo o la contraseña no coinciden. Revisa las mayúsculas o
-              pide a tu administrador que te restablezca la contraseña.
-            </Alert>
-          )}
+          {error && <Alert tone="bad">{error}</Alert>}
 
           {isRegister && (
-            <Field
-              id="register-name"
-              name="name"
-              label="Nombre"
-              type="text"
-              autoComplete="name"
-              required
-            />
+            <>
+              <Field
+                id="register-name"
+                name="name"
+                label="Nombre"
+                type="text"
+                autoComplete="name"
+                required
+              />
+              <Field
+                id="register-role"
+                name="role"
+                label="Tipo de cuenta"
+                options={REGISTER_ROLE_OPTIONS}
+                value={registerRole}
+                onChange={(event) =>
+                  setRegisterRole(event.target.value as BackendRole)
+                }
+                required
+              />
+              {registerRole === "tourist" && (
+                <Field
+                  id="register-age"
+                  name="age"
+                  label="Edad"
+                  type="number"
+                  min={0}
+                  max={120}
+                  autoComplete="off"
+                  required
+                />
+              )}
+              {registerRole === "guide" && (
+                <Field
+                  id="register-specialty"
+                  name="specialty"
+                  label="Especialidad"
+                  type="text"
+                  autoComplete="off"
+                  required
+                />
+              )}
+            </>
           )}
 
           <Field
@@ -220,8 +332,20 @@ export function LoginPage() {
             </div>
           )}
 
-          <Button type="submit" variant="primary" block>
-            {isRegister ? "Crear cuenta" : "Entrar"}
+          <Button
+            type="submit"
+            variant="primary"
+            block
+            disabled={submitting}
+            aria-busy={submitting}
+          >
+            {submitting
+              ? isRegister
+                ? "Creando cuenta…"
+                : "Entrando…"
+              : isRegister
+                ? "Crear cuenta"
+                : "Entrar"}
           </Button>
 
           <p className="login__switch">
@@ -231,6 +355,7 @@ export function LoginPage() {
             <button
               type="button"
               className="login__link login__switch-action"
+              disabled={submitting}
               onClick={() => switchMode(isRegister ? "login" : "register")}
             >
               {isRegister ? "Inicia sesión" : "Crear cuenta"}

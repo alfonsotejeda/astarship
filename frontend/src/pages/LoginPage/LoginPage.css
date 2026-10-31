@@ -78,7 +78,7 @@
 .login__route {
   display: block;
   max-width: 100%;
-  height: auto;
+  height: 100%;
 }
 
 .login__headline {
@@ -186,6 +186,11 @@
   background: none;
   border: 0;
   cursor: pointer;
+}
+
+.login__switch-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* Demo accesses */

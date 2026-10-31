@@ -3,7 +3,8 @@ import type { User } from "./roles";
 
 export interface AuthContextValue {
   user: User | null;
-  login: (user: User, token: string) => void;
+  // remember stores the session across browser restarts; without it, only this tab
+  login: (user: User, token: string, remember?: boolean) => void;
   logout: () => void;
 }
 

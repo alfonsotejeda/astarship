@@ -34,11 +34,33 @@ function match(pattern: string, path: string): Record<string, string> | null {
   return params;
 }
 
+// Demo logins use `mock-<id>`; a real backend login carries the id in the JWT subject
+function tokenUserId(token: string | null): number | null {
+  if (!token) return null;
+  if (token.startsWith("mock-")) {
+    const id = Number(token.slice("mock-".length));
+    return Number.isInteger(id) && id > 0 ? id : null;
+  }
+
+  const payload = token.split(".")[1];
+  if (!payload) return null;
+
+  try {
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const data = JSON.parse(atob(padded)) as { sub?: unknown };
+    const id = Number(data.sub);
+    return Number.isInteger(id) && id > 0 ? id : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function mockRequest<T>(url: string, method: Method, body: unknown, token: string | null): Promise<T> {
   await new Promise(resolve => setTimeout(resolve, DELAY_MS));
 
-  const userId = Number(token?.replace("mock-", ""));
-  if (!userId) throw new ApiError(401, "Inicia sesión para continuar.");
+  const userId = tokenUserId(token);
+  if (userId === null) throw new ApiError(401, "Inicia sesión para continuar.");
 
   const [path, search = ""] = url.split("?");
   for (const route of ROUTES) {
