@@ -34,4 +34,6 @@ class Itinerary(Base):
         cascade="all, delete-orphan"
     )
     proportion_types: Mapped[list[ProportionType]] = relationship(cascade="all, delete-orphan")
-    compositions: Mapped[list[ItineraryComposition]] = relationship(cascade="all, delete-orphan")
+    compositions: Mapped[list[ItineraryComposition]] = relationship(
+        cascade="all, delete-orphan", order_by=ItineraryComposition.order
+    )
