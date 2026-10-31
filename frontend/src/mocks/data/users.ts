@@ -4,6 +4,8 @@ export interface UserRecord {
   id: number;
   name: string;
   role: Role;
+  phone?: string;
+  specialty?: string;
 }
 
 export interface AuthorizationRecord {
@@ -15,9 +17,9 @@ export interface AuthorizationRecord {
 
 // The demo logins of LoginPage use these ids
 export const users: UserRecord[] = [
-  { id: 1, name: "Laura Pérez", role: "guide" },
-  { id: 2, name: "Ernesto Díaz", role: "guide" },
-  { id: 3, name: "Yanet Rodríguez", role: "guide" },
+  { id: 1, name: "Laura Pérez", role: "guide", phone: "+53 5 284 1937", specialty: "Patrimonio colonial" },
+  { id: 2, name: "Ernesto Díaz", role: "guide", phone: "+53 5 391 0482", specialty: "Naturaleza y senderismo" },
+  { id: 3, name: "Yanet Rodríguez", role: "guide", phone: "+53 5 207 6615", specialty: "Gastronomía y artesanía" },
   { id: 4, name: "Rosa Fernández", role: "admin" },
   { id: 5, name: "Marta Rivas", role: "manager" },
   { id: 6, name: "Daniel Ortega", role: "tourist" },

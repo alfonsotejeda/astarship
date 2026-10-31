@@ -5,6 +5,7 @@ import { catalogRoutes } from "./handlers/catalogs";
 import { itineraryRoutes } from "./handlers/itineraries";
 import { packageRoutes } from "./handlers/packages";
 import { reviewRoutes } from "./handlers/reviews";
+import { tripRoutes } from "./handlers/trips";
 import type { MockRoute } from "./types";
 
 // Each page adds its resource's routes here
@@ -14,6 +15,7 @@ const ROUTES: MockRoute[] = [
   ...activityRoutes,
   ...itineraryRoutes,
   ...reviewRoutes,
+  ...tripRoutes,
 ];
 
 // Enough to see the loading states

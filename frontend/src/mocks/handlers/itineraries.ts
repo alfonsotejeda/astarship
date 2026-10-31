@@ -32,7 +32,7 @@ function activity(id: number) {
   return toActivity(record);
 }
 
-function packageOf(record: ItineraryRecord) {
+export function packageOf(record: ItineraryRecord) {
   const pkg = findPackage(record.package_id);
   if (!pkg) throw new ApiError(404, "El paquete no existe.");
   return pkg;
@@ -61,7 +61,7 @@ function findVisible(id: string, userId: number) {
   return record;
 }
 
-function toDays(record: ItineraryRecord): ItineraryDay[] {
+export function toDays(record: ItineraryRecord): ItineraryDay[] {
   return record.days.map((day, index) => ({
     day: index + 1,
     date: day.date,
@@ -81,11 +81,11 @@ function toDays(record: ItineraryRecord): ItineraryDay[] {
   }));
 }
 
-function activityCount(record: ItineraryRecord) {
+export function activityCount(record: ItineraryRecord) {
   return record.days.reduce((sum, day) => sum + day.stops.length, 0);
 }
 
-function effortCounts(record: ItineraryRecord): EffortCounts {
+export function effortCounts(record: ItineraryRecord): EffortCounts {
   const counts = { low: 0, medium: 0, high: 0 };
   record.days.flatMap(day => day.stops).forEach(([activityId]) => {
     const level = activity(activityId).effort_level;
