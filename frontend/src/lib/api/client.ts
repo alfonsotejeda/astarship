@@ -23,7 +23,7 @@ export type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 export async function request<T>(path: string, method: Method = "GET", body?: unknown): Promise<T> {
   if (USE_MOCKS) {
     const { mockRequest } = await import("@/mocks/router");
-    return mockRequest<T>(path, method, body);
+    return mockRequest<T>(path, method, body, token);
   }
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };

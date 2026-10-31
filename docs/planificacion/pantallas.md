@@ -128,6 +128,12 @@ Mientras el endpoint no exista, se añade su handler en `mocks/handlers/` con lo
 artboard en `mocks/data/`. Con `VITE_USE_MOCKS=true` (por defecto en `.env.development`) la
 app responde desde ahí; cuando el backend lo implemente, se pone a `false` y la página no cambia.
 
+Los permisos (qué ve cada rol, quién puede validar) los aplica la API, no la página: la
+respuesta ya trae lo que el usuario puede ver y campos como `is_mine` o `review`. En los
+mocks, el login de demostración guarda el token `mock-<id>` y el router lo usa para saber
+quién pide. Lo que comparten varias páginas sobre un mismo dominio (estados, paradas,
+criterios, PDF de un itinerario) va en `lib/<dominio>.ts`, como `lib/itinerary.ts`.
+
 **Convenciones:**
 - Los colores, espacios y radios **siempre** con las variables de `tokens.css`, nunca un hex suelto.
 - Cada componente replica las props de `index.d.ts` del Design System y su comportamiento de `bundle.js`.

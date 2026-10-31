@@ -6,9 +6,8 @@ import { StatusPill } from "@/components/StatusPill/StatusPill";
 import { Tabs } from "@/components/Tabs/Tabs";
 import type { ItineraryDetail } from "@/lib/api/itineraries";
 import { formatDate, formatItineraryCode, formatTime, isToday } from "@/lib/format";
-import { ITINERARY_STATUS } from "@/lib/status";
+import { dayLabel, exportItinerary, itineraryStatus, maxDayEffort, toCriteria, toStops } from "@/lib/itinerary";
 import type { TypeOption } from "../lib/form";
-import { CRITERION_LABEL, dayLabel, exportItinerary, toStops } from "../lib/mappers";
 
 type ResultSectionProps = {
   itinerary: ItineraryDetail;
@@ -23,11 +22,8 @@ export function ResultSection({ itinerary, types, day, onDayChange, submitting, 
   const current = itinerary.days.find(item => String(item.day) === day) ?? itinerary.days[0];
   const submitted = itinerary.submitted_date !== null;
   const generatedOn = isToday(itinerary.generated_at) ? "hoy" : `el ${formatDate(itinerary.generated_at)}`;
-  // Same points as RouteTimeline: the busiest day fills the bar
-  const maxEffort = Math.max(
-    ...itinerary.days.map(item => item.stops.reduce((sum, stop) => sum + stop.effort_level, 0)),
-  );
-  const criteria = itinerary.criteria.map(criterion => ({ ...criterion, label: CRITERION_LABEL[criterion.key] }));
+  const maxEffort = maxDayEffort(itinerary.days);
+  const criteria = toCriteria(itinerary.criteria);
 
   return (
     <section className="generator__result" aria-labelledby="generator-result-title">
@@ -37,7 +33,7 @@ export function ResultSection({ itinerary, types, day, onDayChange, submitting, 
             <h2 id="generator-result-title" className="generator__result-title">
               Resultado · {formatItineraryCode(itinerary.id)}
             </h2>
-            <StatusPill status={ITINERARY_STATUS[itinerary.status]} />
+            <StatusPill status={itineraryStatus(itinerary)} />
           </div>
           <p className="generator__muted">
             {itinerary.package_name} · {itinerary.days.length} días · {itinerary.activity_count} actividades · generado{" "}
