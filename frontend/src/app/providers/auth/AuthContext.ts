@@ -3,7 +3,7 @@ import type { User } from "./roles";
 
 export interface AuthContextValue {
   user: User | null;
-  login: (user: User) => void;
+  login: (user: User, token: string) => void;
   logout: () => void;
 }
 

@@ -1,5 +1,8 @@
 const API_URL = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
+// With mocks on, requests are answered by src/mocks instead of the backend
+const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
+
 let token: string | null = null;
 
 export function setToken(value: string | null) {
@@ -15,9 +18,14 @@ export class ApiError extends Error {
   }
 }
 
-type Method = "GET" | "POST" | "PATCH" | "DELETE";
+export type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 export async function request<T>(path: string, method: Method = "GET", body?: unknown): Promise<T> {
+  if (USE_MOCKS) {
+    const { mockRequest } = await import("@/mocks/router");
+    return mockRequest<T>(path, method, body, token);
+  }
+
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
 

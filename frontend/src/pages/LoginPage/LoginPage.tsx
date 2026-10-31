@@ -12,19 +12,12 @@ import type { IconName } from "@/components/Icon/icons";
 import Particles from "@/components/Particles/Particles";
 import "./LoginPage.css";
 
-// Mock users until the backend login (#47) and the real form (#95) exist.
+// Mock users until the backend login (#47) and the real form (#95) exist; ids match src/mocks/data/users.ts
 const MOCK_USERS: User[] = [
-  {
-    name: "Laura Pérez",
-    role: "guide",
-    authorizations: [
-      { packageId: 1, canGenerate: true, canValidate: false },
-      { packageId: 2, canGenerate: false, canValidate: true },
-    ],
-  },
-  { name: "Marta Rivas", role: "manager" },
-  { name: "Daniel Ortega", role: "tourist" },
-  { name: "Rosa Fernández", role: "admin" },
+  { id: 1, name: "Laura Pérez", role: "guide" },
+  { id: 5, name: "Marta Rivas", role: "manager" },
+  { id: 6, name: "Daniel Ortega", role: "tourist" },
+  { id: 4, name: "Rosa Fernández", role: "admin" },
 ];
 
 const ROLE_ICON: Record<User["role"], IconName> = {
@@ -182,7 +175,7 @@ export function LoginPage() {
                   key={mock.role}
                   icon={ROLE_ICON[mock.role]}
                   aria-label={`Entrar como ${ROLE_LABEL[mock.role].toLowerCase()}`}
-                  onClick={() => login(mock)}
+                  onClick={() => login(mock, `mock-${mock.id}`)}
                 >
                   {ROLE_LABEL[mock.role]}
                 </Button>
