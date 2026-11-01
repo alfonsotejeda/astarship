@@ -1,0 +1,143 @@
+.packages__columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.packages__main {
+  flex: 999 1 560px;
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.packages__name {
+  display: grid;
+}
+
+.packages__name-title {
+  font-weight: 600;
+}
+
+.packages__muted {
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
+
+.packages__mono {
+  font: var(--type-data);
+}
+
+.packages__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.packages__badges--end {
+  justify-content: flex-end;
+}
+
+.packages__group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.packages__group-label {
+  font: var(--type-small);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.packages__eyebrow {
+  font: var(--type-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.packages__validation {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+}
+
+.packages__validation-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.packages__checks,
+.packages__people {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.packages__checks {
+  gap: var(--space-2);
+}
+
+.packages__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-body);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.packages__check-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--ok);
+}
+
+.packages__check-icon--warn {
+  color: var(--warn);
+}
+
+.packages__person {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.packages__person-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.packages__link {
+  font: var(--type-small);
+  color: var(--route);
+}
+
+.packages__link:hover {
+  color: var(--ink);
+}
+
+.packages__toast {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 10;
+}
+
+@media (max-width: 480px) {
+  /* Above the mobile tab bar */
+  .packages__toast {
+    left: var(--space-4);
+    right: var(--space-4);
+    bottom: 88px;
+  }
+}
