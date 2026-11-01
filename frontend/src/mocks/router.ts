@@ -5,6 +5,7 @@ import { catalogRoutes } from "./handlers/catalogs";
 import { itineraryRoutes } from "./handlers/itineraries";
 import { packageRoutes } from "./handlers/packages";
 import { peopleRoutes } from "./handlers/people";
+import { requestRoutes } from "./handlers/requests";
 import { reviewRoutes } from "./handlers/reviews";
 import { tripRoutes } from "./handlers/trips";
 import type { MockRoute } from "./types";
@@ -18,6 +19,7 @@ const ROUTES: MockRoute[] = [
   ...reviewRoutes,
   ...tripRoutes,
   ...peopleRoutes,
+  ...requestRoutes,
 ];
 
 // Enough to see the loading states
