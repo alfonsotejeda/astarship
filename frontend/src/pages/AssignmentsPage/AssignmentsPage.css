@@ -1,0 +1,81 @@
+.assignments__columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.assignments__side {
+  flex: 1 1 340px;
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  max-width: 420px;
+}
+
+.assignments__main {
+  flex: 999 1 520px;
+  min-width: 0;
+}
+
+.assignments__group {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.assignments__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assignments__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 10px var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.assignments__row--head {
+  background: var(--surface-sunken);
+}
+
+.assignments__row--foot {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 0;
+}
+
+.assignments__eyebrow {
+  font: var(--type-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.assignments__text {
+  margin: 0;
+}
+
+.assignments__muted {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 480px) {
+  .assignments__side {
+    max-width: none;
+  }
+
+  /* The column label would wrap under the checkbox; each row already shows its status */
+  .assignments__eyebrow {
+    display: none;
+  }
+
+  .assignments__row--foot > .button {
+    width: 100%;
+  }
+}
