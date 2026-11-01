@@ -1,7 +1,7 @@
 """add activity duration
 
 Revision ID: f2a7c4e9b316
-Revises: 9e4a1c7b3d52, c3e9a5f1b724
+Revises: 9f3b7c2a1d45
 Create Date: 2026-10-31 12:00:00.000000
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 revision: str = 'f2a7c4e9b316'
-down_revision: Union[str, Sequence[str], None] = ('9e4a1c7b3d52', 'c3e9a5f1b724')
+down_revision: Union[str, Sequence[str], None] = '9f3b7c2a1d45'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
