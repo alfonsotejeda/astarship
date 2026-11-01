@@ -21,9 +21,7 @@ def _get_tourist_or_404(db: Session, tourist_id: int) -> Tourist:
 
 
 @router.get("/{tourist_id}/packages", response_model=list[PackageRead])
-def get_tourist_packages(
-    tourist_id: int, db: Session = Depends(get_db)
-) -> list[PackageRead]:
+def get_tourist_packages(tourist_id: int, db: Session = Depends(get_db)) -> list[PackageRead]:
     """List all packages a tourist is booked into."""
     tourist = _get_tourist_or_404(db, tourist_id)
     return booking_service.get_packages_for_tourist(db, tourist.id)

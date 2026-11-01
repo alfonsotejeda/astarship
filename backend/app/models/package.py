@@ -20,7 +20,7 @@ class Package(Base):
     name: Mapped[str] = mapped_column(String(255))
     destination: Mapped[str] = mapped_column(String(255))
     creation_date: Mapped[date] = mapped_column(default=date.today)
-    
+
     status: Mapped[ReviewStatus] = mapped_column(
         status_enum(ReviewStatus), default=ReviewStatus.PENDING
     )

@@ -12,7 +12,7 @@ def test_table_name():
 def test_expected_columns():
     columns = {c.name for c in Booking.__table__.columns}
 
-    assert columns == {"tourist_id", "package_id"}
+    assert columns == {"tourist_id", "package_id", "booking_date"}
 
 
 def test_composite_primary_key():
@@ -22,9 +22,7 @@ def test_composite_primary_key():
 
 
 def test_foreign_keys_cascade_on_parent_delete():
-    foreign_keys = {
-        (fk.target_fullname, fk.ondelete) for fk in Booking.__table__.foreign_keys
-    }
+    foreign_keys = {(fk.target_fullname, fk.ondelete) for fk in Booking.__table__.foreign_keys}
 
     assert ("tourists.id", "CASCADE") in foreign_keys
     assert ("packages.id", "CASCADE") in foreign_keys

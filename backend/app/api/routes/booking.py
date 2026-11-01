@@ -27,9 +27,7 @@ def _get_package_or_404(db: Session, package_id: int) -> Package:
     """Return the package or raise a 404."""
     package = package_service.get_package(db, package_id)
     if package is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Package not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
     return package
 
 
@@ -37,9 +35,7 @@ def _get_booking_or_404(db: Session, tourist_id: int, package_id: int) -> Bookin
     """Return the booking or raise a 404."""
     booking = booking_service.get_booking(db, tourist_id, package_id)
     if booking is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
     return booking
 
 
@@ -64,9 +60,7 @@ def list_bookings(
 
 
 @router.get("/{tourist_id}/{package_id}", response_model=BookingRead)
-def get_booking(
-    tourist_id: int, package_id: int, db: Session = Depends(get_db)
-) -> BookingRead:
+def get_booking(tourist_id: int, package_id: int, db: Session = Depends(get_db)) -> BookingRead:
     """Get a single booking by its tourist and package ids."""
     return _get_booking_or_404(db, tourist_id, package_id)
 

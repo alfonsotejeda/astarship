@@ -15,14 +15,13 @@ def _create_tourist(client, email="ada@example.com"):
 
 
 def _create_package(client, name="Europa Capitales", destination="París"):
-    return client.post(
-        "/api/packages", json={"name": name, "destination": destination}
-    ).json()
+    return client.post("/api/packages", json={"name": name, "destination": destination}).json()
 
 
-def _create_booking(client, tourist_id, package_id):
+def _create_booking(client, tourist_id, package_id, booking_date="2026-10-01"):
     return client.post(
-        "/api/bookings", json={"tourist_id": tourist_id, "package_id": package_id}
+        "/api/bookings",
+        json={"tourist_id": tourist_id, "package_id": package_id, "booking_date": booking_date},
     )
 
 
@@ -34,7 +33,11 @@ def test_create_booking_returns_201_and_pair(client):
 
     assert response.status_code == 201
     body = response.json()
-    assert body == {"tourist_id": tourist["id"], "package_id": package["id"]}
+    assert body == {
+        "tourist_id": tourist["id"],
+        "package_id": package["id"],
+        "booking_date": "2026-10-01",
+    }
 
 
 def test_create_booking_requires_both_ids(client):
@@ -205,9 +208,7 @@ def test_booking_disappears_when_package_deleted(client):
 
     client.delete(f"/api/packages/{package['id']}")
 
-    assert (
-        client.get(f"/api/bookings/{tourist['id']}/{package['id']}").status_code == 404
-    )
+    assert client.get(f"/api/bookings/{tourist['id']}/{package['id']}").status_code == 404
 
 
 def test_create_booking_conflict_leaves_session_usable(client, db_session, monkeypatch):
@@ -234,7 +235,11 @@ def test_create_booking_conflict_leaves_session_usable(client, db_session, monke
     assert (
         client.post(
             "/api/bookings",
-            json={"tourist_id": tourist2["id"], "package_id": package["id"]},
+            json={
+                "tourist_id": tourist2["id"],
+                "package_id": package["id"],
+                "booking_date": "2026-10-02",
+            },
         ).status_code
         == 201
     )

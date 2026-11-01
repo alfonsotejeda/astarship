@@ -1,5 +1,7 @@
 """Tests for the Booking schemas."""
 
+from datetime import date
+
 import pytest
 from pydantic import ValidationError
 
@@ -16,25 +18,32 @@ def test_create_requires_tourist_and_package_ids():
         BookingCreate()
 
 
+def test_create_requires_booking_date():
+    with pytest.raises(ValidationError):
+        BookingCreate(tourist_id=1, package_id=2)
+
+
 def test_create_accepts_valid_pair():
-    booking = BookingCreate(tourist_id=1, package_id=2)
+    booking = BookingCreate(tourist_id=1, package_id=2, booking_date=date(2026, 10, 1))
 
     assert booking.tourist_id == 1
     assert booking.package_id == 2
+    assert booking.booking_date == date(2026, 10, 1)
 
 
 def test_create_rejects_non_integer_ids():
     with pytest.raises(ValidationError):
-        BookingCreate(tourist_id="abc", package_id=1)
+        BookingCreate(tourist_id="abc", package_id=1, booking_date=date(2026, 10, 1))
 
 
 def test_read_validates_from_orm_instance():
-    booking = Booking(tourist_id=1, package_id=2)
+    booking = Booking(tourist_id=1, package_id=2, booking_date=date(2026, 10, 1))
 
     read = BookingRead.model_validate(booking)
 
     assert read.tourist_id == 1
     assert read.package_id == 2
+    assert read.booking_date == date(2026, 10, 1)
 
 
 def test_no_update_schema_exists():

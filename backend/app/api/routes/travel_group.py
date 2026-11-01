@@ -14,9 +14,7 @@ def _get_travel_group_or_404(db: Session, travel_group_id: int):
     """Return the travel group or raise a 404."""
     travel_group = travel_group_service.get_travel_group(db, travel_group_id)
     if travel_group is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="TravelGroup not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="TravelGroup not found")
     return travel_group
 
 
@@ -33,9 +31,7 @@ def get_travel_group(travel_group_id: int, db: Session = Depends(get_db)) -> Tra
 
 
 @router.post("", response_model=TravelGroupRead, status_code=status.HTTP_201_CREATED)
-def create_travel_group(
-    data: TravelGroupCreate, db: Session = Depends(get_db)
-) -> TravelGroupRead:
+def create_travel_group(data: TravelGroupCreate, db: Session = Depends(get_db)) -> TravelGroupRead:
     """Create a new travel group."""
     return travel_group_service.create_travel_group(db, data)
 

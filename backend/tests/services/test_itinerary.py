@@ -8,9 +8,7 @@ from app.services import itinerary as itinerary_service
 
 
 def test_create_itinerary_persists_it(db_session):
-    data = ItineraryCreate(
-        creation_date=date(2026, 1, 1), activity_count=2
-    )
+    data = ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=2)
 
     itinerary = itinerary_service.create_itinerary(db_session, data)
 

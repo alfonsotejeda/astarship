@@ -1,6 +1,8 @@
 """Booking model."""
 
-from sqlalchemy import ForeignKey
+from datetime import date
+
+from sqlalchemy import Date, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -19,6 +21,7 @@ class Booking(Base):
     package_id: Mapped[int] = mapped_column(
         ForeignKey("packages.id", ondelete="CASCADE"), primary_key=True
     )
+    booking_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     tourist: Mapped[Tourist] = relationship(back_populates="bookings", passive_deletes=True)
     package: Mapped[Package] = relationship(back_populates="bookings", passive_deletes=True)

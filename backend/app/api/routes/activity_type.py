@@ -14,9 +14,7 @@ def _get_activity_type_or_404(db: Session, code: str):
     """Return the activity type or raise a 404."""
     activity_type = activity_type_service.get_activity_type(db, code)
     if activity_type is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="ActivityType not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ActivityType not found")
     return activity_type
 
 

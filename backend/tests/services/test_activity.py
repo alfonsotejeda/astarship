@@ -25,9 +25,7 @@ def test_update_activity_applies_partial_changes(db_session):
         db_session, ActivityCreate(name="Old", effort_level=1)
     )
 
-    updated = activity_service.update_activity(
-        db_session, activity, ActivityUpdate(name="New")
-    )
+    updated = activity_service.update_activity(db_session, activity, ActivityUpdate(name="New"))
 
     assert updated.name == "New"
     assert updated.effort_level == 1

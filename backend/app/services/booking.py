@@ -45,7 +45,7 @@ def create_booking(db: Session, data: BookingCreate) -> Booking:
         raise ValueError("Package not found")
     if get_booking(db, data.tourist_id, data.package_id) is not None:
         raise ValueError("Booking for this tourist and package already exists")
-    booking = Booking(tourist=tourist, package=package)
+    booking = Booking(tourist=tourist, package=package, booking_date=data.booking_date)
     db.add(booking)
     try:
         db.commit()

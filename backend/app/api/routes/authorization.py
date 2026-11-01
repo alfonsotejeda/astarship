@@ -48,9 +48,7 @@ def delete_authorization(package_id: int, guide_id: int, db: Session = Depends(g
     """Revoke a guide's authorization on a package."""
     authorization = authorization_service.get_authorization(db, package_id, guide_id)
     if authorization is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Authorization not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Authorization not found")
     authorization_service.delete_authorization(db, authorization)
 
 

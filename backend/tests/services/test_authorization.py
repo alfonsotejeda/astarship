@@ -16,9 +16,7 @@ def _create_guide(db_session, email="gil@example.com"):
 
 
 def _create_package(db_session, name="Andes"):
-    return package_service.create_package(
-        db_session, PackageCreate(name=name, destination="Peru")
-    )
+    return package_service.create_package(db_session, PackageCreate(name=name, destination="Peru"))
 
 
 def test_create_authorization_stores_the_flags(db_session):

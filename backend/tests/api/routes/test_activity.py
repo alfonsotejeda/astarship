@@ -33,9 +33,7 @@ def test_get_activity_returns_404_when_missing(client):
 
 
 def test_update_activity_changes_name(client):
-    created = client.post(
-        "/api/activities", json={"name": "Old", "effort_level": 1}
-    ).json()
+    created = client.post("/api/activities", json={"name": "Old", "effort_level": 1}).json()
 
     response = client.patch(f"/api/activities/{created['id']}", json={"name": "New"})
 
@@ -44,9 +42,7 @@ def test_update_activity_changes_name(client):
 
 
 def test_delete_activity_removes_it(client):
-    created = client.post(
-        "/api/activities", json={"name": "Temp", "effort_level": 1}
-    ).json()
+    created = client.post("/api/activities", json={"name": "Temp", "effort_level": 1}).json()
 
     response = client.delete(f"/api/activities/{created['id']}")
 

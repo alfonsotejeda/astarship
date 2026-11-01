@@ -17,9 +17,7 @@ def add_tourist(
 ) -> MembershipRead:
     """Add a tourist to a travel group."""
     if travel_group_service.get_travel_group(db, travel_group_id) is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="TravelGroup not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="TravelGroup not found")
     if membership_service.get_tourist(db, tourist_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tourist not found")
     if membership_service.get_membership(db, travel_group_id, tourist_id) is not None:

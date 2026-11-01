@@ -15,9 +15,7 @@ def _get_itinerary_or_404(db: Session, itinerary_id: int):
     """Return the itinerary or raise a 404."""
     itinerary = itinerary_service.get_itinerary(db, itinerary_id)
     if itinerary is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Itinerary not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Itinerary not found")
     return itinerary
 
 

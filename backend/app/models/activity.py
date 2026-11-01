@@ -1,4 +1,5 @@
 """Activity model."""
+
 from datetime import date
 
 from sqlalchemy import String
@@ -16,11 +17,11 @@ class Activity(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
     effort_level: Mapped[int]
-    
+
     status: Mapped[ReviewStatus] = mapped_column(
         status_enum(ReviewStatus), default=ReviewStatus.PENDING
     )
-    
+
     creation_date: Mapped[date] = mapped_column(default=date.today)
     activity_type_code: Mapped[str | None] = mapped_column(String(50))
     category_id: Mapped[int | None]

@@ -73,9 +73,7 @@ def test_get_package_returns_created_package(client):
 def test_update_package_treats_null_fields_as_not_sent(client):
     created = _create_package(client)
 
-    response = client.patch(
-        f"/api/packages/{created['id']}", json={"name": None, "status": None}
-    )
+    response = client.patch(f"/api/packages/{created['id']}", json={"name": None, "status": None})
 
     assert response.status_code == 200
     assert response.json() == created
@@ -147,9 +145,10 @@ def _create_tourist(client, email="ada@example.com", age=30):
     ).json()
 
 
-def _create_booking(client, tourist_id, package_id):
+def _create_booking(client, tourist_id, package_id, booking_date="2026-10-01"):
     return client.post(
-        "/api/bookings", json={"tourist_id": tourist_id, "package_id": package_id}
+        "/api/bookings",
+        json={"tourist_id": tourist_id, "package_id": package_id, "booking_date": booking_date},
     )
 
 

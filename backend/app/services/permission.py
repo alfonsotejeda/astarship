@@ -21,7 +21,7 @@ def get_permission(db: Session, name: str) -> Permission | None:
 
 def create_permission(db: Session, data: PermissionCreate) -> Permission:
     """Create and persist a new permission."""
-    permission = Permission(name = data.name)
+    permission = Permission(name=data.name)
     db.add(permission)
     db.commit()
     db.refresh(permission)

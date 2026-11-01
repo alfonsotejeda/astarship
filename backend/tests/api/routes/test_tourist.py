@@ -15,14 +15,13 @@ def _create_tourist(client, email="ada@example.com"):
 
 
 def _create_package(client, name="Europa Capitales", destination="París"):
-    return client.post(
-        "/api/packages", json={"name": name, "destination": destination}
-    ).json()
+    return client.post("/api/packages", json={"name": name, "destination": destination}).json()
 
 
-def _create_booking(client, tourist_id, package_id):
+def _create_booking(client, tourist_id, package_id, booking_date="2026-10-01"):
     return client.post(
-        "/api/bookings", json={"tourist_id": tourist_id, "package_id": package_id}
+        "/api/bookings",
+        json={"tourist_id": tourist_id, "package_id": package_id, "booking_date": booking_date},
     )
 
 

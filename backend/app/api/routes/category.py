@@ -18,19 +18,16 @@ def get_category(db: Session, category_id: int):
     return category
 
 
-
 @router.get("", response_model=list[CategoryRead])
 def list_categories(db: Session = Depends(get_db)) -> list[CategoryRead]:
     """List all categories."""
     return category_sv.list_categories(db)
 
 
-
 @router.get("/{category_id}", response_model=CategoryRead)
 def get_category_by_id(category_id: int, db: Session = Depends(get_db)) -> CategoryRead:
     """Return a category by its ID."""
     return get_category(db, category_id)
-
 
 
 @router.get("/name/{category_name}", response_model=CategoryRead)
@@ -42,7 +39,6 @@ def get_category_name(category_name: str, db: Session = Depends(get_db)) -> Cate
     return category
 
 
-
 @router.post("/create", response_model=CategoryRead, status_code=status.HTTP_201_CREATED)
 def create_category_end(data: CategoryCreate, db: Session = Depends(get_db)) -> CategoryRead:
     """Create a new category."""
@@ -50,7 +46,6 @@ def create_category_end(data: CategoryCreate, db: Session = Depends(get_db)) -> 
         return category_sv.create_category(db, data)
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
-
 
 
 @router.put("/{category_id}", response_model=CategoryRead)
@@ -63,7 +58,6 @@ def update_category(
         return category_sv.update_category(db, category, data)
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
-
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
