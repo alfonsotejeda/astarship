@@ -10,6 +10,7 @@ import type {
   ItineraryDay,
   ItineraryDetail,
   ItineraryStatus,
+  ItinerarySummary,
   ProportionType,
 } from "@/lib/api/itineraries";
 import { formatDuration, formatItineraryCode, formatShortDate, formatTime } from "@/lib/format";
@@ -91,4 +92,59 @@ export function exportItinerary(itinerary: ItineraryDetail, types: TypeLabel[]) 
       ]),
     ),
   });
+}
+
+// The status shown in the list: «assigned» is derived from the assignments
+export type ListStatus = "pending" | "validated" | "approved" | "rejected" | "assigned";
+
+export const STATUS_LABEL: Record<ListStatus, string> = {
+  pending: "Pendiente",
+  validated: "Validado",
+  rejected: "Rechazado",
+  approved: "Aprobado",
+  assigned: "Asignado",
+};
+
+// Sorting by status follows the review flow, not the alphabet
+export const STATUS_ORDER: Record<ListStatus, number> = {
+  pending: 1,
+  validated: 2,
+  rejected: 3,
+  approved: 4,
+  assigned: 5,
+};
+
+export const STATUS_OPTIONS = [
+  { value: "", label: "Todos" },
+  ...Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+];
+
+export function listStatus(item: ItinerarySummary): ListStatus {
+  return item.assigned ? "assigned" : item.status;
+}
+
+export function isBalanced(item: ItinerarySummary) {
+  return item.criteria_met === item.criteria_total;
+}
+
+export function packageOptions(items: ItinerarySummary[], allLabel: string) {
+  const packages = new Map(items.map(item => [String(item.package_id), item.package_name]));
+  return [{ value: "", label: allLabel }, ...[...packages].map(([value, label]) => ({ value, label }))];
+}
+
+export function guideOptions(items: ItinerarySummary[]) {
+  const guides = new Map(items.map(item => [String(item.guide_id), item.guide_name]));
+  return [{ value: "", label: "Todos" }, ...[...guides].map(([value, label]) => ({ value, label }))];
+}
+
+export function matchesSearch(item: ItinerarySummary, query: string) {
+  const text = `${formatItineraryCode(item.id)} ${item.package_name} ${item.guide_name}`.toLowerCase();
+  return text.includes(query.trim().toLowerCase());
+}
+
+// What the current user can review, oldest submission first
+export function reviewQueue(items: ItinerarySummary[]) {
+  return items
+    .filter(item => item.review !== null)
+    .sort((a, b) => (a.submitted_date ?? "").localeCompare(b.submitted_date ?? "") || a.id - b.id);
 }
