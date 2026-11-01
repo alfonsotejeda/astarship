@@ -1,6 +1,7 @@
 import { ApiError } from "@/lib/api/client";
 import type { Method } from "@/lib/api/client";
 import { activityRoutes } from "./handlers/activities";
+import { assignmentRoutes } from "./handlers/assignments";
 import { catalogRoutes } from "./handlers/catalogs";
 import { itineraryRoutes } from "./handlers/itineraries";
 import { packageRoutes } from "./handlers/packages";
@@ -22,6 +23,7 @@ const ROUTES: MockRoute[] = [
   ...peopleRoutes,
   ...requestRoutes,
   ...ratingRoutes,
+  ...assignmentRoutes,
 ];
 
 // Enough to see the loading states
