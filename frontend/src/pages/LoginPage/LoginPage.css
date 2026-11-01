@@ -78,7 +78,7 @@
 .login__route {
   display: block;
   max-width: 100%;
-  height: auto;
+  height: 100%;
 }
 
 .login__headline {
@@ -115,7 +115,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-7) var(--space-5);
-  background-color: #ffffff;
+  background-color: var(--surface-raised);
 }
 
 .login__form {
@@ -166,6 +166,31 @@
   outline: 2px solid var(--focus);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+.login__switch {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  font: var(--type-small);
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.login__switch-action {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.login__switch-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* Demo accesses */
