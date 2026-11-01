@@ -18,7 +18,7 @@ import { activityCount, effortCounts, packageOf, toDays } from "./itineraries";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function addDays(date: string, days: number) {
+export function addDays(date: string, days: number) {
   const next = new Date(`${date}T00:00:00Z`);
   next.setUTCDate(next.getUTCDate() + days);
   return next.toISOString().slice(0, 10);
@@ -30,11 +30,11 @@ function itineraryOf(assignment: AssignmentRecord) {
   return record;
 }
 
-function endDate(assignment: AssignmentRecord) {
+export function endDate(assignment: AssignmentRecord) {
   return addDays(assignment.start_date, itineraryOf(assignment).days.length - 1);
 }
 
-function statusOf(assignment: AssignmentRecord): AssignmentStatus {
+export function statusOf(assignment: AssignmentRecord): AssignmentStatus {
   const today = daysFromToday(0);
   if (today < assignment.start_date) return "assigned";
   if (today > endDate(assignment)) return "finished";
