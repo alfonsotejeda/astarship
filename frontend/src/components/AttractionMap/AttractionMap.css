@@ -1,0 +1,48 @@
+.attraction-map {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  /* Leaflet's panes stack up to z-index 1000; keep them under drawers and toasts */
+  isolation: isolate;
+  z-index: 0;
+}
+
+.attraction-map__canvas {
+  width: 100%;
+  height: 100%;
+  font: var(--type-small);
+}
+
+.attraction-map--picking .attraction-map__canvas {
+  cursor: crosshair;
+}
+
+/* Leaflet sets these as SVG attributes; CSS takes precedence and follows the theme */
+.attraction-map__marker {
+  stroke: var(--surface-raised);
+  stroke-width: 2;
+  fill: var(--ink-muted);
+  fill-opacity: 1;
+}
+
+.attraction-map__marker--highlighted {
+  fill: var(--route);
+}
+
+.attraction-map__marker--picked {
+  fill: var(--destination);
+}
+
+.attraction-map__route {
+  stroke: var(--route);
+  stroke-width: 3;
+  stroke-dasharray: 6 6;
+  fill: none;
+}
+
+/* The OSM tiles are light; dimmed and inverted they sit on the dark surfaces */
+[data-theme="dark"] .attraction-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9);
+}
