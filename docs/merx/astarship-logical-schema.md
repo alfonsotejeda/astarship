@@ -49,7 +49,7 @@
 | Itinerary Composition | Itinerary — Activity               | Composes      | N:M          | Itinerary (1,\*) — Activity (0,\*)               | Order, Day, StartTime                    | Visit                                |
 | Visit                 | Assignment — Itinerary Composition | Visits        | N:M          | Assignment (0,\*) — Itinerary Composition (0,\*) | Comment, Rating, Status                  | —                                    |
 | Authorization         | Guide — Package                    | Authorizes    | N:M          | Guide (0,\*) — Package (0,\*)                    | CanGenerate, CanValidate                 | —                                    |
-| Booking               | Tourist — Package                  | To Book       | N:M          | Tourist (0,\*) — Package (0,\*)                  | BookingDate                              | —                                    |
+| Booking               | Tourist — Package                  | To Book       | N:M          | Tourist (0,\*) — Package (0,\*)                  | BookingDate, Status, RequestedStartDate, RejectionReason, ResolvedDate | —                                    |
 
 ## 4. Esquema Lógico Relacional
 
@@ -150,6 +150,8 @@
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Guide REFERENCES Guide(ID)*
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Package REFERENCES Package(ID)*
 
-**Booking**(<u>ID_Tourist</u>, <u>ID_Package</u>, BookingDate)
+**Booking**(<u>ID_Tourist</u>, <u>ID_Package</u>, BookingDate, Status, RequestedStartDate, ID_PreferredItinerary, RejectionReason, ResolvedDate)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Tourist REFERENCES Tourist(ID)*
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Package REFERENCES Package(ID)*
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_PreferredItinerary REFERENCES Itinerary(ID)* (opcional)
+&nbsp;&nbsp;&nbsp;&nbsp;*Status ∈ {pending, assigned, rejected, cancelled}; el itinerario asignado se obtiene de Assignment ([revision-frontend.md §1](../planificacion/revision-frontend.md#1-catálogo-del-turista-y-reserva-de-paquetes))*
