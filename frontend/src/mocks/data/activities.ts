@@ -1,3 +1,4 @@
+import type { ActivityValidationResult, DuplicateStatus } from "@/lib/api/activities";
 import type { ReviewStatus } from "@/lib/api/packages";
 
 export interface AttractionRecord {
@@ -17,6 +18,25 @@ export interface ActivityRecord {
   user_id: number;
   attraction_id: number;
   duration_minutes: number;
+}
+
+export interface ActivityValidationRecord {
+  activity_id: number;
+  admin_id: number;
+  validation_date: string;
+  result: ActivityValidationResult;
+  observations: string | null;
+}
+
+export interface DuplicatePairRecord {
+  id: number;
+  a_id: number;
+  b_id: number;
+  score: number;
+  status: DuplicateStatus;
+  kept_id: number | null;
+  resolved_date: string | null;
+  resolver_id: number | null;
 }
 
 export const attractions: AttractionRecord[] = [
@@ -71,8 +91,31 @@ export const activities: ActivityRecord[] = [
   { id: 22, name: "Tren por el Valle de los Ingenios", effort_level: 2, status: "approved", creation_date: "2026-09-17", activity_type_code: "excursion", category_id: 1, user_id: 3, attraction_id: 22, duration_minutes: 150 },
   { id: 23, name: "Taller de alfarería", effort_level: 1, status: "approved", creation_date: "2026-09-17", activity_type_code: "taller", category_id: 1, user_id: 3, attraction_id: 23, duration_minutes: 90 },
   { id: 24, name: "Museo Romántico", effort_level: 1, status: "approved", creation_date: "2026-09-18", activity_type_code: "visita", category_id: 1, user_id: 1, attraction_id: 24, duration_minutes: 60 },
+  { id: 25, name: "Mirador del Morro al atardecer", effort_level: 2, status: "approved", creation_date: "2026-09-20", activity_type_code: "visita", category_id: 5, user_id: 1, attraction_id: 4, duration_minutes: 60 },
+  // New and waiting for the administrator (#156); each one is in a duplicate pair (P-21)
+  { id: 26, name: "Recorrido por la Plaza Vieja", effort_level: 2, status: "pending", creation_date: "2026-10-28", activity_type_code: "excursion", category_id: 1, user_id: 3, attraction_id: 2, duration_minutes: 90 },
+  { id: 27, name: "Taller de son en la Casa de la Música", effort_level: 1, status: "pending", creation_date: "2026-10-30", activity_type_code: "taller", category_id: 4, user_id: 1, attraction_id: 6, duration_minutes: 90 },
 ];
 
+// Activities removed by a merge; kept so the resolved pairs still show both sides
+export const removedActivities: ActivityRecord[] = [
+  { id: 90, name: "Visita al Castillo de la Real Fuerza", effort_level: 1, status: "pending", creation_date: "2026-09-25", activity_type_code: "visita", category_id: 1, user_id: 2, attraction_id: 1, duration_minutes: 60 },
+];
+
+export const activityValidations: ActivityValidationRecord[] = [
+  { activity_id: 25, admin_id: 4, validation_date: "2026-09-21", result: "approved", observations: null },
+];
+
+export const duplicatePairs: DuplicatePairRecord[] = [
+  { id: 1, a_id: 2, b_id: 26, score: 92, status: "pending", kept_id: null, resolved_date: null, resolver_id: null },
+  { id: 2, a_id: 6, b_id: 27, score: 87, status: "pending", kept_id: null, resolved_date: null, resolver_id: null },
+  { id: 3, a_id: 1, b_id: 90, score: 89, status: "merged", kept_id: 1, resolved_date: "2026-09-26", resolver_id: 4 },
+  { id: 4, a_id: 4, b_id: 25, score: 48, status: "dismissed", kept_id: null, resolved_date: "2026-09-21", resolver_id: 4 },
+];
+
+export const nextActivityId = { value: 28 };
+export const nextDuplicatePairId = { value: 5 };
+
 export function findActivityRecord(id: number) {
-  return activities.find(activity => activity.id === id);
+  return activities.find(activity => activity.id === id) ?? removedActivities.find(activity => activity.id === id);
 }
