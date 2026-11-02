@@ -16,8 +16,17 @@ type AttractionFieldsProps = {
 };
 
 // Shared by the attraction drawer and the new attraction dialog of the activity form
-export function AttractionFields({ idPrefix, value, onChange, showErrors, disabled = false, nearby = [] }: AttractionFieldsProps) {
-  const errors = showErrors ? draftErrors(value) : {};
+export function AttractionFields({
+  idPrefix,
+  value,
+  onChange,
+  showErrors,
+  disabled = false,
+  nearby = [],
+}: AttractionFieldsProps) {
+  const errors: Partial<ReturnType<typeof draftErrors>> = showErrors
+    ? draftErrors(value)
+    : {};
   const position = draftPosition(value);
 
   function pick({ lat, lng }: { lat: number; lng: number }) {
@@ -33,7 +42,7 @@ export function AttractionFields({ idPrefix, value, onChange, showErrors, disabl
         value={value.name}
         disabled={disabled}
         error={errors.name}
-        onChange={event => onChange({ ...value, name: event.target.value })}
+        onChange={(event) => onChange({ ...value, name: event.target.value })}
       />
       <Field
         id={`${idPrefix}-address`}
@@ -43,7 +52,9 @@ export function AttractionFields({ idPrefix, value, onChange, showErrors, disabl
         value={value.address}
         disabled={disabled}
         error={errors.address}
-        onChange={event => onChange({ ...value, address: event.target.value })}
+        onChange={(event) =>
+          onChange({ ...value, address: event.target.value })
+        }
       />
 
       <div className="attraction-fields__location">
@@ -55,7 +66,11 @@ export function AttractionFields({ idPrefix, value, onChange, showErrors, disabl
           label="Mapa para marcar la ubicación"
           height={240}
         />
-        {!disabled && <span className="attraction-fields__hint">Pulsa en el mapa para marcarla.</span>}
+        {!disabled && (
+          <span className="attraction-fields__hint">
+            Pulsa en el mapa para marcarla.
+          </span>
+        )}
         <div className="attraction-fields__coords">
           <Field
             id={`${idPrefix}-latitude`}
@@ -64,7 +79,9 @@ export function AttractionFields({ idPrefix, value, onChange, showErrors, disabl
             value={value.latitude}
             disabled={disabled}
             error={errors.location}
-            onChange={event => onChange({ ...value, latitude: event.target.value })}
+            onChange={(event) =>
+              onChange({ ...value, latitude: event.target.value })
+            }
           />
           <Field
             id={`${idPrefix}-longitude`}
@@ -72,7 +89,9 @@ export function AttractionFields({ idPrefix, value, onChange, showErrors, disabl
             inputMode="decimal"
             value={value.longitude}
             disabled={disabled}
-            onChange={event => onChange({ ...value, longitude: event.target.value })}
+            onChange={(event) =>
+              onChange({ ...value, longitude: event.target.value })
+            }
           />
         </div>
       </div>
