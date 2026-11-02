@@ -33,23 +33,24 @@
 | Generates     | Package — Admin         | N:1          | Package (1,1) — Admin (0,\*)         |
 | Generates     | Itinerary — Guide       | N:1          | Itinerary (1,1) — Guide (0,\*)       |
 | Assigns       | Admin — Assignment      | 1:N          | Admin (0,\*) — Assignment (1,1)      |
+| Prefers       | Booking — Itinerary     | N:1          | Booking (0,1) — Itinerary (0,\*)     |
 
 ## 3. Agregaciones
 
-| Agregación            | Participantes                      | Interrelación | Cardinalidad | (min,max)                                        | Atributos                                | Usada por                            |
-| --------------------- | ---------------------------------- | ------------- | ------------ | ------------------------------------------------ | ---------------------------------------- | ------------------------------------ |
-| Proportion Type       | Itinerary — ActivityType           | Proportion    | N:M          | Itinerary (1,\*) — ActivityType (0,\*)           | Value                                    | —                                    |
-| Proportion Category   | Itinerary — Category               | Proportion    | N:M          | Itinerary (1,\*) — Category (0,\*)               | Value                                    | —                                    |
-| Itinerary Validation  | Itinerary — Guide                  | Validates     | N:M          | Itinerary (0,\*) — Guide (0,\*)                  | ValidationDate, Result, Observations     | —                                    |
-| Itinerary Approval    | Itinerary — OperationsManager      | Approves      | N:M          | Itinerary (0,\*) — OperationsManager (0,\*)      | ApprovalDate, Result, Observations       | —                                    |
-| Package Validation    | Package — OperationsManager        | Validates     | N:M          | Package (0,\*) — OperationsManager (0,\*)        | ValidationDate, Result, Observations     | —                                    |
-| Activity Validation   | Activity — Admin                   | Validates     | N:M          | Activity (0,\*) — Admin (0,\*)                   | ValidationDate, Result, Observations     | —                                    |
-| Assignment            | Itinerary — Tourist                | Assigned      | N:M          | Itinerary (0,\*) — Tourist (0,\*)                | AssignmentDate, Status                   | Assigns, Modification Request, Visit |
-| Modification Request  | Guide — Assignment                 | Handles       | N:M          | Guide (0,\*) — Assignment (0,\*)                 | RequestDate, Description, Status, Result | —                                    |
-| Itinerary Composition | Itinerary — Activity               | Composes      | N:M          | Itinerary (1,\*) — Activity (0,\*)               | Order, Day, StartTime                    | Visit                                |
-| Visit                 | Assignment — Itinerary Composition | Visits        | N:M          | Assignment (0,\*) — Itinerary Composition (0,\*) | Comment, Rating, Status                  | —                                    |
-| Authorization         | Guide — Package                    | Authorizes    | N:M          | Guide (0,\*) — Package (0,\*)                    | CanGenerate, CanValidate                 | —                                    |
-| Booking               | Tourist — Package                  | To Book       | N:M          | Tourist (0,\*) — Package (0,\*)                  | BookingDate, Status, RequestedStartDate, RejectionReason, ResolvedDate | —                                    |
+| Agregación            | Participantes                      | Interrelación | Cardinalidad | (min,max)                                        | Atributos                                                              | Usada por                            |
+| --------------------- | ---------------------------------- | ------------- | ------------ | ------------------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------ |
+| Proportion Type       | Itinerary — ActivityType           | Proportion    | N:M          | Itinerary (1,\*) — ActivityType (0,\*)           | Value                                                                  | —                                    |
+| Proportion Category   | Itinerary — Category               | Proportion    | N:M          | Itinerary (1,\*) — Category (0,\*)               | Value                                                                  | —                                    |
+| Itinerary Validation  | Itinerary — Guide                  | Validates     | N:M          | Itinerary (0,\*) — Guide (0,\*)                  | ValidationDate, Result, Observations                                   | —                                    |
+| Itinerary Approval    | Itinerary — OperationsManager      | Approves      | N:M          | Itinerary (0,\*) — OperationsManager (0,\*)      | ApprovalDate, Result, Observations                                     | —                                    |
+| Package Validation    | Package — OperationsManager        | Validates     | N:M          | Package (0,\*) — OperationsManager (0,\*)        | ValidationDate, Result, Observations                                   | —                                    |
+| Activity Validation   | Activity — Admin                   | Validates     | N:M          | Activity (0,\*) — Admin (0,\*)                   | ValidationDate, Result, Observations                                   | —                                    |
+| Assignment            | Itinerary — Tourist                | Assigned      | N:M          | Itinerary (0,\*) — Tourist (0,\*)                | AssignmentDate, Status                                                 | Assigns, Modification Request, Visit |
+| Modification Request  | Guide — Assignment                 | Handles       | N:M          | Guide (0,\*) — Assignment (0,\*)                 | RequestDate, Description, Status, Result                               | —                                    |
+| Itinerary Composition | Itinerary — Activity               | Composes      | N:M          | Itinerary (1,\*) — Activity (0,\*)               | Order, Day, StartTime                                                  | Visit                                |
+| Visit                 | Assignment — Itinerary Composition | Visits        | N:M          | Assignment (0,\*) — Itinerary Composition (0,\*) | Comment, Rating, Status                                                | —                                    |
+| Authorization         | Guide — Package                    | Authorizes    | N:M          | Guide (0,\*) — Package (0,\*)                    | CanGenerate, CanValidate                                               | —                                    |
+| Booking               | Tourist — Package                  | To Book       | N:M          | Tourist (0,\*) — Package (0,\*)                  | BookingDate, Status, RequestedStartDate, RejectionReason, ResolvedDate | Prefers                              |
 
 ## 4. Esquema Lógico Relacional
 
@@ -153,5 +154,5 @@
 **Booking**(<u>ID_Tourist</u>, <u>ID_Package</u>, BookingDate, Status, RequestedStartDate, ID_PreferredItinerary, RejectionReason, ResolvedDate)
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Tourist REFERENCES Tourist(ID)*
 &nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_Package REFERENCES Package(ID)*
-&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_PreferredItinerary REFERENCES Itinerary(ID)* (opcional)
+&nbsp;&nbsp;&nbsp;&nbsp;*FK: ID_PreferredItinerary REFERENCES Itinerary(ID)* (opcional; interrelación Prefers, N:1, migrada a Booking)
 &nbsp;&nbsp;&nbsp;&nbsp;*Status ∈ {pending, assigned, rejected, cancelled}; el itinerario asignado se obtiene de Assignment ([revision-frontend.md §1](../planificacion/revision-frontend.md#1-catálogo-del-turista-y-reserva-de-paquetes))*
