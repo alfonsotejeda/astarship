@@ -14,9 +14,11 @@ export const ROLE_LABEL: Record<Role, string> = {
   admin: "Administrador",
 };
 
+export const ALL_ROLES: Role[] = ["guide", "manager", "tourist", "admin"];
+
 export const HOME_BY_ROLE: Record<Role, string> = {
-  guide: "/actividades",
-  manager: "/itinerarios",
-  tourist: "/viaje/hoy",
-  admin: "/paquetes",
+  guide: "/activities",
+  manager: "/itineraries",
+  tourist: "/trip/today",
+  admin: "/packages",
 };

@@ -15,7 +15,23 @@
 
 .assignments__main {
   flex: 999 1 520px;
+  display: grid;
+  gap: var(--space-4);
   min-width: 0;
+}
+
+.assignments__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.assignments__strong {
+  font: var(--type-body-strong);
+}
+
+.assignments__mono {
+  font: var(--type-data);
 }
 
 .assignments__group {
@@ -60,6 +76,7 @@
 }
 
 .assignments__muted {
+  margin: 0;
   font-size: 14px;
   line-height: 20px;
   color: var(--ink-muted);

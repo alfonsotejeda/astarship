@@ -4,7 +4,8 @@ import type { AssignmentStatus as PillAssignment, VisitStatus as PillVisit } fro
 import { toEffortLevel } from "@/lib/api/activities";
 import type { AssignmentStatus, TravelMode, TripDay, TripStop, VisitStatus } from "@/lib/api/trips";
 import { formatDuration, formatTime, formatWeekday } from "@/lib/format";
-import { EFFORT_LABEL, toStops } from "@/lib/itinerary";
+import { EFFORT_LABEL } from "@/lib/activity";
+import { toStops } from "@/lib/itinerary";
 import { exportPdf } from "@/lib/pdf";
 
 export const ASSIGNMENT_STATUS: Record<AssignmentStatus, PillAssignment> = {
@@ -58,7 +59,7 @@ export function travelText(stop: TripStop, previous: TripStop | undefined) {
   return from ? `${text} desde ${from}` : text;
 }
 
-export function dayTabLabel(day: TripDay, today?: number) {
+export function dayTabLabel(day: { day: number; date: string }, today?: number) {
   return `Día ${day.day} · ${day.day === today ? "hoy" : formatWeekday(day.date, true)}`;
 }
 

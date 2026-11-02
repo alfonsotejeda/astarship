@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Link, Navigate } from "react-router";
-import { useAuth } from "@/app/providers/auth/AuthContext";
-import { HOME_BY_ROLE } from "@/app/providers/auth/roles";
+import { Link } from "react-router";
+import { useCurrentUser } from "@/app/providers/auth/AuthContext";
 import type { Role } from "@/app/providers/auth/roles";
 import { Alert } from "@/components/Alert/Alert";
 import type { Tone } from "@/components/Alert/tones";
@@ -63,7 +62,7 @@ function sameCategories(a: number[], b: number[]) {
 }
 
 export function PackagesPage() {
-  const { user } = useAuth();
+  const user = useCurrentUser();
   const packages = usePackages();
   const categories = useCategories();
   const savePackage = useSavePackage();
@@ -71,9 +70,6 @@ export function PackagesPage() {
   // Undefined until the user picks a row, so the default follows the loaded data
   const [selection, setSelection] = useState<Selection>();
   const [toast, setToast] = useState<ToastMessage | null>(null);
-
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role === "tourist") return <Navigate to={HOME_BY_ROLE[user.role]} replace />;
 
   const isAdmin = user.role === "admin";
 
@@ -596,7 +592,7 @@ function PackageDrawer({
             ))}
           </ul>
           {isAdmin && (
-            <Link to="/personas" className="packages__link">
+            <Link to="/people/guides" className="packages__link">
               Cambiar permisos en Guías y permisos
             </Link>
           )}
