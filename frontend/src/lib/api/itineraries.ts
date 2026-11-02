@@ -47,6 +47,7 @@ export interface ItineraryStop {
   order: number;
   start_time: string;
   activity_name: string;
+  attraction_id: number | null;
   attraction_name: string | null;
   activity_type_code: string | null;
   effort_level: number;
@@ -156,8 +157,8 @@ export function reviewItinerary(id: number, body: ReviewRequest) {
   return request<ItineraryDetail>(`/itineraries/${id}/validations`, "POST", body);
 }
 
-export function useItineraries() {
-  return useQuery({ queryKey: ["itineraries"], queryFn: getItineraries });
+export function useItineraries(enabled = true) {
+  return useQuery({ queryKey: ["itineraries"], queryFn: getItineraries, enabled });
 }
 
 export function useItinerary(id: number) {

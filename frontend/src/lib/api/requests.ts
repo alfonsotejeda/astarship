@@ -65,8 +65,8 @@ export function updateModificationRequest(id: number, body: ModificationRequestU
   return request<ModificationRequest>(`/modification-requests/${id}`, "PATCH", body);
 }
 
-export function useModificationRequests() {
-  return useQuery({ queryKey: ["modification-requests"], queryFn: getModificationRequests });
+export function useModificationRequests(enabled = true) {
+  return useQuery({ queryKey: ["modification-requests"], queryFn: getModificationRequests, enabled });
 }
 
 export function useSupportGuides(itineraryId: number | null) {

@@ -4,6 +4,10 @@ import type { ReviewStatus } from "@/lib/api/packages";
 export interface AttractionRecord {
   id: number;
   name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  // Not in the model: it decides which packages can use the attraction's activities
   destination: string;
 }
 
@@ -40,31 +44,38 @@ export interface DuplicatePairRecord {
 }
 
 export const attractions: AttractionRecord[] = [
-  { id: 1, name: "Plaza de Armas", destination: "La Habana" },
-  { id: 2, name: "Calle Obispo → Plaza Vieja", destination: "La Habana" },
-  { id: 3, name: "Paladar El Patio", destination: "La Habana" },
-  { id: 4, name: "Castillo de los Tres Reyes del Morro", destination: "La Habana" },
-  { id: 5, name: "Edificio de Arte Cubano", destination: "La Habana" },
-  { id: 6, name: "Casa de la Música", destination: "La Habana" },
-  { id: 7, name: "Centro Habana", destination: "La Habana" },
-  { id: 8, name: "Malecón", destination: "La Habana" },
-  { id: 9, name: "Fortaleza de La Cabaña", destination: "La Habana" },
-  { id: 10, name: "Fábrica Partagás", destination: "La Habana" },
-  { id: 11, name: "Bosque de La Habana", destination: "La Habana" },
-  { id: 12, name: "Plaza de la Catedral", destination: "La Habana" },
-  { id: 13, name: "Museo del Ron", destination: "La Habana" },
-  { id: 14, name: "Taller Experimental de Gráfica", destination: "La Habana" },
-  { id: 15, name: "Valle de Dos Hermanas", destination: "Viñales" },
-  { id: 16, name: "Cueva del Indio", destination: "Viñales" },
-  { id: 17, name: "Valle de Viñales", destination: "Viñales" },
-  { id: 18, name: "Finca Raúl Reyes", destination: "Viñales" },
-  { id: 19, name: "Hotel Los Jazmines", destination: "Viñales" },
-  { id: 20, name: "Plaza Mayor de Trinidad", destination: "Trinidad" },
-  { id: 21, name: "Parque Guanayara", destination: "Trinidad" },
-  { id: 22, name: "Valle de los Ingenios", destination: "Trinidad" },
-  { id: 23, name: "Casa del Alfarero", destination: "Trinidad" },
-  { id: 24, name: "Palacio Brunet", destination: "Trinidad" },
+  { id: 1, name: "Plaza de Armas", address: "Calle Obispo esq. Tacón, La Habana Vieja", latitude: 23.1404, longitude: -82.35, destination: "La Habana" },
+  { id: 2, name: "Calle Obispo → Plaza Vieja", address: "Calle Obispo y Plaza Vieja, La Habana Vieja", latitude: 23.138, longitude: -82.351, destination: "La Habana" },
+  { id: 3, name: "Paladar El Patio", address: "Calle San Ignacio 54, La Habana Vieja", latitude: 23.1412, longitude: -82.3519, destination: "La Habana" },
+  { id: 4, name: "Castillo de los Tres Reyes del Morro", address: "Carretera de la Cabaña, La Habana del Este", latitude: 23.15, longitude: -82.3567, destination: "La Habana" },
+  { id: 5, name: "Edificio de Arte Cubano", address: "Calle Trocadero e/ Zulueta y Monserrate, La Habana", latitude: 23.1405, longitude: -82.3584, destination: "La Habana" },
+  { id: 6, name: "Casa de la Música", address: "Calle Galiano 255, Centro Habana", latitude: 23.1355, longitude: -82.364, destination: "La Habana" },
+  { id: 7, name: "Centro Habana", address: "Callejón de Hamel, Centro Habana", latitude: 23.134, longitude: -82.38, destination: "La Habana" },
+  { id: 8, name: "Malecón", address: "Malecón y Paseo del Prado, La Habana", latitude: 23.1435, longitude: -82.368, destination: "La Habana" },
+  { id: 9, name: "Fortaleza de La Cabaña", address: "Carretera de la Cabaña, La Habana del Este", latitude: 23.146, longitude: -82.351, destination: "La Habana" },
+  { id: 10, name: "Fábrica Partagás", address: "Calle Industria 520, Centro Habana", latitude: 23.1325, longitude: -82.359, destination: "La Habana" },
+  { id: 11, name: "Bosque de La Habana", address: "Avenida 47 y río Almendares, Nuevo Vedado", latitude: 23.115, longitude: -82.403, destination: "La Habana" },
+  { id: 12, name: "Plaza de la Catedral", address: "Calle Empedrado 158, La Habana Vieja", latitude: 23.1418, longitude: -82.3524, destination: "La Habana" },
+  { id: 13, name: "Museo del Ron", address: "Avenida del Puerto 262, La Habana Vieja", latitude: 23.1361, longitude: -82.3487, destination: "La Habana" },
+  { id: 14, name: "Taller Experimental de Gráfica", address: "Callejón del Chorro 6, La Habana Vieja", latitude: 23.1416, longitude: -82.353, destination: "La Habana" },
+  { id: 15, name: "Valle de Dos Hermanas", address: "Valle de Dos Hermanas, Viñales", latitude: 22.634, longitude: -83.738, destination: "Viñales" },
+  { id: 16, name: "Cueva del Indio", address: "Carretera a Puerto Esperanza km 38, Viñales", latitude: 22.669, longitude: -83.696, destination: "Viñales" },
+  { id: 17, name: "Valle de Viñales", address: "Valle de Viñales, Pinar del Río", latitude: 22.619, longitude: -83.711, destination: "Viñales" },
+  { id: 18, name: "Finca Raúl Reyes", address: "Camino al Palmarito, Viñales", latitude: 22.61, longitude: -83.725, destination: "Viñales" },
+  { id: 19, name: "Hotel Los Jazmines", address: "Carretera a Viñales km 23, Pinar del Río", latitude: 22.6, longitude: -83.714, destination: "Viñales" },
+  { id: 20, name: "Plaza Mayor de Trinidad", address: "Plaza Mayor, Trinidad", latitude: 21.8053, longitude: -79.9846, destination: "Trinidad" },
+  { id: 21, name: "Parque Guanayara", address: "Topes de Collantes, Sancti Spíritus", latitude: 21.933, longitude: -80.027, destination: "Trinidad" },
+  { id: 22, name: "Valle de los Ingenios", address: "Valle de los Ingenios, Trinidad", latitude: 21.838, longitude: -79.857, destination: "Trinidad" },
+  { id: 23, name: "Casa del Alfarero", address: "Calle Andrés Berro 51, Trinidad", latitude: 21.8, longitude: -79.99, destination: "Trinidad" },
+  { id: 24, name: "Palacio Brunet", address: "Calle Fernando Hernández Echerri 52, Trinidad", latitude: 21.8058, longitude: -79.985, destination: "Trinidad" },
+  { id: 25, name: "Parque José Martí", address: "Avenida 54 y calle 29, Cienfuegos", latitude: 22.146, longitude: -80.452, destination: "Cienfuegos" },
+  { id: 26, name: "Teatro Tomás Terry", address: "Avenida 56 n.º 270, Cienfuegos", latitude: 22.1466, longitude: -80.4527, destination: "Cienfuegos" },
+  { id: 27, name: "Palacio de Valle", address: "Calle 37 e/ 0 y 2, Punta Gorda, Cienfuegos", latitude: 22.122, longitude: -80.447, destination: "Cienfuegos" },
+  { id: 28, name: "Castillo de Jagua", address: "Poblado de Perché, Cienfuegos", latitude: 22.048, longitude: -80.414, destination: "Cienfuegos" },
+  { id: 29, name: "Jardín Botánico de Cienfuegos", address: "Carretera a Trinidad km 15, Pepito Tey", latitude: 22.125, longitude: -80.317, destination: "Cienfuegos" },
 ];
+
+export const nextAttractionId = { value: 30 };
 
 export const activities: ActivityRecord[] = [
   { id: 1, name: "Castillo de la Real Fuerza", effort_level: 1, status: "approved", creation_date: "2026-09-03", activity_type_code: "visita", category_id: 1, user_id: 1, attraction_id: 1, duration_minutes: 60 },
@@ -92,6 +103,12 @@ export const activities: ActivityRecord[] = [
   { id: 23, name: "Taller de alfarería", effort_level: 1, status: "approved", creation_date: "2026-09-17", activity_type_code: "taller", category_id: 1, user_id: 3, attraction_id: 23, duration_minutes: 90 },
   { id: 24, name: "Museo Romántico", effort_level: 1, status: "approved", creation_date: "2026-09-18", activity_type_code: "visita", category_id: 1, user_id: 1, attraction_id: 24, duration_minutes: 60 },
   { id: 25, name: "Mirador del Morro al atardecer", effort_level: 2, status: "approved", creation_date: "2026-09-20", activity_type_code: "visita", category_id: 5, user_id: 1, attraction_id: 4, duration_minutes: 60 },
+  { id: 28, name: "Paseo por el centro histórico", effort_level: 1, status: "approved", creation_date: "2026-09-25", activity_type_code: "visita", category_id: 1, user_id: 1, attraction_id: 25, duration_minutes: 90 },
+  { id: 29, name: "Función en el Teatro Terry", effort_level: 1, status: "approved", creation_date: "2026-09-25", activity_type_code: "visita", category_id: 4, user_id: 3, attraction_id: 26, duration_minutes: 120 },
+  { id: 30, name: "Atardecer en Punta Gorda", effort_level: 1, status: "approved", creation_date: "2026-09-26", activity_type_code: "visita", category_id: 5, user_id: 1, attraction_id: 27, duration_minutes: 60 },
+  { id: 31, name: "Lancha al Castillo de Jagua", effort_level: 2, status: "approved", creation_date: "2026-09-26", activity_type_code: "excursion", category_id: 1, user_id: 2, attraction_id: 28, duration_minutes: 150 },
+  { id: 32, name: "Ruta por el Jardín Botánico", effort_level: 2, status: "approved", creation_date: "2026-09-27", activity_type_code: "excursion", category_id: 5, user_id: 2, attraction_id: 29, duration_minutes: 120 },
+  { id: 33, name: "Taller de danzón", effort_level: 2, status: "approved", creation_date: "2026-09-27", activity_type_code: "taller", category_id: 4, user_id: 3, attraction_id: 25, duration_minutes: 90 },
   // New and waiting for the administrator (#156); each one is in a duplicate pair (P-21)
   { id: 26, name: "Recorrido por la Plaza Vieja", effort_level: 2, status: "pending", creation_date: "2026-10-28", activity_type_code: "excursion", category_id: 1, user_id: 3, attraction_id: 2, duration_minutes: 90 },
   { id: 27, name: "Taller de son en la Casa de la Música", effort_level: 1, status: "pending", creation_date: "2026-10-30", activity_type_code: "taller", category_id: 4, user_id: 1, attraction_id: 6, duration_minutes: 90 },
@@ -113,7 +130,7 @@ export const duplicatePairs: DuplicatePairRecord[] = [
   { id: 4, a_id: 4, b_id: 25, score: 48, status: "dismissed", kept_id: null, resolved_date: "2026-09-21", resolver_id: 4 },
 ];
 
-export const nextActivityId = { value: 28 };
+export const nextActivityId = { value: 34 };
 export const nextDuplicatePairId = { value: 5 };
 
 export function findActivityRecord(id: number) {

@@ -15,3 +15,10 @@ export function useAuth(): AuthContextValue {
   if (!context) throw new Error("useAuth must be used inside AuthProvider");
   return context;
 }
+
+// For the pages behind RequireRole, where there is always a user
+export function useCurrentUser(): User {
+  const { user } = useAuth();
+  if (!user) throw new Error("useCurrentUser must be used behind RequireRole");
+  return user;
+}

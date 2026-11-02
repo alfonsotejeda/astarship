@@ -1,15 +1,40 @@
 import type { Activity as RowActivity } from "@/components/ActivityRow/ActivityRow";
+import type { EffortLevel } from "@/components/EffortMeter/EffortMeter";
 import type { Status } from "@/components/StatusPill/StatusPill";
 import { toActivityType, toEffortLevel } from "@/lib/api/activities";
 import type { Activity } from "@/lib/api/activities";
 import type { ReviewStatus } from "@/lib/api/packages";
 import { formatDuration } from "@/lib/format";
 
+export const TYPE_OPTIONS = [
+  { value: "visita", label: "Visita" },
+  { value: "excursion", label: "Excursión" },
+  { value: "taller", label: "Taller" },
+];
+
+// Same scale as the API: 1 low, 2 medium, 3 high
+export const EFFORT_OPTIONS = [
+  { value: "1", label: "Bajo" },
+  { value: "2", label: "Medio" },
+  { value: "3", label: "Alto" },
+];
+
+export const EFFORT_LABEL: Record<EffortLevel, string> = { bajo: "Bajo", medio: "Medio", alto: "Alto" };
+
+export function typeLabel(code: string | null) {
+  return TYPE_OPTIONS.find(option => option.value === code)?.label ?? "";
+}
+
+export function effortLabel(level: number) {
+  return EFFORT_LABEL[toEffortLevel(level)];
+}
+
 export function toRowActivity(activity: Activity, category: string | undefined): RowActivity {
   return {
     id: activity.id,
     name: activity.name,
     attraction: activity.attraction_name ?? undefined,
+    attractionTo: activity.attraction_id !== null ? `/attractions/${activity.attraction_id}` : undefined,
     author: activity.author_name ?? undefined,
     type: toActivityType(activity.activity_type_code),
     category,

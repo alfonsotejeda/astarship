@@ -58,14 +58,21 @@ const TRINIDAD: DayRecord["stops"][] = [
   [[21, "08:00"], [22, "14:00"]],
 ];
 
+const CIENFUEGOS: DayRecord["stops"][] = [
+  [[28, "09:00"], [29, "11:30"], [30, "18:00"]],
+  [[31, "09:00"], [33, "16:00"]],
+  [[32, "09:30"]],
+];
+
 // What the fake generator returns for each package
-export const GENERATED_ROUTES: Record<number, DayRecord["stops"][]> = { 1: HABANA_SHORT, 2: VINALES, 3: TRINIDAD };
+export const GENERATED_ROUTES: Record<number, DayRecord["stops"][]> = { 1: HABANA_SHORT, 2: VINALES, 3: TRINIDAD, 5: CIENFUEGOS };
 
 export const GENERATED_DISCARDED: Record<number, ItineraryRecord["discarded"]> = {
   1: [{ activity_id: 4, reason: "esfuerzo alto a las 15:00 del día 2 rompía «Evitar esfuerzo alto al final del día»." }],
 };
 
 export const itineraries: ItineraryRecord[] = [
+  { id: 160, package_id: 5, guide_id: 3, status: "approved", assigned: false, generated_at: "2026-10-03T10:00:00", submitted_date: "2026-10-03", replaces_id: null, proportion: [50, 33, 17], avoid_late_high_effort: true, days: route("2026-11-10", CIENFUEGOS) },
   { id: 156, package_id: 1, guide_id: 1, status: "pending", assigned: false, generated_at: "2026-10-11T16:42:00", submitted_date: null, replaces_id: null, proportion: [40, 35, 25], avoid_late_high_effort: true, days: route("2026-10-13", HABANA_SHORT) },
   { id: 155, package_id: 1, guide_id: 2, status: "validated", assigned: false, generated_at: "2026-10-11T09:15:00", submitted_date: "2026-10-11", replaces_id: null, proportion: [50, 25, 25], avoid_late_high_effort: true, days: route("2026-10-20", HABANA_SHORT) },
   { id: 153, package_id: 2, guide_id: 2, status: "validated", assigned: false, generated_at: "2026-10-10T12:00:00", submitted_date: "2026-10-10", replaces_id: null, proportion: [30, 50, 20], avoid_late_high_effort: true, days: route("2026-10-22", VINALES), failed: { type_proportion: { actual: "40 / 40 / 20 %", detail: "Visita 10 puntos por encima" } } },
@@ -82,6 +89,8 @@ export const itineraries: ItineraryRecord[] = [
 ];
 
 export const reviews: ReviewRecord[] = [
+  { itinerary_id: 160, reviewer_id: 1, review_date: "2026-10-04", result: "validated", observations: null },
+  { itinerary_id: 160, reviewer_id: 5, review_date: "2026-10-05", result: "approved", observations: "Buen equilibrio entre ciudad y naturaleza." },
   { itinerary_id: 155, reviewer_id: 3, review_date: "2026-10-11", result: "validated", observations: null },
   { itinerary_id: 153, reviewer_id: 1, review_date: "2026-10-10", result: "validated", observations: "Buena variedad de naturaleza." },
   { itinerary_id: 151, reviewer_id: 3, review_date: "2026-10-10", result: "validated", observations: null },
@@ -97,4 +106,4 @@ export const reviews: ReviewRecord[] = [
   { itinerary_id: 121, reviewer_id: 5, review_date: "2026-09-23", result: "approved", observations: null },
 ];
 
-export const nextItineraryId = { value: 157 };
+export const nextItineraryId = { value: 161 };

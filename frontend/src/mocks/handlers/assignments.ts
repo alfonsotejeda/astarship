@@ -1,7 +1,7 @@
 import { ApiError } from "@/lib/api/client";
 import type { AssignRequest, AssignResult } from "@/lib/api/assignments";
 import { assignments } from "../data/assignments";
-import { enrollments } from "../data/groups";
+import { bookings, isActive } from "../data/bookings";
 import { itineraries } from "../data/itineraries";
 import { findUser } from "../data/users";
 import type { MockRoute } from "../types";
@@ -24,7 +24,7 @@ function assign(itineraryId: string, body: AssignRequest, userId: number): Assig
 
   // RN-04: nobody gets two itineraries of the same package
   const doubled = userIds.filter(id =>
-    enrollments.some(item => item.tourist_id === id && item.package_id === pkg.id && item.itinerary_id !== null),
+    bookings.some(item => item.tourist_id === id && item.package_id === pkg.id && item.status === "assigned"),
   );
   if (doubled.length > 0) {
     const names = doubled.map(id => findUser(id)?.name).join(", ");
@@ -32,10 +32,23 @@ function assign(itineraryId: string, body: AssignRequest, userId: number): Assig
     throw new ApiError(409, `${names} ${verb} un itinerario de ${pkg.name}.`);
   }
 
+  const today = new Date().toISOString().slice(0, 10);
   for (const id of userIds) {
-    const enrollment = enrollments.find(item => item.tourist_id === id && item.package_id === pkg.id);
-    if (enrollment) enrollment.itinerary_id = record.id;
-    else enrollments.push({ tourist_id: id, package_id: pkg.id, itinerary_id: record.id });
+    // Assigning resolves the tourist's pending booking, or enrols them if they had none
+    const booking = bookings.find(item => item.tourist_id === id && item.package_id === pkg.id);
+    if (!booking || !isActive(booking)) pkg.enrolled += 1;
+    const assigned = { status: "assigned" as const, itinerary_id: record.id, resolved_date: today, rejection_reason: null };
+    if (booking) Object.assign(booking, assigned);
+    else {
+      bookings.push({
+        tourist_id: id,
+        package_id: pkg.id,
+        booking_date: today,
+        requested_start_date: null,
+        preferred_itinerary_id: null,
+        ...assigned,
+      });
+    }
     assignments.push({ itinerary_id: record.id, user_id: id, start_date: body.start_date, rating: null, comment: null });
   }
   record.assigned = true;

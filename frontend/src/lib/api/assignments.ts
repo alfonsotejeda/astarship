@@ -21,10 +21,11 @@ export function useAssignItinerary() {
 
   return useMutation({
     mutationFn: ({ itineraryId, ...body }: AssignRequest & { itineraryId: number }) => assignItinerary(itineraryId, body),
-    // The group's members, the itinerary's status and the tourists' trips all change
+    // The group's members, the itinerary's status, the tourists' trips and their bookings all change
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["travel-groups"] });
       queryClient.invalidateQueries({ queryKey: ["itineraries"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
       queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });

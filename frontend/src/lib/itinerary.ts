@@ -1,7 +1,7 @@
-import type { EffortLevel } from "@/components/EffortMeter/EffortMeter";
 import type { EffortCount } from "@/components/ItineraryCard/EffortSplit";
 import type { RouteStop } from "@/components/RouteTimeline/RouteTimeline";
 import type { AssignmentStatus, ReviewStatus } from "@/components/StatusPill/StatusPill";
+import { EFFORT_LABEL } from "@/lib/activity";
 import { toActivityType, toEffortLevel } from "@/lib/api/activities";
 import type {
   CriterionKey,
@@ -25,8 +25,6 @@ export const ITINERARY_STATUS: Record<ItineraryStatus, ReviewStatus> = {
   approved: "aprobado",
   rejected: "rechazado",
 };
-
-export const EFFORT_LABEL: Record<EffortLevel, string> = { bajo: "Bajo", medio: "Medio", alto: "Alto" };
 
 export const CRITERION_LABEL: Record<CriterionKey, string> = {
   type_proportion: "Proporción por tipo",
@@ -58,6 +56,7 @@ export function toStops(day: ItineraryDay): RouteStop[] {
     time: formatTime(stop.start_time),
     name: stop.activity_name,
     place: stop.attraction_name ?? undefined,
+    placeTo: stop.attraction_id !== null ? `/attractions/${stop.attraction_id}` : undefined,
     type: toActivityType(stop.activity_type_code),
     effort: toEffortLevel(stop.effort_level),
     duration: formatDuration(stop.duration_minutes),

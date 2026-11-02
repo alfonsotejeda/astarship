@@ -1,8 +1,5 @@
 import { useState } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
-import { Navigate } from "react-router";
-import { useAuth } from "@/app/providers/auth/AuthContext";
-import { HOME_BY_ROLE } from "@/app/providers/auth/roles";
 import { ActivityRow } from "@/components/ActivityRow/ActivityRow";
 import { Alert } from "@/components/Alert/Alert";
 import type { Tone } from "@/components/Alert/tones";
@@ -36,7 +33,7 @@ import type { FormValidity, GeneratorForm, TypeOption } from "@/lib/generator";
 import { exportItinerary, itineraryStatus, toCriteria } from "@/lib/itinerary";
 import "./GeneratorPage.css";
 
-const BREADCRUMBS = [{ label: "Itinerarios", to: "/itinerarios" }, { label: "Nuevo" }];
+const BREADCRUMBS = [{ label: "Itinerarios", to: "/itineraries" }, { label: "Nuevo" }];
 
 const SUBTITLE =
   "Elige el paquete, los parámetros y las actividades candidatas. El sistema arma el recorrido y comprueba el equilibrio.";
@@ -44,15 +41,6 @@ const SUBTITLE =
 type ToastMessage = { tone: Tone; text: string };
 
 export function GeneratorPage() {
-  const { user } = useAuth();
-
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== "guide") return <Navigate to={HOME_BY_ROLE[user.role]} replace />;
-
-  return <GeneratorLoader />;
-}
-
-function GeneratorLoader() {
   const packages = usePackages("generate_itinerary");
   const categories = useCategories();
   const activityTypes = useActivityTypes();
