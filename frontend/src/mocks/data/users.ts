@@ -46,6 +46,8 @@ export const authorizations: AuthorizationRecord[] = [
   { guide_id: 2, package_id: 3, can_generate: true, can_validate: true },
   { guide_id: 3, package_id: 1, can_generate: true, can_validate: true },
   { guide_id: 3, package_id: 3, can_generate: true, can_validate: false },
+  { guide_id: 1, package_id: 5, can_generate: false, can_validate: true },
+  { guide_id: 3, package_id: 5, can_generate: true, can_validate: false },
 ];
 
 export function findUser(id: number) {

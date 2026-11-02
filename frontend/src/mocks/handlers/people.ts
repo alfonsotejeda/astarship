@@ -1,7 +1,8 @@
 import type { Role } from "@/app/providers/auth/roles";
 import { ApiError } from "@/lib/api/client";
 import type { Authorization, GroupForm, GroupTourist, TravelGroup } from "@/lib/api/people";
-import { enrollments, memberships, travelGroups } from "../data/groups";
+import { bookings, isActive } from "../data/bookings";
+import { memberships, travelGroups } from "../data/groups";
 import type { TravelGroupRecord } from "../data/groups";
 import { findPackage } from "../data/packages";
 import { authorizations, findUser, users } from "../data/users";
@@ -161,7 +162,7 @@ function groupTourists(groupId: string): GroupTourist[] {
     .filter(item => item.travel_group_id === group.id)
     .map(item => {
       const tourist = findUser(item.tourist_id);
-      const enrolled = enrollments.filter(enrollment => enrollment.tourist_id === item.tourist_id);
+      const enrolled = bookings.filter(booking => booking.tourist_id === item.tourist_id && isActive(booking));
       return {
         id: item.tourist_id,
         name: tourist?.name ?? "",
@@ -198,39 +199,6 @@ function removeMember(params: Record<string, string>, userId: number) {
   );
   if (index < 0) throw new ApiError(404, "Membership not found");
   memberships.splice(index, 1);
-  return undefined;
-}
-
-function addBooking(packageId: string, body: { tourist_id?: number }, userId: number) {
-  requireAdmin(userId);
-  const record = findPackage(Number(packageId));
-  const touristId = Number(body.tourist_id);
-  if (!record) throw new ApiError(404, "Package not found");
-  if (findUser(touristId)?.role !== "tourist") throw new ApiError(404, "Tourist not found");
-  // RN-09
-  if (record.status !== "approved") throw new ApiError(409, `«${record.name}» no está validado y no admite inscripciones.`);
-  if (enrollments.some(item => item.tourist_id === touristId && item.package_id === record.id)) {
-    throw new ApiError(409, "El turista ya está inscrito en ese paquete.");
-  }
-
-  enrollments.push({ tourist_id: touristId, package_id: record.id, itinerary_id: null });
-  record.enrolled += 1;
-  return { tourist_id: touristId, package_id: record.id };
-}
-
-function removeBooking(params: Record<string, string>, userId: number) {
-  requireAdmin(userId);
-  const record = findPackage(Number(params.id));
-  const index = enrollments.findIndex(
-    item => item.package_id === Number(params.id) && item.tourist_id === Number(params.touristId),
-  );
-  if (!record || index < 0) throw new ApiError(404, "Booking not found");
-  if (enrollments[index].itinerary_id !== null) {
-    throw new ApiError(409, `Tiene un itinerario asignado en «${record.name}»: quita antes la asignación.`);
-  }
-
-  enrollments.splice(index, 1);
-  record.enrolled -= 1;
   return undefined;
 }
 
@@ -279,15 +247,5 @@ export const peopleRoutes: MockRoute[] = [
     method: "DELETE",
     path: "/travel-groups/:id/tourists/:touristId",
     handler: ({ params, userId }) => removeMember(params, userId),
-  },
-  {
-    method: "POST",
-    path: "/packages/:id/bookings",
-    handler: ({ params, body, userId }) => addBooking(params.id, body as { tourist_id?: number }, userId),
-  },
-  {
-    method: "DELETE",
-    path: "/packages/:id/bookings/:touristId",
-    handler: ({ params, userId }) => removeBooking(params, userId),
   },
 ];

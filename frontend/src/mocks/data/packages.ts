@@ -24,15 +24,17 @@ export const packages: PackageRecord[] = [
   { id: 2, name: "Viñales natural", destination: "Viñales", status: "approved", creation_date: "2026-09-10", admin_id: 4, category_ids: [5, 2], enrolled: 21 },
   { id: 3, name: "Trinidad y Topes de Collantes", destination: "Trinidad", status: "approved", creation_date: "2026-09-15", admin_id: 4, category_ids: [1, 5], enrolled: 26 },
   { id: 4, name: "Santiago de Cuba", destination: "Santiago de Cuba", status: "pending", creation_date: "2026-10-12", admin_id: 4, category_ids: [1, 4], enrolled: 0 },
+  { id: 5, name: "Cienfuegos y la bahía", destination: "Cienfuegos", status: "approved", creation_date: "2026-09-24", admin_id: 4, category_ids: [1, 4, 5], enrolled: 0 },
 ];
 
 export const packageValidations: PackageValidationRecord[] = [
   { package_id: 1, reviewer_id: 5, validation_date: "2026-09-03", result: "approved", observations: null },
   { package_id: 2, reviewer_id: 5, validation_date: "2026-09-11", result: "approved", observations: null },
   { package_id: 3, reviewer_id: 5, validation_date: "2026-09-16", result: "approved", observations: "Revisar los horarios de Topes en temporada de lluvias." },
+  { package_id: 5, reviewer_id: 5, validation_date: "2026-09-25", result: "approved", observations: null },
 ];
 
-export const nextPackageId = { value: 5 };
+export const nextPackageId = { value: 6 };
 
 export function findPackage(id: number) {
   return packages.find(pkg => pkg.id === id);
