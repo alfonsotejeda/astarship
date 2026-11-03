@@ -59,9 +59,29 @@ export function AppShell({ counts, layout, children = <Outlet /> }: AppShellProp
 
   const avatar = <span className="app-shell__avatar" aria-hidden="true">{initials(user.name)}</span>;
 
+  // Without a hash in the URL: focus moves to <main> and the page scrolls there
+  const skipLink = (
+    <a
+      className="app-shell__skip"
+      href="#main"
+      onClick={event => {
+        event.preventDefault();
+        document.getElementById("main")?.focus();
+      }}
+    >
+      Saltar al contenido
+    </a>
+  );
+
+  const main = (
+    <main id="main" className="app-shell__main" tabIndex={-1}>
+      {children}
+    </main>
+  );
+
   const navigation = (
     <PillNav className={mobile ? "app-shell__tabbar" : "app-shell__nav"} aria-label="Navegación principal">
-      {(mobile ? nav.slice(0, 5) : nav).map(item => {
+      {(mobile ? nav.filter(item => !item.desktopOnly).slice(0, 5) : nav).map(item => {
         const isActive = item.key === activeKey;
         return (
           <Link
@@ -82,6 +102,7 @@ export function AppShell({ counts, layout, children = <Outlet /> }: AppShellProp
   if (mobile) {
     return (
       <div className="app-shell app-shell--mobile">
+        {skipLink}
         <header className="app-shell__topbar">
           {brand}
           <div className="app-shell__topbar-end">
@@ -90,7 +111,7 @@ export function AppShell({ counts, layout, children = <Outlet /> }: AppShellProp
             {avatar}
           </div>
         </header>
-        <main className="app-shell__main">{children}</main>
+        {main}
         {navigation}
       </div>
     );
@@ -98,6 +119,7 @@ export function AppShell({ counts, layout, children = <Outlet /> }: AppShellProp
 
   return (
     <div className="app-shell">
+      {skipLink}
       <aside className="app-shell__sidebar">
         {brand}
         {navigation}
@@ -111,7 +133,7 @@ export function AppShell({ counts, layout, children = <Outlet /> }: AppShellProp
           {logoutButton}
         </div>
       </aside>
-      <main className="app-shell__main">{children}</main>
+      {main}
     </div>
   );
 }

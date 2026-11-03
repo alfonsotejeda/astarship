@@ -42,6 +42,52 @@
   fill: none;
 }
 
+/* Leaflet's controls and tooltips come in fixed white; these follow the theme */
+.attraction-map .leaflet-container {
+  background: var(--surface-sunken);
+}
+
+.attraction-map .leaflet-bar {
+  border-color: var(--line-strong);
+}
+
+.attraction-map .leaflet-bar a {
+  color: var(--ink);
+  background-color: var(--surface-raised);
+  border-bottom-color: var(--line);
+}
+
+.attraction-map .leaflet-bar a:hover,
+.attraction-map .leaflet-bar a:focus {
+  background-color: var(--surface-sunken);
+}
+
+.attraction-map .leaflet-bar a.leaflet-disabled {
+  color: var(--ink-muted);
+  background-color: var(--surface-sunken);
+}
+
+.attraction-map .leaflet-control-attribution {
+  color: var(--ink-muted);
+  background: var(--surface-raised);
+}
+
+.attraction-map .leaflet-control-attribution a {
+  color: var(--route);
+}
+
+.attraction-map .leaflet-tooltip {
+  font: var(--type-small);
+  color: var(--ink);
+  background: var(--surface-raised);
+  border-color: var(--line);
+  box-shadow: var(--shadow-overlay);
+}
+
+.attraction-map .leaflet-tooltip-top::before {
+  border-top-color: var(--surface-raised);
+}
+
 /* The OSM tiles are light; dimmed and inverted they sit on the dark surfaces */
 [data-theme="dark"] .attraction-map .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9);

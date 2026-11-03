@@ -186,7 +186,12 @@ function ReviewQueue({ queue }: { queue: ItinerarySummary[] }) {
                   <span className={isBalanced(item) ? "itineraries__balance" : "itineraries__balance itineraries__balance--bad"}>
                     Cumple {item.criteria_met} de {item.criteria_total} criterios
                   </span>
-                  <Button variant="primary" size="sm" onClick={() => navigate(`/itineraries/${item.id}`)}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    aria-label={`Revisar ${formatItineraryCode(item.id)}`}
+                    onClick={() => navigate(`/itineraries/${item.id}`)}
+                  >
                     Revisar
                   </Button>
                 </div>

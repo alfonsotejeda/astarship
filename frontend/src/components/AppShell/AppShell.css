@@ -132,6 +132,30 @@
   padding: var(--space-6) var(--space-6) var(--space-7);
 }
 
+/* Focused only by the skip link; the ring would frame the whole page */
+.app-shell__main:focus {
+  outline: none;
+}
+
+/* Out of the grid flow; shows up on the first Tab */
+.app-shell__skip {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 10;
+  padding: var(--space-2) var(--space-3);
+  font: var(--type-body-strong);
+  color: var(--on-action);
+  background: var(--action);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transform: translateY(calc(-100% - var(--space-4)));
+}
+
+.app-shell__skip:focus-visible {
+  transform: none;
+}
+
 .app-shell--mobile {
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr auto;

@@ -82,7 +82,7 @@ function DetailContent({ assignment, breadcrumbs }: DetailContentProps) {
             <Button icon="download" onClick={() => exportTrip(`Mi viaje · ${assignment.package_name}`, days)}>
               Exportar PDF
             </Button>
-            <TripActions assignment={assignment} />
+            <TripActions assignment={assignment} size="md" />
           </>
         }
       />
