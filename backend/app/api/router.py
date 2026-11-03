@@ -19,6 +19,7 @@ from app.api.routes import (
     package,
     proportion_category,
     proportion_type,
+    report,
     travel_group,
     itinerary_validation,
     user,
@@ -47,3 +48,4 @@ api_router.include_router(membership.router, dependencies=authenticated)
 api_router.include_router(authorization.router, dependencies=authenticated)
 api_router.include_router(itinerary_validation.router, dependencies=authenticated)
 api_router.include_router(itinerary_approval.router, dependencies=authenticated)
+api_router.include_router(report.router, dependencies=authenticated)
