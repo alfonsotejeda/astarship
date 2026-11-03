@@ -27,6 +27,11 @@ def get_admin(db: Session, admin_id: int) -> Admin | None:
     return db.get(Admin, admin_id)
 
 
+def get_operations_manager(db: Session, manager_id: int) -> OperationsManager | None:
+    """Return an operations manager by id, or None if the user doesn't exist or isn't one."""
+    return db.get(OperationsManager, manager_id)
+
+
 def get_tourist(db: Session, tourist_id: int) -> Tourist | None:
     """Return a tourist by id, or None if the user doesn't exist or isn't a tourist."""
     return db.get(Tourist, tourist_id)

@@ -11,6 +11,7 @@ from app.api.routes import (
     category,
     health,
     itinerary,
+    itinerary_approval,
     itinerary_composition,
     membership,
     package,
@@ -39,3 +40,4 @@ api_router.include_router(itinerary_composition.router)
 api_router.include_router(membership.router)
 api_router.include_router(authorization.router)
 api_router.include_router(itinerary_validation.router)
+api_router.include_router(itinerary_approval.router)

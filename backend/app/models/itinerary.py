@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.models.assignment import Assignment
+from app.models.itinerary_approval import ItineraryApproval
 from app.models.itinerary_composition import ItineraryComposition
 from app.models.proportion_category import ProportionCategory
 from app.models.proportion_type import ProportionType
@@ -34,3 +35,4 @@ class Itinerary(Base):
     )
     proportion_types: Mapped[list[ProportionType]] = relationship(cascade="all, delete-orphan")
     compositions: Mapped[list[ItineraryComposition]] = relationship(cascade="all, delete-orphan")
+    approvals: Mapped[list[ItineraryApproval]] = relationship(cascade="all, delete-orphan")
