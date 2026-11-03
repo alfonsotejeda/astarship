@@ -12,7 +12,15 @@ def test_table_name():
 def test_expected_columns():
     columns = {c.name for c in Booking.__table__.columns}
 
-    assert columns == {"tourist_id", "package_id", "booking_date"}
+    assert columns == {
+        "tourist_id",
+        "package_id",
+        "booking_date",
+        "status",
+        "proposed_date",
+        "itinerary_id",
+        "rejection_reason",
+    }
 
 
 def test_composite_primary_key():
@@ -26,6 +34,29 @@ def test_foreign_keys_cascade_on_parent_delete():
 
     assert ("tourists.id", "CASCADE") in foreign_keys
     assert ("packages.id", "CASCADE") in foreign_keys
+    assert ("itineraries.id", "SET NULL") in foreign_keys
+
+
+def test_itinerary_relationship_points_at_the_itinerary_model():
+    from app.models.itinerary import Itinerary
+
+    assert Booking.itinerary.property.mapper.class_ is Itinerary
+    assert Booking.itinerary.property.back_populates == "bookings"
+    assert Booking.itinerary.property.uselist is False
+
+
+def test_booking_defaults_to_pending_status():
+    booking = Booking(tourist_id=1, package_id=2)
+
+    assert booking.proposed_date is None
+    assert booking.itinerary_id is None
+    assert booking.rejection_reason is None
+
+
+def test_booking_column_has_pending_default():
+    """The status column must default to PENDING at the database level."""
+    column = Booking.__table__.columns["status"]
+    assert column.default is not None
 
 
 def test_tourist_relationship_points_at_the_tourist_model():

@@ -4,10 +4,13 @@ from datetime import date
 
 import pytest
 
-from app.schemas.booking import BookingCreate
+from app.models.status import BookingStatus
+from app.schemas.booking import BookingCreate, BookingUpdate
+from app.schemas.itinerary import ItineraryCreate
 from app.schemas.package import PackageCreate
 from app.schemas.user import AdminCreate, TouristCreate
 from app.services import booking as booking_service
+from app.services import itinerary as itinerary_service
 from app.services import package as package_service
 from app.services import user as user_service
 
@@ -282,3 +285,162 @@ def test_get_packages_for_tourist_empty_when_no_bookings(db_session):
     tourist = _create_tourist(db_session)
 
     assert booking_service.get_packages_for_tourist(db_session, tourist.id) == []
+
+
+def _create_itinerary(db_session):
+    return itinerary_service.create_itinerary(
+        db_session,
+        ItineraryCreate(creation_date=date(2026, 10, 1), activity_count=3),
+    )
+
+
+def test_create_booking_stores_optional_fields(db_session):
+    tourist = _create_tourist(db_session)
+    package = _create_package(db_session)
+    itinerary = _create_itinerary(db_session)
+
+    booking = booking_service.create_booking(
+        db_session,
+        BookingCreate(
+            tourist_id=tourist.id,
+            package_id=package.id,
+            booking_date=date(2026, 10, 1),
+            proposed_date=date(2026, 11, 1),
+            itinerary_id=itinerary.id,
+            rejection_reason="",
+            status=BookingStatus.PENDING,
+        ),
+    )
+
+    assert booking.proposed_date == date(2026, 11, 1)
+    assert booking.itinerary_id == itinerary.id
+    assert booking.status is BookingStatus.PENDING
+
+
+def test_create_booking_with_unknown_itinerary_raises_value_error(db_session):
+    tourist = _create_tourist(db_session)
+    package = _create_package(db_session)
+
+    with pytest.raises(ValueError, match="Itinerary not found"):
+        booking_service.create_booking(
+            db_session,
+            BookingCreate(
+                tourist_id=tourist.id,
+                package_id=package.id,
+                booking_date=date(2026, 10, 1),
+                itinerary_id=999999,
+            ),
+        )
+
+
+def test_update_booking_changes_fields(db_session):
+    tourist = _create_tourist(db_session)
+    package = _create_package(db_session)
+    itinerary = _create_itinerary(db_session)
+    booking = booking_service.create_booking(
+        db_session,
+        BookingCreate(
+            tourist_id=tourist.id,
+            package_id=package.id,
+            booking_date=date(2026, 10, 1),
+        ),
+    )
+
+    updated = booking_service.update_booking(
+        db_session,
+        booking,
+        BookingUpdate(
+            status=BookingStatus.ASSIGNED,
+            proposed_date=date(2026, 11, 5),
+            itinerary_id=itinerary.id,
+        ),
+    )
+
+    assert updated.status is BookingStatus.ASSIGNED
+    assert updated.proposed_date == date(2026, 11, 5)
+    assert updated.itinerary_id == itinerary.id
+    assert updated.booking_date == date(2026, 10, 1)  # unchanged
+
+
+def test_update_booking_partial_only_provided_fields(db_session):
+    tourist = _create_tourist(db_session)
+    package = _create_package(db_session)
+    booking = booking_service.create_booking(
+        db_session,
+        BookingCreate(
+            tourist_id=tourist.id,
+            package_id=package.id,
+            booking_date=date(2026, 10, 1),
+            status=BookingStatus.PENDING,
+        ),
+    )
+
+    updated = booking_service.update_booking(
+        db_session, booking, BookingUpdate(status=BookingStatus.CANCELLED)
+    )
+
+    assert updated.status is BookingStatus.CANCELLED
+    assert updated.proposed_date is None
+
+
+def test_update_booking_rejects_requires_reason(db_session):
+    tourist = _create_tourist(db_session)
+    package = _create_package(db_session)
+    booking = booking_service.create_booking(
+        db_session,
+        BookingCreate(
+            tourist_id=tourist.id,
+            package_id=package.id,
+            booking_date=date(2026, 10, 1),
+            status=BookingStatus.PENDING,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="(?i)rejection reason"):
+        booking_service.update_booking(
+            db_session, booking, BookingUpdate(status=BookingStatus.REJECTED)
+        )
+
+
+def test_update_booking_rejects_with_reason_is_ok(db_session):
+    tourist = _create_tourist(db_session)
+    package = _create_package(db_session)
+    booking = booking_service.create_booking(
+        db_session,
+        BookingCreate(
+            tourist_id=tourist.id,
+            package_id=package.id,
+            booking_date=date(2026, 10, 1),
+            status=BookingStatus.PENDING,
+        ),
+    )
+
+    updated = booking_service.update_booking(
+        db_session,
+        booking,
+        BookingUpdate(status=BookingStatus.REJECTED, rejection_reason="No cupos"),
+    )
+
+    assert updated.status is BookingStatus.REJECTED
+    assert updated.rejection_reason == "No cupos"
+
+
+def test_update_booking_clears_itinerary(db_session):
+    tourist = _create_tourist(db_session)
+    package = _create_package(db_session)
+    itinerary = _create_itinerary(db_session)
+    booking = booking_service.create_booking(
+        db_session,
+        BookingCreate(
+            tourist_id=tourist.id,
+            package_id=package.id,
+            booking_date=date(2026, 10, 1),
+            itinerary_id=itinerary.id,
+        ),
+    )
+
+    updated = booking_service.update_booking(
+        db_session, booking, BookingUpdate(itinerary_id=None)
+    )
+
+    assert updated.itinerary_id is None

@@ -8,7 +8,7 @@ from app.db.session import get_db
 from app.models.booking import Booking
 from app.models.package import Package
 from app.models.user.tourist import Tourist
-from app.schemas.booking import BookingCreate, BookingRead
+from app.schemas.booking import BookingCreate, BookingRead, BookingUpdate
 from app.services import booking as booking_service
 from app.services import package as package_service
 
@@ -81,3 +81,19 @@ def delete_booking(tourist_id: int, package_id: int, db: Session = Depends(get_d
     """Delete a booking by its tourist and package ids."""
     booking = _get_booking_or_404(db, tourist_id, package_id)
     booking_service.delete_booking(db, booking)
+
+
+@router.patch("/{tourist_id}/{package_id}", response_model=BookingRead)
+def update_booking(
+    tourist_id: int, package_id: int, data: BookingUpdate, db: Session = Depends(get_db)
+) -> BookingRead:
+    """Modify an existing booking.
+
+    Only the fields sent in the request body are changed. A booking moved to
+    ``rejected`` must include a non-empty ``rejection_reason``.
+    """
+    booking = _get_booking_or_404(db, tourist_id, package_id)
+    try:
+        return booking_service.update_booking(db, booking, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

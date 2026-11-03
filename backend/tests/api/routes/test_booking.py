@@ -18,11 +18,14 @@ def _create_package(client, name="Europa Capitales", destination="París"):
     return client.post("/api/packages", json={"name": name, "destination": destination}).json()
 
 
-def _create_booking(client, tourist_id, package_id, booking_date="2026-10-01"):
-    return client.post(
-        "/api/bookings",
-        json={"tourist_id": tourist_id, "package_id": package_id, "booking_date": booking_date},
-    )
+def _create_booking(client, tourist_id, package_id, booking_date="2026-10-01", **extra):
+    payload = {
+        "tourist_id": tourist_id,
+        "package_id": package_id,
+        "booking_date": booking_date,
+    }
+    payload.update(extra)
+    return client.post("/api/bookings", json=payload)
 
 
 def test_create_booking_returns_201_and_pair(client):
@@ -37,7 +40,108 @@ def test_create_booking_returns_201_and_pair(client):
         "tourist_id": tourist["id"],
         "package_id": package["id"],
         "booking_date": "2026-10-01",
+        "proposed_date": None,
+        "itinerary_id": None,
+        "rejection_reason": None,
+        "status": "pending",
     }
+
+
+def test_create_booking_with_optional_fields(client):
+    tourist = _create_tourist(client)
+    package = _create_package(client)
+    itinerary = client.post(
+        "/api/itineraries",
+        json={"creation_date": "2026-10-01", "activity_count": 3},
+    ).json()
+
+    response = _create_booking(
+        client,
+        tourist["id"],
+        package["id"],
+        proposed_date="2026-11-01",
+        itinerary_id=itinerary["id"],
+        status="rejected",
+        rejection_reason="Sin cupos",
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["proposed_date"] == "2026-11-01"
+    assert body["itinerary_id"] == itinerary["id"]
+    assert body["rejection_reason"] == "Sin cupos"
+    assert body["status"] == "rejected"
+
+
+def test_update_booking_returns_200_and_modified_fields(client):
+    tourist = _create_tourist(client)
+    package = _create_package(client)
+    itinerary = client.post(
+        "/api/itineraries",
+        json={"creation_date": "2026-10-01", "activity_count": 2},
+    ).json()
+    _create_booking(client, tourist["id"], package["id"])
+
+    response = client.patch(
+        f"/api/bookings/{tourist['id']}/{package['id']}",
+        json={"status": "assigned", "proposed_date": "2026-11-05", "itinerary_id": itinerary["id"]},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "assigned"
+    assert body["proposed_date"] == "2026-11-05"
+    assert body["itinerary_id"] == itinerary["id"]
+    assert body["booking_date"] == "2026-10-01"
+
+
+def test_update_booking_rejects_requires_reason(client):
+    tourist = _create_tourist(client)
+    package = _create_package(client)
+    _create_booking(client, tourist["id"], package["id"])
+
+    response = client.patch(
+        f"/api/bookings/{tourist['id']}/{package['id']}",
+        json={"status": "rejected"},
+    )
+
+    assert response.status_code == 400
+    assert "rejection reason" in response.json()["detail"].lower()
+
+
+def test_update_booking_rejects_with_reason(client):
+    tourist = _create_tourist(client)
+    package = _create_package(client)
+    _create_booking(client, tourist["id"], package["id"])
+
+    response = client.patch(
+        f"/api/bookings/{tourist['id']}/{package['id']}",
+        json={"status": "rejected", "rejection_reason": "Sin cupos"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "rejected"
+    assert response.json()["rejection_reason"] == "Sin cupos"
+
+
+def test_update_booking_unknown_itinerary_returns_400(client):
+    tourist = _create_tourist(client)
+    package = _create_package(client)
+    _create_booking(client, tourist["id"], package["id"])
+
+    response = client.patch(
+        f"/api/bookings/{tourist['id']}/{package['id']}",
+        json={"itinerary_id": 999999},
+    )
+
+    assert response.status_code == 400
+
+
+def test_update_booking_unknown_booking_returns_404(client):
+    response = client.patch("/api/bookings/1/1", json={"status": "assigned"})
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Booking not found"
 
 
 def test_create_booking_requires_both_ids(client):
