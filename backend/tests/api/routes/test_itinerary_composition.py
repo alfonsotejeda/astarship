@@ -1,5 +1,7 @@
 """Tests for the itinerary composition routes."""
 
+import itertools
+
 import pytest
 
 COMPOSITION = {"order": 1, "day": 1, "start_time": "09:00:00"}
@@ -11,8 +13,33 @@ def _create_itinerary(client) -> int:
     ).json()["id"]
 
 
+_ids = itertools.count(1)
+
+
 def _create_activity(client, name="Museum") -> int:
-    return client.post("/api/activities", json={"name": name, "effort_level": 1}).json()["id"]
+    n = next(_ids)
+    category = client.post("/api/categories/create", json={"name": f"Category {n}"}).json()
+    client.post("/api/activity-types", json={"code": f"T{n}", "name": f"Type {n}"})
+    guide = client.post(
+        "/api/users",
+        json={
+            "name": "Gil",
+            "role": "guide",
+            "email": f"gil{n}@example.com",
+            "password": "x",
+            "specialty": "History",
+        },
+    ).json()
+    return client.post(
+        "/api/activities",
+        json={
+            "name": name,
+            "effort_level": 1,
+            "activity_type_code": f"T{n}",
+            "category_id": category["id"],
+            "guide_id": guide["id"],
+        },
+    ).json()["id"]
 
 
 def test_create_composition_returns_201(client):
