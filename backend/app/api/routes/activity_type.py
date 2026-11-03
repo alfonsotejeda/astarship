@@ -14,9 +14,7 @@ def _get_activity_type_or_404(db: Session, code: str):
     """Return the activity type or raise a 404."""
     activity_type = activity_type_service.get_activity_type(db, code)
     if activity_type is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="ActivityType not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ActivityType not found")
     return activity_type
 
 
@@ -53,4 +51,7 @@ def update_activity_type(
 def delete_activity_type(code: str, db: Session = Depends(get_db)) -> None:
     """Delete an activity type."""
     activity_type = _get_activity_type_or_404(db, code)
-    activity_type_service.delete_activity_type(db, activity_type)
+    try:
+        activity_type_service.delete_activity_type(db, activity_type)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
