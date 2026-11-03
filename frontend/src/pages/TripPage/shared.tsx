@@ -23,19 +23,20 @@ export function DaySummary({ day }: { day: TripDay }) {
 }
 
 // What the tourist can do with a trip, depending on whether it has started or finished
-export function TripActions({ assignment }: { assignment: Assignment }) {
+// Small on the cards; the page header passes "md" to match its other actions
+export function TripActions({ assignment, size = "sm" }: { assignment: Assignment; size?: "sm" | "md" }) {
   const navigate = useNavigate();
 
   if (assignment.status === "in_progress") {
     return (
-      <Button variant="primary" size="sm" onClick={() => navigate("/trip/today")}>
+      <Button variant="primary" size={size} onClick={() => navigate("/trip/today")}>
         Ver hoy
       </Button>
     );
   }
   if (assignment.status === "assigned") {
     return (
-      <Button size="sm" onClick={() => navigate("/requests")}>
+      <Button size={size} onClick={() => navigate("/requests")}>
         Pedir modificación
       </Button>
     );
@@ -44,7 +45,7 @@ export function TripActions({ assignment }: { assignment: Assignment }) {
     return <Rating value={assignment.rating} showValue label="Tu valoración del viaje" />;
   }
   return (
-    <Button variant="primary" size="sm" onClick={() => navigate(`/trip/itineraries/${assignment.itinerary_id}/rate`)}>
+    <Button variant="primary" size={size} onClick={() => navigate(`/trip/itineraries/${assignment.itinerary_id}/rate`)}>
       Valorar el viaje
     </Button>
   );
