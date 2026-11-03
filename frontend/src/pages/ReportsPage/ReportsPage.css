@@ -22,6 +22,10 @@
   min-width: 0;
 }
 
+.reports__mono {
+  font: var(--type-data);
+}
+
 @media (max-width: 480px) {
   .reports__stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
