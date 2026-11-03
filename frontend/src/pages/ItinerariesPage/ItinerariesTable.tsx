@@ -114,6 +114,7 @@ export function ItinerariesTable({ items, title, allPackagesLabel }: Itineraries
         <Button
           variant="ghost"
           size="sm"
+          aria-label={`${item.review ? REVIEW_LABEL[item.review] : "Ver"} ${formatItineraryCode(item.id)}`}
           onClick={event => {
             // The row opens it too; one navigation is enough
             event.stopPropagation();

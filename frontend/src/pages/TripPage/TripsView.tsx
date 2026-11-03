@@ -126,10 +126,19 @@ export function TripsView() {
                 booking={booking}
                 actions={
                   <>
-                    <Button size="sm" variant="ghost" onClick={() => setCancelling(booking)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`Cancelar la reserva de ${booking.package_name}`}
+                      onClick={() => setCancelling(booking)}
+                    >
                       Cancelar
                     </Button>
-                    <Button size="sm" onClick={() => navigate(`/catalog/${booking.package_id}`)}>
+                    <Button
+                      size="sm"
+                      aria-label={`Ver paquete ${booking.package_name}`}
+                      onClick={() => navigate(`/catalog/${booking.package_id}`)}
+                    >
                       Ver paquete
                     </Button>
                   </>

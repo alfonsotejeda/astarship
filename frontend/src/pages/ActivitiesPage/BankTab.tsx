@@ -317,17 +317,19 @@ function ActivitiesTable({ user, activities, categories, selectedId, onSelect }:
       render: activity => {
         // RN-01: the guide edits only what they described
         if (!isAdmin && !isMine(activity)) return <span className="activities__muted">Solo lectura</span>;
+        const action = !isAdmin ? "Editar" : activity.status === "pending" ? "Revisar" : "Ver";
         return (
           <Button
             variant="ghost"
             size="sm"
+            aria-label={`${action} ${activity.name}`}
             onClick={event => {
               // The row opens it too; once is enough
               event.stopPropagation();
               onSelect(activity);
             }}
           >
-            {!isAdmin ? "Editar" : activity.status === "pending" ? "Revisar" : "Ver"}
+            {action}
           </Button>
         );
       },
