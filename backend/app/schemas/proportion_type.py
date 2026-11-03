@@ -11,6 +11,12 @@ class ProportionTypeCreate(BaseModel):
     value: int = Field(ge=0, le=100)
 
 
+class ProportionTypeParam(ProportionTypeCreate):
+    """Activity type proportion requested when generating an itinerary."""
+
+    activity_type_code: str
+
+
 class ProportionTypeUpdate(BaseModel):
     """Fields allowed when updating an activity type's proportion on an itinerary."""
 

@@ -49,25 +49,24 @@ def make_admin(db_session) -> Admin:
 
 @pytest.fixture
 def sample_data(db_session):
-    """Create a package, three guides and three itineraries."""
+    """Create a package, three guides and two itineraries."""
     g1, g2, creator = (make_guide(db_session, n) for n in (1, 2, 3))
     admin = make_admin(db_session)
     package = Package(name="Havana", destination="Cuba", admin_id=admin.id)
     db_session.add(package)
     db_session.flush()
 
-    def itinerary(pkg):
+    def itinerary():
         return Itinerary(
             creation_date=date(2026, 10, 1),
             activity_count=3,
-            package_id=pkg.id if pkg else None,
-            creator_id=creator.id,
+            package_id=package.id,
+            guide_id=creator.id,
         )
 
-    with_validations = itinerary(package)
-    empty = itinerary(package)
-    no_package = itinerary(None)
-    db_session.add_all([with_validations, empty, no_package])
+    with_validations = itinerary()
+    empty = itinerary()
+    db_session.add_all([with_validations, empty])
     db_session.flush()
 
     db_session.add_all(
@@ -90,7 +89,7 @@ def sample_data(db_session):
     db_session.commit()
     return {
         "g1": g1, "g2": g2, "creator": creator, "package": package,
-        "with_validations": with_validations, "empty": empty, "no_package": no_package,
+        "with_validations": with_validations, "empty": empty,
     }  # fmt: skip
 
 
@@ -167,17 +166,6 @@ def test_create_validation_by_the_creator(client, sample_data):
 
     assert response.status_code == 403
     assert "generated" in response.json()["detail"].lower()
-
-
-def test_create_validation_itinerary_without_package(client, sample_data):
-    """An itinerary without package returns 409."""
-    d = sample_data
-
-    response = client.post(
-        url(d["no_package"].id), json={"guide_id": d["g1"].id, "result": True}
-    )
-
-    assert response.status_code == 409
 
 
 @pytest.mark.parametrize(

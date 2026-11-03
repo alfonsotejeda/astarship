@@ -12,9 +12,9 @@ from app.services import itinerary_approval as approval_service
 from app.services import user as user_service
 
 
-def _create_itinerary(db_session):
+def _create_itinerary(db_session, owners):
     itinerary = itinerary_service.create_itinerary(
-        db_session, ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=2)
+        db_session, ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=2, **owners)
     )
     return itinerary_service.update_itinerary(
         db_session, itinerary, ItineraryUpdate(status=ItineraryStatus.VALIDATED)
@@ -28,8 +28,8 @@ def _create_manager(db_session, email="olga@example.com"):
     )
 
 
-def test_create_approval_approves_the_itinerary(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_create_approval_approves_the_itinerary(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     manager = _create_manager(db_session)
 
     approval = approval_service.create_approval(
@@ -44,8 +44,8 @@ def test_create_approval_approves_the_itinerary(db_session):
     assert itinerary.status is ItineraryStatus.APPROVED
 
 
-def test_create_approval_rejects_the_itinerary(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_create_approval_rejects_the_itinerary(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     manager = _create_manager(db_session)
 
     approval = approval_service.create_approval(
@@ -59,9 +59,9 @@ def test_create_approval_rejects_the_itinerary(db_session):
     assert itinerary.status is ItineraryStatus.REJECTED
 
 
-def test_list_approvals_oldest_first(db_session):
-    itinerary = _create_itinerary(db_session)
-    other = _create_itinerary(db_session)
+def test_list_approvals_oldest_first(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
+    other = _create_itinerary(db_session, itinerary_owners)
     manager = _create_manager(db_session)
     db_session.add_all(
         [
@@ -86,7 +86,7 @@ def test_list_approvals_oldest_first(db_session):
     assert [a.approval_date.day for a in approvals] == [1, 2]
 
 
-def test_list_approvals_empty(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_list_approvals_empty(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
 
     assert approval_service.list_approvals(db_session, itinerary.id) == []

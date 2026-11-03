@@ -3,9 +3,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import get_current_user
+from app.api.deps.rules import forbid_acting_for_others
 from app.db.session import get_db
 from app.models.itinerary import Itinerary
 from app.models.status import ItineraryStatus
+from app.models.user.user import User
 from app.schemas.itinerary_approval import ItineraryApprovalCreate, ItineraryApprovalRead
 from app.services import itinerary as itinerary_service
 from app.services import itinerary_approval as approval_service
@@ -31,9 +34,13 @@ def list_approvals(itinerary_id: int, db: Session = Depends(get_db)) -> list[Iti
 
 @router.post("", response_model=ItineraryApprovalRead, status_code=status.HTTP_201_CREATED)
 def create_approval(
-    itinerary_id: int, data: ItineraryApprovalCreate, db: Session = Depends(get_db)
+    itinerary_id: int,
+    data: ItineraryApprovalCreate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> ItineraryApprovalRead:
     """Approve or reject a validated itinerary as an operations manager."""
+    forbid_acting_for_others(user, data.manager_id)
     itinerary = _get_itinerary_or_404(db, itinerary_id)
     if user_service.get_operations_manager(db, data.manager_id) is None:
         raise HTTPException(

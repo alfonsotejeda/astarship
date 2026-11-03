@@ -14,12 +14,12 @@ from app.models.user.user import User
 
 
 @pytest.fixture
-def base(db_session):
+def base(db_session, itinerary_owners):
     user = User(name="Manager", email="manager@test.com", password_hash="hash")
     db_session.add(user)
     db_session.flush()
     manager = OperationsManager(id=user.id)
-    itinerary = Itinerary(creation_date=date(2026, 10, 1), activity_count=3)
+    itinerary = Itinerary(creation_date=date(2026, 10, 1), activity_count=3, **itinerary_owners)
     db_session.add_all([manager, itinerary])
     db_session.commit()
     return {"manager": manager, "itinerary": itinerary}

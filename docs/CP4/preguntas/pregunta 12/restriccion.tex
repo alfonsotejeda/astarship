@@ -1,0 +1,238 @@
+\phantomsection
+\addcontentsline{toc}{subsection}{Restricción final}
+\subsection*{Restricción final}
+
+% Seccion con nombres de clase largos, que no se parten con guion.
+\sloppy
+
+\textit{Las operaciones deben poder ejecutarse en paralelo sobre diferentes cuentas (considera
+concurrencia y estado mutable del Visitor). Además, el sistema debe garantizar que las
+transacciones sobre una misma cuenta sean atómicas y consistentes (¿cómo lo resuelves con el
+patrón elegido?).}
+
+\vspace{0.4cm}
+
+\subsubsection*{Qué pide, y por qué las dos mitades tiran en sentidos opuestos}
+
+La restricción impone dos obligaciones que conviene leer juntas:
+
+\begin{enumerate}[leftmargin=1.2cm]
+    \item \textbf{Paralelismo} entre operaciones sobre cuentas \emph{distintas}.
+    \item \textbf{Atomicidad y consistencia} entre operaciones sobre la \emph{misma} cuenta.
+\end{enumerate}
+
+Tomadas por separado, cada una tiene una solución trivial y equivocada: para la primera, no
+sincronizar nada; para la segunda, un cerrojo global. Cada solución trivial destruye la otra
+obligación. Lo que resuelve la tensión no es elegir, sino acertar con la
+\textbf{granularidad}: el enunciado nombra la unidad de consistencia cuando dice ``sobre una
+misma cuenta''. Si el cerrojo es por cuenta, las dos obligaciones se cumplen a la vez y sin
+contradicción, porque dos operaciones sobre cuentas distintas no comparten cerrojo.
+
+De ahí sale el criterio que guía toda esta sección: \textbf{la exclusión mutua pertenece al
+elemento, no a la operación}. La cuenta es quien debe proteger sus invariantes; el visitante
+solo pasa por ahí.
+
+\subsubsection*{Tres intentos ingenuos, y qué rompe cada uno}
+
+Antes de la solución conviene descartar lo que no funciona, porque las tres son tentaciones
+razonables:
+
+\begin{table}[h!]
+    \centering
+    \small
+    \begin{tabular}{p{4.3cm}p{4.2cm}p{4.9cm}}
+        \toprule
+        \textbf{Intento} & \textbf{Qué arregla} & \textbf{Qué rompe} \\
+        \midrule
+        Un cerrojo global, o \texttt{lock} sobre el visitante completo
+        & La consistencia: nunca hay dos operaciones a la vez.
+        & El paralelismo exigido. Dos cuentas sin relación se serializan entre sí. \\
+        \addlinespace
+        Compartir una instancia de visitante entre hilos y acumular en sus campos
+        & Nada. Parece ahorrar objetos.
+        & El resultado: dos recorridos simultáneos mezclan sus acumuladores. \\
+        \addlinespace
+        Visitante sin estado, pero sin cerrojo en la cuenta
+        & El estado del visitante, que deja de ser compartido.
+        & Los invariantes de la cuenta: leer, sumar y escribir el saldo deja de ser atómico. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+El tercero es el más instructivo, porque es el que parece correcto. Un visitante puro no
+arregla la cuenta: la carrera no está en el visitante sino en la secuencia
+lectura--modificación--escritura del saldo, y esa vive en el elemento. La prueba 7 de la
+ejecución lo mide.
+
+\subsubsection*{Primera mitad: el estado mutable del visitante}
+
+El patrón elegido tiene aquí un riesgo propio, y el enunciado lo señala al pedir que se
+considere ``el estado mutable del Visitor''. Un visitante transporta datos, y la tentación es
+que los acumule en sus campos. La implementación lo evita con tres decisiones, de la más
+preferible a la tolerable:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Devolver en lugar de acumular.} La interfaz es genérica en el tipo de
+          retorno, \texttt{IVisitanteOperacion<R>}, precisamente para que cada método de
+          visita \emph{devuelva} un valor inmutable.
+          \texttt{AuditarTransaccionVisitor} no tiene ni un campo: construye y devuelve un
+          \texttt{InformeAuditoria}. Por eso una sola instancia se comparte entre hilos sin
+          sincronización de ningún tipo.
+    \item \textbf{Estado inmutable y de un solo uso.}
+          \texttt{EjecutarTransaccionVisitor} sí lleva estado, la \texttt{Transaccion}, pero
+          es un \textit{record} inmutable y el visitante se construye uno por operación. El
+          estado existe, pero nadie lo escribe después de construirlo.
+    \item \textbf{Si la acumulación compartida fuera inevitable}, contadores atómicos
+          (\texttt{Interlocked}) o colecciones concurrentes. Nunca sincronizar el visitante
+          completo: eso serializa los recorridos y devuelve al primer intento ingenuo.
+\end{itemize}
+
+Esta decisión es la que paga el inciso (c): un visitante que devuelve su resultado se puede
+reducir, y un recorrido reducible se puede repartir entre hilos.
+
+\subsubsection*{Segunda mitad: atomicidad por cuenta con el patrón elegido}
+
+La pregunta del enunciado es concreta: \emph{¿cómo lo resuelves con el patrón elegido?} La
+respuesta tiene tres piezas.
+
+\textbf{1. El cerrojo vive en la cuenta.} Cada \texttt{Cuenta} lleva su propio objeto de
+cerrojo. No es un detalle de implementación: es la afirmación de que la cuenta es la unidad de
+consistencia del dominio.
+
+\textbf{2. Un decorador lo toma y lo libera.} Para que ningún visitante concreto sepa que
+existen cerrojos, el control de concurrencia entra como un \textbf{Decorator} del visitante,
+no como código dentro de las operaciones:
+
+{\small
+\begin{verbatim}
+public sealed class VisitanteTransaccional<R>
+    : IVisitanteOperacion<R>
+{
+    private readonly IVisitanteOperacion<R> _interno;
+
+    public R VisitAhorro(CuentaAhorro c)
+        => BajoCerrojo(c, () => _interno.VisitAhorro(c));
+
+    private static R BajoCerrojo(Cuenta c, Func<R> accion)
+    {
+        lock (c.Cerrojo)       // Monitor.Enter/Exit con
+        {                      // try/finally, y reentrante
+            return accion();
+        }
+    }
+}
+\end{verbatim}
+}
+
+Aquí se ve por qué el patrón elegido ayuda en lugar de estorbar: como la operación es un
+objeto, se puede \emph{envolver}. Con las operaciones escritas como métodos de las cuentas, el
+control transaccional habría tenido que repetirse dentro de cada método de cada cuenta, o
+subir al cliente, que es donde peor está. Esta es una ventaja de Visitor que la métrica del
+inciso (d) no mide.
+
+\textbf{3. Orden total de adquisición cuando hacen falta dos cerrojos.} Una transferencia toca
+dos cuentas. Dos transferencias cruzadas que tomaran los cerrojos en el orden de sus
+argumentos podrían esperarse mutuamente para siempre. Se toman siempre por identificador
+ascendente:
+
+{\small
+\begin{verbatim}
+Cuenta primera = string.CompareOrdinal(origen.Id, destino.Id) <= 0
+    ? origen : destino;
+Cuenta segunda = ReferenceEquals(primera, origen) ? destino : origen;
+
+lock (primera.Cerrojo)
+{
+    lock (segunda.Cerrojo)
+    {
+        ...
+\end{verbatim}
+}
+
+El argumento de corrección es corto: un interbloqueo exige un ciclo en el grafo de espera, y
+un ciclo exige que dos hilos adquieran dos cerrojos en órdenes opuestos. Con un orden total
+sobre los identificadores, ese orden opuesto no puede ocurrir. No hace falta detección de
+ciclos ni tiempos límite.
+
+\subsubsection*{Hasta dónde llega la garantía}
+
+Conviene decir con precisión qué queda garantizado, porque es menos de lo que la palabra
+``atómico'' sugiere:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Sí:} toda operación sobre una cuenta es atómica frente a otras operaciones
+          sobre \emph{esa} cuenta, y consistente, en el sentido de que ningún entrelazado
+          puede dejar el saldo fuera de los límites que la cuenta impone.
+    \item \textbf{Sí:} operaciones sobre cuentas distintas progresan en paralelo, sin
+          contención entre ellas.
+    \item \textbf{No:} una operación sobre un \emph{grupo} de cuentas no es atómica. El
+          decorador da atomicidad por cuenta, y el inciso (c) lo muestra con una aplicación
+          parcial real. Tomar todos los cerrojos del grupo da \textbf{aislamiento}, no
+          atomicidad: si la operación falla a mitad, lo ya aplicado sigue aplicado. Para
+          todo\,o\,nada hace falta una validación previa o compensación por \textit{saga}.
+    \item \textbf{No:} no hay durabilidad. Nada se escribe en un registro antes de aplicarse,
+          así que un fallo del proceso pierde el estado. Un sistema real delegaría esto en las
+          transacciones de la base de datos o en un registro de escritura anticipada.
+    \item \textbf{No:} \texttt{lock} no es justo. No garantiza orden de llegada entre hilos
+          que esperan. Si el dominio exigiera orden FIFO por cuenta, la forma correcta sería
+          una cola por cuenta, es decir un actor por cuenta, que convierte la serialización en
+          una propiedad estructural en lugar de depender de cerrojos.
+\end{itemize}
+
+\subsubsection*{Evidencia de ejecución}
+
+Las partes 7 y 8 de \texttt{Demo} miden exactamente las dos mitades de la restricción. Ocho
+hilos hacen 250 depósitos de 10,00 sobre la misma cuenta, y después dieciséis hilos operan
+sobre cuatro cuentas a la vez:
+
+{\small
+\begin{verbatim}
+7. Restriccion: concurrencia sobre la MISMA cuenta
+--------------------------------------------------
+  con decorador transaccional: esperado 20,000.00, obtenido 20,000.00
+  atomico y consistente: true
+  sin decorador:               esperado 20,000.00, obtenido 3,390.00
+  actualizaciones perdidas:    16,610.00
+
+8. Restriccion: paralelismo sobre cuentas DISTINTAS
+---------------------------------------------------
+  PAR-AHO     saldo=  10,000.00 correcto=true
+  PAR-COR     saldo=  10,000.00 correcto=true
+  PAR-INV     saldo=  10,000.00 correcto=true
+  PAR-EMP     saldo=  10,000.00 correcto=true
+  16 hilos sobre 4 cuentas, sin contencion entre ellas: 5 ms
+\end{verbatim}
+}
+
+Dos lecturas de estas cifras. La primera: con el decorador el saldo final es exacto, y sin él
+se pierde más de la mitad del dinero depositado. La segunda, menos cómoda: \textbf{la cifra de
+pérdida cambia en cada ejecución}, porque depende del entrelazado de los hilos. Es un error no
+determinista, y eso es justamente lo que lo hace peligroso: una prueba que corriera una sola
+vez podría pasar con el código incorrecto. Para que la carrera se manifieste en cada corrida,
+\texttt{Cuenta} amplía a propósito la ventana entre la lectura y la escritura del saldo con un
+\texttt{Thread.Yield()} activado solo en esa prueba; en producción no existiría.
+
+\subsubsection*{Resumen del proceso}
+
+El camino seguido para resolver el ejercicio, que es el mismo que serviría para cualquier otro
+problema de diseño:
+
+\begin{enumerate}[leftmargin=1.2cm]
+    \item Leer el enunciado buscando los \emph{ejes de variación}, no las clases: aquí, tipos
+          de cuenta y operaciones.
+    \item Identificar los conceptos del dominio y cuál de los ejes está cerrado.
+    \item Escribir mentalmente la solución ingenua, con \textit{switch} sobre el tipo de
+          cuenta, y nombrar qué rompe.
+    \item Buscar el patrón que cierra el eje correcto, descartando los candidatos con
+          argumentos y no por eliminación (inciso a).
+    \item Diseñar las dos jerarquías y el mecanismo de doble despacho (inciso a).
+    \item Implementar las $T \times V$ combinaciones de modo que cada celda sea una regla de
+          negocio real (inciso b).
+    \item Integrar con los patrones estructurales que el problema pide, pagando y nombrando su
+          peaje (inciso c).
+    \item Medir la decisión sobre el propio repositorio en lugar de afirmarla (inciso d).
+    \item Resolver la restricción eligiendo la granularidad correcta, y decir hasta dónde llega
+          la garantía (esta sección).
+\end{enumerate}
+
+\fussy

@@ -160,11 +160,8 @@ def create_validation(
     itinerary = get_itinerary_or_raise(itinerary_id, db)
     guide = get_guide_or_raise(data.guide_id, db)
 
-    if itinerary.creator_id == guide.id:
+    if itinerary.guide_id == guide.id:
         raise PermissionError("A guide cannot validate an itinerary they generated")
-
-    if itinerary.package_id is None:
-        raise ValueError("The itinerary does not belong to a package")
 
     authorization = get_authorization(db, itinerary.package_id, guide.id)
     if authorization is None or not authorization.can_validate:

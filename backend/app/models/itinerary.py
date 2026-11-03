@@ -2,6 +2,7 @@
 
 from datetime import date
 
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -26,13 +27,15 @@ class Itinerary(Base):
     )
 
     activity_count: Mapped[int]
-    package_id: Mapped[int | None]
-    creator_id: Mapped[int | None]
+    package_id: Mapped[int] = mapped_column(ForeignKey("packages.id", ondelete="CASCADE"))
+    guide_id: Mapped[int] = mapped_column(ForeignKey("guides.id", ondelete="RESTRICT"))
 
     assignments: Mapped[list[Assignment]] = relationship(cascade="all, delete-orphan")
     proportion_categories: Mapped[list[ProportionCategory]] = relationship(
         cascade="all, delete-orphan"
     )
     proportion_types: Mapped[list[ProportionType]] = relationship(cascade="all, delete-orphan")
-    compositions: Mapped[list[ItineraryComposition]] = relationship(cascade="all, delete-orphan")
+    compositions: Mapped[list[ItineraryComposition]] = relationship(
+        cascade="all, delete-orphan", order_by=ItineraryComposition.order
+    )
     approvals: Mapped[list[ItineraryApproval]] = relationship(cascade="all, delete-orphan")
