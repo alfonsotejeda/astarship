@@ -102,8 +102,12 @@ forma de ver su información.
 ### Decisiones
 
 - **Página propia** `/attractions` y `/attractions/:id`, abierta a todos los roles; en el
-  menú del guía y del admin. No es una pestaña de ActivitiesPage porque esa página es solo
-  de guía y admin, y el turista llega a las atracciones desde el catálogo.
+  menú del guía, del admin y del turista. No es una pestaña de ActivitiesPage porque esa
+  página es solo de guía y admin. El turista también llega desde el catálogo, y el
+  breadcrumb del detalle lo lleva al listado, así que tiene su entrada en el menú.
+- **Barra inferior del turista en móvil:** caben cinco entradas. Entra *Atracciones* y sale
+  *Valoraciones*, que sigue en la barra lateral de escritorio; en móvil se valora desde el
+  detalle del viaje.
 - **Listado y detalle:** dirección, **mapa** (Leaflet + OpenStreetMap), actividades que se
   hacen allí y atracciones conectadas.
 - Pulsar el nombre de una atracción en ActivityRow o RouteTimeline lleva a su detalle.

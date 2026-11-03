@@ -81,7 +81,7 @@ export function AppShell({ counts, layout, children = <Outlet /> }: AppShellProp
 
   const navigation = (
     <PillNav className={mobile ? "app-shell__tabbar" : "app-shell__nav"} aria-label="Navegación principal">
-      {(mobile ? nav.slice(0, 5) : nav).map(item => {
+      {(mobile ? nav.filter(item => !item.desktopOnly).slice(0, 5) : nav).map(item => {
         const isActive = item.key === activeKey;
         return (
           <Link

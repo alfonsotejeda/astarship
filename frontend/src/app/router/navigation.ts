@@ -8,6 +8,8 @@ export interface NavItem {
   to: string;
   // Also active on the routes below this one; without it, only on `to`
   match?: string;
+  // Left out of the mobile tab bar, which fits five
+  desktopOnly?: boolean;
 }
 
 export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
@@ -31,7 +33,8 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { key: "today", label: "Hoy", icon: "calendar", to: "/trip/today" },
     { key: "itineraries", label: "Mis itinerarios", icon: "route", to: "/trip/itineraries", match: "/trip/itineraries" },
     { key: "catalog", label: "Catálogo", icon: "compass", to: "/catalog", match: "/catalog" },
-    { key: "ratings", label: "Valoraciones", icon: "star", to: "/ratings" },
+    { key: "attractions", label: "Atracciones", icon: "landmark", to: "/attractions", match: "/attractions" },
+    { key: "ratings", label: "Valoraciones", icon: "star", to: "/ratings", desktopOnly: true },
     { key: "requests", label: "Solicitudes", icon: "message", to: "/requests" },
   ],
   admin: [
