@@ -43,12 +43,12 @@ def make_admin(db_session) -> Admin:
 
 
 def make_itinerary(package, creator) -> Itinerary:
-    """Build an itinerary of a package (or none) created by a guide."""
+    """Build an itinerary of a package created by a guide."""
     return Itinerary(
         creation_date=date(2026, 10, 1),
         activity_count=3,
-        package_id=package.id if package else None,
-        creator_id=creator.id,
+        package_id=package.id,
+        guide_id=creator.id,
     )
 
 
@@ -89,13 +89,14 @@ def sample_data(db_session):
     pkg1 = Package(name="Havana", destination="Cuba", admin_id=admin.id)
     pkg2 = Package(name="Trinidad", destination="Cuba", admin_id=admin.id)
     pkg3 = Package(name="Empty", destination="Cuba", admin_id=admin.id)
-    db_session.add_all([pkg1, pkg2, pkg3])
+    pkg4 = Package(name="Baracoa", destination="Cuba", admin_id=admin.id)
+    db_session.add_all([pkg1, pkg2, pkg3, pkg4])
     db_session.flush()
 
     it1 = make_itinerary(pkg1, g3)
     it2 = make_itinerary(pkg1, g3)
     it3 = make_itinerary(pkg2, g3)
-    it4 = make_itinerary(None, g3)
+    it4 = make_itinerary(pkg4, g3)
     it5 = make_itinerary(pkg2, g3)  # without validations
     db_session.add_all([it1, it2, it3, it4, it5])
     db_session.flush()
@@ -113,7 +114,7 @@ def sample_data(db_session):
     db_session.commit()
     return {
         "g1": g1, "g2": g2, "g3": g3,
-        "pkg1": pkg1, "pkg2": pkg2, "pkg3": pkg3,
+        "pkg1": pkg1, "pkg2": pkg2, "pkg3": pkg3, "pkg4": pkg4,
         "it1": it1, "it2": it2, "it3": it3, "it4": it4, "it5": it5,
     }  # fmt: skip
 
@@ -201,7 +202,7 @@ def test_validations_between_empty_range(db_session, sample_data):
 
 # 5) itineraries validated by a guide, with their package
 def test_itineraries_by_guide_with_package(db_session, sample_data):
-    """Returns each itinerary once, with its package or None."""
+    """Returns each itinerary once, with its package."""
     d = sample_data
     rows = service.get_itineraries_by_guide(d["g1"].id, db_session)
 
@@ -210,7 +211,7 @@ def test_itineraries_by_guide_with_package(db_session, sample_data):
     assert found == {
         (d["it1"].id, d["pkg1"].id),
         (d["it2"].id, d["pkg1"].id),
-        (d["it4"].id, None),
+        (d["it4"].id, d["pkg4"].id),
     }
 
 
@@ -339,15 +340,6 @@ def test_create_validation_by_the_creator(db_session, sample_data):
 
     with pytest.raises(PermissionError, match="generated"):
         service.create_validation(d["it1"].id, data, db_session)
-
-
-def test_create_validation_itinerary_without_package(db_session, sample_data):
-    """An itinerary without package cannot be validated."""
-    d = sample_data
-    data = ItineraryValidationCreate(guide_id=d["g1"].id, result=True)
-
-    with pytest.raises(ValueError, match="package"):
-        service.create_validation(d["it4"].id, data, db_session)
 
 
 def test_create_validation_approved(db_session, sample_data):

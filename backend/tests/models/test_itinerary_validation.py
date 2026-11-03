@@ -13,13 +13,13 @@ from app.models.user.user import User
 
 
 @pytest.fixture
-def base(db_session):
+def base(db_session, itinerary_owners):
     """Create a guide and an itinerary."""
     user = User(name="Guide", email="guide@test.com", password_hash="hash")
     db_session.add(user)
     db_session.flush()
     guide = Guide(id=user.id, specialty="History")
-    itinerary = Itinerary(creation_date=date(2026, 10, 1), activity_count=3)
+    itinerary = Itinerary(creation_date=date(2026, 10, 1), activity_count=3, **itinerary_owners)
     db_session.add_all([guide, itinerary])
     db_session.commit()
     return {"guide": guide, "itinerary": itinerary}

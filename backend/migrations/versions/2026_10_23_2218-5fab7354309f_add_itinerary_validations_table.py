@@ -1,7 +1,7 @@
 """add itinerary validations table
 
 Revision ID: 5fab7354309f
-Revises: a6d2f8c41e93
+Revises: f2a7c4e9b316
 Create Date: 2026-10-23 22:18:39.672253
 
 """
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "5fab7354309f"
-down_revision: str | None = "a6d2f8c41e93"
+down_revision: str | None = "f2a7c4e9b316"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

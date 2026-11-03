@@ -5,6 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.models.authorization import Authorization
+from app.models.modification_request import ModificationRequest
 
 
 class Guide(Base):
@@ -17,3 +18,6 @@ class Guide(Base):
 
     user = relationship("User", back_populates="guide")
     authorizations: Mapped[list[Authorization]] = relationship(cascade="all, delete-orphan")
+    modification_requests: Mapped[list[ModificationRequest]] = relationship(
+        cascade="all, delete-orphan"
+    )

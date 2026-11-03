@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import require_admin
 from app.db.session import get_db
 from app.models.status import ReviewStatus
 from app.schemas.package import PackageCreate, PackageRead, PackageUpdate
@@ -47,7 +48,12 @@ def get_package(package_id: int, db: Session = Depends(get_db)) -> PackageRead:
     return _get_package_or_404(db, package_id)
 
 
-@router.post("", response_model=PackageRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=PackageRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
+)
 def create_package(data: PackageCreate, db: Session = Depends(get_db)) -> PackageRead:
     """Create a new package; the name and destination pair must be unique."""
     if user_service.get_admin(db, data.admin_id) is None:
@@ -58,7 +64,9 @@ def create_package(data: PackageCreate, db: Session = Depends(get_db)) -> Packag
         _raise_conflict(db, exc)
 
 
-@router.patch("/{package_id}", response_model=PackageRead)
+@router.patch(
+    "/{package_id}", response_model=PackageRead, dependencies=[Depends(require_admin)]
+)
 def update_package(
     package_id: int, data: PackageUpdate, db: Session = Depends(get_db)
 ) -> PackageRead:
@@ -70,7 +78,9 @@ def update_package(
         _raise_conflict(db, exc)
 
 
-@router.delete("/{package_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{package_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)]
+)
 def delete_package(package_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a package."""
     package = _get_package_or_404(db, package_id)

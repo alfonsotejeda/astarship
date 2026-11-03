@@ -15,6 +15,12 @@ class ItineraryCompositionCreate(BaseModel):
     start_time: time
 
 
+class PlannedActivity(ItineraryCompositionCreate):
+    """Place given by the itinerary generator to an activity."""
+
+    activity_id: int
+
+
 class ItineraryCompositionUpdate(BaseModel):
     """Fields allowed when rescheduling an activity within an itinerary."""
 

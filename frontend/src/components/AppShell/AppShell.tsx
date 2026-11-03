@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { Navigate, NavLink, Outlet } from "react-router";
+import { Link, Navigate, Outlet, useLocation } from "react-router";
 import { useAuth } from "@/app/providers/auth/AuthContext";
 import { ROLE_LABEL } from "@/app/providers/auth/roles";
 import { useTheme } from "@/app/providers/theme/ThemeContext";
-import { NAV_BY_ROLE } from "@/app/router/navigation";
+import { activeNavKey, NAV_BY_ROLE } from "@/app/router/navigation";
+import { useNavCounts } from "@/app/router/useNavCounts";
 import { Button } from "@/components/Button/Button";
 import { Icon } from "@/components/Icon/Icon";
 import { PillNav } from "@/components/PillNav/PillNav";
@@ -20,15 +21,20 @@ function initials(name: string) {
   return name.split(" ").map(word => word[0]).slice(0, 2).join("");
 }
 
-export function AppShell({ counts = {}, layout, children = <Outlet /> }: AppShellProps) {
+export function AppShell({ counts, layout, children = <Outlet /> }: AppShellProps) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { pathname } = useLocation();
   const isPhone = useMediaQuery("(max-width: 480px)");
+  // The previews pass their own counts
+  const liveCounts = useNavCounts(user, counts === undefined);
   const mobile = layout ? layout === "mobile" : isPhone;
 
   if (!user) return <Navigate to="/login" replace />;
 
   const nav = NAV_BY_ROLE[user.role];
+  const shownCounts = counts ?? liveCounts;
+  const activeKey = activeNavKey(nav, pathname);
 
   const brand = (
     <div className="app-shell__brand">
@@ -55,13 +61,21 @@ export function AppShell({ counts = {}, layout, children = <Outlet /> }: AppShel
 
   const navigation = (
     <PillNav className={mobile ? "app-shell__tabbar" : "app-shell__nav"} aria-label="Navegación principal">
-      {(mobile ? nav.slice(0, 5) : nav).map(item => (
-        <NavLink key={item.key} to={item.to} end className="app-shell__nav-item">
-          <Icon name={item.icon} size={20} />
-          <span className="app-shell__nav-label">{item.label}</span>
-          {counts[item.key] ? <span className="app-shell__count">{counts[item.key]}</span> : null}
-        </NavLink>
-      ))}
+      {(mobile ? nav.slice(0, 5) : nav).map(item => {
+        const isActive = item.key === activeKey;
+        return (
+          <Link
+            key={item.key}
+            to={item.to}
+            className={isActive ? "app-shell__nav-item active" : "app-shell__nav-item"}
+            aria-current={isActive ? "page" : undefined}
+          >
+            <Icon name={item.icon} size={20} />
+            <span className="app-shell__nav-label">{item.label}</span>
+            {shownCounts[item.key] ? <span className="app-shell__count">{shownCounts[item.key]}</span> : null}
+          </Link>
+        );
+      })}
     </PillNav>
   );
 
