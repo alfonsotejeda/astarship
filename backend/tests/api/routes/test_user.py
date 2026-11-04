@@ -15,6 +15,15 @@ def test_create_user_returns_201(client):
     assert "password_hash" not in body
 
 
+def test_create_user_with_existing_email_returns_409(client):
+    payload = {"name": "Ada", "role": "admin", "email": "ada@example.com", "password": "s3cret"}
+    client.post("/api/users", json=payload)
+
+    response = client.post("/api/users", json=payload)
+
+    assert response.status_code == 409
+
+
 def test_create_tourist_returns_its_subtype_fields(client):
     response = client.post(
         "/api/users",

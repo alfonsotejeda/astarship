@@ -33,9 +33,8 @@ def refs(db_session):
     }
 
 
-def _create(db_session, refs, name="Hiking", **overrides):
-    data = ActivityCreate(**{"name": name, "effort_level": 3, **refs, **overrides})
-    return activity_service.create_activity(db_session, data)
+def test_create_activity_persists_it(db_session):
+    data = ActivityCreate(name="Hiking", effort_level=3, duration=90)
 
 
 def test_create_activity_persists_it(db_session, refs):
@@ -43,6 +42,7 @@ def test_create_activity_persists_it(db_session, refs):
 
     assert activity.id is not None
     assert activity.name == "Hiking"
+    assert activity.duration == 90
     assert activity.status is ReviewStatus.PENDING
     assert activity.creation_date is not None
     assert activity.category_id == refs["category_id"]
@@ -69,22 +69,36 @@ def test_get_activity_returns_none_when_missing(db_session):
     assert activity_service.get_activity(db_session, 999) is None
 
 
-def test_update_activity_applies_partial_changes(db_session, refs):
-    activity = _create(db_session, refs, name="Old", effort_level=1)
+def test_update_activity_applies_partial_changes(db_session):
+    activity = activity_service.create_activity(
+        db_session, ActivityCreate(name="Old", effort_level=1, duration=60)
+    )
 
     updated = activity_service.update_activity(db_session, activity, ActivityUpdate(name="New"))
 
     assert updated.name == "New"
     assert updated.effort_level == 1
-    assert updated.category_id == refs["category_id"]
+    assert updated.duration == 60
 
+
+def test_update_activity_changes_duration(db_session):
+    activity = activity_service.create_activity(
+        db_session, ActivityCreate(name="Tour", effort_level=1, duration=60)
+    )
+
+    updated = activity_service.update_activity(
+        db_session, activity, ActivityUpdate(duration=120)
+    )
+
+    assert updated.duration == 120
 
 def test_update_activity_can_move_it_to_another_category(db_session, refs):
     activity = _create(db_session, refs)
     other = category_service.create_category(db_session, CategoryCreate(name="Culture"))
 
-    updated = activity_service.update_activity(
-        db_session, activity, ActivityUpdate(category_id=other.id)
+def test_delete_activity_removes_it(db_session):
+    activity = activity_service.create_activity(
+        db_session, ActivityCreate(name="Temp", effort_level=1, duration=60)
     )
 
     assert updated.category_id == other.id

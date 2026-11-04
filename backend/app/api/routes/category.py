@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import require_admin
 from app.db.session import get_db
 from app.schemas.activity import ActivityRead
 from app.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
@@ -47,7 +48,13 @@ def get_category_name(category_name: str, db: Session = Depends(get_db)) -> Cate
     return category
 
 
-@router.post("/create", response_model=CategoryRead, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/create",
+    response_model=CategoryRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
+)
 def create_category_end(data: CategoryCreate, db: Session = Depends(get_db)) -> CategoryRead:
     """Create a new category."""
     try:
@@ -56,7 +63,10 @@ def create_category_end(data: CategoryCreate, db: Session = Depends(get_db)) -> 
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
 
 
-@router.put("/{category_id}", response_model=CategoryRead)
+
+@router.put(
+    "/{category_id}", response_model=CategoryRead, dependencies=[Depends(require_admin)]
+)
 def update_category(
     data: CategoryUpdate, category_id: int, db: Session = Depends(get_db)
 ) -> CategoryRead:
@@ -68,7 +78,10 @@ def update_category(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
 
 
-@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+
+@router.delete(
+    "/{category_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)]
+)
 def delete_category(category_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a category."""
     category = get_category(db, category_id)

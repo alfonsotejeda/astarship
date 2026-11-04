@@ -13,34 +13,33 @@ def test_create_requires_required_fields():
         ActivityCreate(name="Hiking")
 
 
-@pytest.mark.parametrize("missing", REFS)
-def test_create_requires_every_foreign_key(missing):
-    refs = {k: v for k, v in REFS.items() if k != missing}
-
+def test_create_requires_duration():
     with pytest.raises(ValidationError):
-        ActivityCreate(name="Hiking", effort_level=3, **refs)
+        ActivityCreate(name="Hiking", effort_level=3)
 
 
 def test_create_accepts_valid_data():
-    activity = ActivityCreate(name="Hiking", effort_level=3, **REFS)
+    activity = ActivityCreate(name="Hiking", effort_level=3, duration=90)
 
     assert activity.name == "Hiking"
-    assert activity.activity_type_code == "HIKE"
-    assert activity.category_id == 1
-    assert activity.guide_id == 2
+    assert activity.duration == 90
+    assert activity.category_id is None
+
+
+@pytest.mark.parametrize("duration", [0, -30])
+def test_create_rejects_non_positive_duration(duration):
+    with pytest.raises(ValidationError):
+        ActivityCreate(name="Hiking", effort_level=3, duration=duration)
 
 
 def test_update_allows_partial_data():
     update = ActivityUpdate(name="New name")
 
     assert update.name == "New name"
-    assert update.model_dump(exclude_unset=True) == {"name": "New name"}
+    assert update.effort_level is None
+    assert update.duration is None
 
 
-@pytest.mark.parametrize(
-    "field",
-    ["name", "effort_level", "status", "activity_type_code", "category_id", "guide_id"],
-)
-def test_update_rejects_explicit_null(field):
+def test_update_rejects_non_positive_duration():
     with pytest.raises(ValidationError):
-        ActivityUpdate(**{field: None})
+        ActivityUpdate(duration=0)

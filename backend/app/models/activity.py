@@ -2,7 +2,8 @@
 
 from datetime import date
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import CheckConstraint, String
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -14,13 +15,13 @@ class Activity(Base):
     """A tourist activity that can be included in an itinerary."""
 
     __tablename__ = "activities"
-    #    __table_args__ = (
-    #        UniqueConstraint("name", "attraction_id", name="uq_activities_name_attraction_id"),
-    #    )
+    __table_args__ = (CheckConstraint("duration >= 1", name="duration_positive"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     effort_level: Mapped[int]
+    duration: Mapped[int]
+
     status: Mapped[ReviewStatus] = mapped_column(
         status_enum(ReviewStatus), default=ReviewStatus.PENDING
     )
