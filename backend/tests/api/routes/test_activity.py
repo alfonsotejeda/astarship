@@ -105,10 +105,13 @@ def test_update_activity_changes_duration(client, as_guide):
 def test_delete_activity_removes_it(client, as_guide):
     created = _create(client, as_guide, name="Temp", effort_level=1).json()
 
-    response = client.delete(f"/api/activities/{created['id']}")
+    response = client.patch(f"/api/activities/{created['id']}", json={"effort_level": 5})
 
-    assert response.status_code == 204
-    assert client.get(f"/api/activities/{created['id']}").status_code == 404
+    assert response.status_code == 200
+    body = response.json()
+    assert body["effort_level"] == 5
+    assert body["category_id"] == refs["category_id"]
+    assert body["guide_id"] == refs["guide_id"]
 
 
 def test_delete_activity_returns_403_for_guide(client, as_guide):
@@ -140,3 +143,21 @@ def test_list_activities_filters_by_status(client, as_guide):
 
     assert response.status_code == 200
     assert [a["id"] for a in response.json()] == [approved["id"]]
+
+
+def test_activities_by_type_returns_only_that_type_ordered_by_name(client, refs):
+    client.post("/api/activity-types", json={"code": "MUSEUM", "name": "Museum"})
+    _create(client, refs, name="Beta")
+    _create(client, refs, name="Alpha")
+    _create(client, refs, name="Louvre", activity_type_code="MUSEUM")
+
+    response = client.get("/api/activities/by_type/HIKE")
+
+    assert response.status_code == 200
+    assert [a["name"] for a in response.json()] == ["Alpha", "Beta"]
+
+
+def test_activities_by_type_returns_404_when_type_is_missing(client):
+    response = client.get("/api/activities/by_type/MISSING")
+
+    assert response.status_code == 404

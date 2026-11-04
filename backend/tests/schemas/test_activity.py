@@ -5,6 +5,8 @@ from pydantic import ValidationError
 
 from app.schemas.activity import ActivityCreate, ActivityUpdate
 
+REFS = {"activity_type_code": "HIKE", "category_id": 1, "guide_id": 2}
+
 
 def test_create_requires_required_fields():
     with pytest.raises(ValidationError):

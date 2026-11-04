@@ -1,5 +1,7 @@
 """Tests for the itinerary composition routes."""
 
+import itertools
+
 import pytest
 
 COMPOSITION = {"order": 1, "day": 1, "start_time": "09:00:00"}

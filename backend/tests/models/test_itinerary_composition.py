@@ -6,12 +6,35 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from app.models.activity import Activity
+from app.models.activity_type import ActivityType
+from app.models.category import Category
 from app.models.itinerary import Itinerary
 from app.models.itinerary_composition import ItineraryComposition
+from app.models.user.guide import Guide
+from app.models.user.user import User
 
 
 def test_table_name():
     assert ItineraryComposition.__tablename__ == "itinerary_compositions"
+
+
+def _make_activity(db_session) -> Activity:
+    """Build an activity together with the rows its foreign keys point to."""
+    category = Category(name="Adventure")
+    activity_type = ActivityType(code="HIKE", name="Hiking")
+    user = User(name="Gil", email="gil@example.com", password_hash="hash")
+    db_session.add_all([category, activity_type, user])
+    db_session.flush()
+    guide = Guide(id=user.id, specialty="History")
+    db_session.add(guide)
+    db_session.flush()
+    return Activity(
+        name="Museum",
+        effort_level=1,
+        category_id=category.id,
+        activity_type_code=activity_type.code,
+        guide_id=guide.id,
+    )
 
 
 def test_primary_key_is_itinerary_and_activity():

@@ -42,7 +42,12 @@ def get_activity(activity_id: int, db: Session = Depends(get_db)) -> ActivityRea
 )
 def create_activity(data: ActivityCreate, db: Session = Depends(get_db)) -> ActivityRead:
     """Create a new activity."""
-    return activity_service.create_activity(db, data)
+    try:
+        return activity_service.create_activity(db, data)
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
 
 
 @router.patch(
@@ -53,7 +58,10 @@ def update_activity(
 ) -> ActivityRead:
     """Update an existing activity."""
     activity = _get_activity_or_404(db, activity_id)
-    return activity_service.update_activity(db, activity, data)
+    try:
+        return activity_service.update_activity(db, activity, data)
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
 
 
 @router.delete(
@@ -63,3 +71,15 @@ def delete_activity(activity_id: int, db: Session = Depends(get_db)) -> None:
     """Delete an activity."""
     activity = _get_activity_or_404(db, activity_id)
     activity_service.delete_activity(db, activity)
+
+
+# Probar este endpoint
+@router.get("/by_type/{activity_type_code}", response_model=list[ActivityRead])
+def activities_by_type(
+    activity_type_code: str, db: Session = Depends(get_db)
+) -> list[ActivityRead]:
+    """List all activities of a specific type."""
+    try:
+        return activity_service.activities_by_type(db, activity_type_code)
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error

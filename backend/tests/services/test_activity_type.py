@@ -1,7 +1,15 @@
 """Tests for the activity type service."""
 
+import pytest
+
+from app.schemas.activity import ActivityCreate
 from app.schemas.activity_type import ActivityTypeCreate, ActivityTypeUpdate
+from app.schemas.category import CategoryCreate
+from app.schemas.user import GuideCreate
+from app.services import activity as activity_service
 from app.services import activity_type as activity_type_service
+from app.services import category as category_service
+from app.services import user as user_service
 
 
 def test_create_activity_type_persists_it(db_session):
@@ -38,3 +46,31 @@ def test_delete_activity_type_removes_it(db_session):
     activity_type_service.delete_activity_type(db_session, activity_type)
 
     assert activity_type_service.get_activity_type(db_session, "TEMP") is None
+
+
+def test_delete_activity_type_with_activities_raises(db_session):
+    activity_type = activity_type_service.create_activity_type(
+        db_session, ActivityTypeCreate(code="HIKE", name="Hiking")
+    )
+    category = category_service.create_category(db_session, CategoryCreate(name="Adventure"))
+    guide = user_service.create_user(
+        db_session,
+        GuideCreate(
+            name="Gil", role="guide", email="gil@example.com", password="x", specialty="History"
+        ),
+    )
+    activity_service.create_activity(
+        db_session,
+        ActivityCreate(
+            name="Hiking",
+            effort_level=3,
+            activity_type_code="HIKE",
+            category_id=category.id,
+            guide_id=guide.id,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="existing activities"):
+        activity_type_service.delete_activity_type(db_session, activity_type)
+
+    assert activity_type_service.get_activity_type(db_session, "HIKE") is not None

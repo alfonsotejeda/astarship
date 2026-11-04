@@ -77,4 +77,8 @@ def delete_user(user_id: int, db: Session = Depends(get_db)) -> None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Admin still generates packages"
         )
+    if user.guide is not None and user.guide.activity:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Guide still has activities"
+        )
     user_service.delete_user(db, user)
