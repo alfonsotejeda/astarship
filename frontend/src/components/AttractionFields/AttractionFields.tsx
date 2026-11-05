@@ -16,17 +16,8 @@ type AttractionFieldsProps = {
 };
 
 // Shared by the attraction drawer and the new attraction dialog of the activity form
-export function AttractionFields({
-  idPrefix,
-  value,
-  onChange,
-  showErrors,
-  disabled = false,
-  nearby = [],
-}: AttractionFieldsProps) {
-  const errors: Partial<ReturnType<typeof draftErrors>> = showErrors
-    ? draftErrors(value)
-    : {};
+export function AttractionFields({ idPrefix, value, onChange, showErrors, disabled = false, nearby = [] }: AttractionFieldsProps) {
+  const errors: Partial<ReturnType<typeof draftErrors>> = showErrors ? draftErrors(value) : {};
   const position = draftPosition(value);
 
   function pick({ lat, lng }: { lat: number; lng: number }) {

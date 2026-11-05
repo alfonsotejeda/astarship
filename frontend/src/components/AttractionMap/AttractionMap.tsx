@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import type { LatLngTuple } from "leaflet";
-import { CircleMarker, MapContainer, Polyline, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import { CircleMarker, MapContainer, Polyline, TileLayer, Tooltip, useMap, useMapEvents, ZoomControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./AttractionMap.css";
 
@@ -65,7 +65,9 @@ export function AttractionMap({ points, route = false, picked, onPick, label, he
   return (
     <div className={classes} role="region" aria-label={label} style={{ height }}>
       {/* The wheel zooms while the cursor is over the map */}
-      <MapContainer center={DEFAULT_CENTER} zoom={13} scrollWheelZoom className="attraction-map__canvas">
+      <MapContainer center={DEFAULT_CENTER} zoom={13} scrollWheelZoom zoomControl={false} className="attraction-map__canvas">
+        {/* Leaflet's default buttons are labelled in English */}
+        <ZoomControl zoomInTitle="Acercar" zoomOutTitle="Alejar" />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

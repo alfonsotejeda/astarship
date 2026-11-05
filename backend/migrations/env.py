@@ -15,6 +15,8 @@ from app.models import (  # noqa: F401
     authorization,
     category,
     itinerary,
+    itinerary_approval,
+    itinerary_validation,
     itinerary_composition,
     membership,
     modification_request,
