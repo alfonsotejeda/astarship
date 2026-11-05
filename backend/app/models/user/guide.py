@@ -22,4 +22,4 @@ class Guide(Base):
     modification_requests: Mapped[list[ModificationRequest]] = relationship(
         cascade="all, delete-orphan"
     )
-    activity: Mapped[list["Activity"]] = relationship(back_populates="guide")
+    activities: Mapped[list["Activity"]] = relationship(back_populates="guide")

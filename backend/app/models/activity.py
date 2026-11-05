@@ -2,8 +2,7 @@
 
 from datetime import date
 
-from sqlalchemy import CheckConstraint, String
-from sqlalchemy import ForeignKey
+from sqlalchemy import CheckConstraint, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -15,7 +14,10 @@ class Activity(Base):
     """A tourist activity that can be included in an itinerary."""
 
     __tablename__ = "activities"
-    __table_args__ = (CheckConstraint("duration >= 1", name="duration_positive"),)
+    __table_args__ = (
+        CheckConstraint("duration >= 1", name="duration_positive"),
+        UniqueConstraint("name", "attraction_id", name="uq_activities_name_attraction_id"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -37,13 +39,13 @@ class Activity(Base):
     guide_id: Mapped[int] = mapped_column(
         ForeignKey("guides.id", onupdate="CASCADE", ondelete="RESTRICT"), nullable=False
     )
-    #   attraction_id : Mapped[int] = mapped_column(ForeignKey("attraction.id",
-    #                                                          onupdate="CASCADE"))
+    attraction_id: Mapped[int] = mapped_column(
+        ForeignKey("attractions.id", onupdate="CASCADE", ondelete="RESTRICT")
+        
+    )
 
     compositions: Mapped[list[ItineraryComposition]] = relationship(cascade="all, delete-orphan")
     category = relationship("Category", back_populates="activities")
     activity_type = relationship("ActivityType", back_populates="activities")
-    guide = relationship("Guide", back_populates="activity")
-
-
-#   attraction = relationship("Attraction", back_populates="attraction")
+    guide = relationship("Guide", back_populates="activities")
+    attraction = relationship("Attraction", back_populates="activities")

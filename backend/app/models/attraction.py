@@ -1,9 +1,10 @@
 """Attraction model."""
 
 from sqlalchemy import Float, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.activity import Activity
 
 
 class Attraction(Base):
@@ -16,3 +17,4 @@ class Attraction(Base):
     address: Mapped[str] = mapped_column(String(255))
     latitude: Mapped[float] = mapped_column(Float)
     longitude: Mapped[float] = mapped_column(Float)
+    activities: Mapped[list["Activity"]] = relationship(back_populates="attraction")
