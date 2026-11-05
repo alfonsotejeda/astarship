@@ -1,7 +1,5 @@
 """Tests for the itinerary composition routes."""
 
-import itertools
-
 import pytest
 
 COMPOSITION = {"order": 1, "day": 1, "start_time": "09:00:00"}
@@ -10,12 +8,30 @@ COMPOSITION = {"order": 1, "day": 1, "start_time": "09:00:00"}
 @pytest.fixture
 def create_activity(client, as_user, itinerary_owners):
     """Return a function that creates an activity as the guide of the test itineraries."""
+    category_id = client.post("/api/categories/create", json={"name": "Culture"}).json()["id"]
+    client.post("/api/activity-types", json={"code": "walk", "name": "Walk"})
+    attraction_id = client.post(
+        "/api/attractions",
+        json={
+            "name": "Malecón",
+            "address": "Av. del Puerto",
+            "latitude": 23.14,
+            "longitude": -82.36,
+        },
+    ).json()["id"]
 
     def create(name="Museum") -> int:
+        payload = {
+            "name": name,
+            "effort_level": 1,
+            "duration": 60,
+            "activity_type_code": "walk",
+            "category_id": category_id,
+            "guide_id": itinerary_owners["guide_id"],
+            "attraction_id": attraction_id,
+        }
         with as_user(itinerary_owners["guide_id"]):
-            response = client.post(
-                "/api/activities", json={"name": name, "effort_level": 1, "duration": 60}
-            )
+            response = client.post("/api/activities", json=payload)
         return response.json()["id"]
 
     return create

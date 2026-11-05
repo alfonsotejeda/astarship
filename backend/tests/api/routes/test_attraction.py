@@ -127,3 +127,87 @@ def test_delete_attraction_returns_403_for_non_admin(client, as_user, guide_id):
         response = client.delete(f"/api/attractions/{created['id']}")
 
     assert response.status_code == 403
+
+
+@pytest.fixture
+def activity_refs(client, guide_id):
+    """Category, activity type and guide that every activity needs."""
+    category = client.post("/api/categories/create", json={"name": "Adventure"}).json()
+    client.post("/api/activity-types", json={"code": "HIKE", "name": "Hiking"})
+    return {"category_id": category["id"], "activity_type_code": "HIKE", "guide_id": guide_id}
+
+
+def _create_attraction(client, name):
+    return client.post("/api/attractions", json={**PAYLOAD, "name": name}).json()
+
+
+def _add_activity(client, as_user, activity_refs, attraction, name):
+    payload = {
+        "name": name,
+        "effort_level": 3,
+        "duration": 90,
+        "attraction_id": attraction["id"],
+        **activity_refs,
+    }
+    with as_user(activity_refs["guide_id"]):
+        return client.post("/api/activities", json=payload)
+
+
+def test_activities_by_attraction_returns_only_its_activities_ordered_by_name(
+    client, as_user, activity_refs
+):
+    malecon = _create_attraction(client, "Malecón")
+    capitolio = _create_attraction(client, "Capitolio")
+    _add_activity(client, as_user, activity_refs, malecon, "Beta")
+    _add_activity(client, as_user, activity_refs, malecon, "Alpha")
+    _add_activity(client, as_user, activity_refs, capitolio, "Visita")
+
+    response = client.get(f"/api/attractions/activities_by_attraction/{malecon['id']}")
+
+    assert response.status_code == 200
+    assert [a["name"] for a in response.json()] == ["Alpha", "Beta"]
+
+
+def test_activities_by_attraction_returns_empty_list_when_it_has_none(client):
+    attraction = _create_attraction(client, "Vacía")
+
+    response = client.get(f"/api/attractions/activities_by_attraction/{attraction['id']}")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_activities_by_attraction_returns_404_when_attraction_is_missing(client):
+    response = client.get("/api/attractions/activities_by_attraction/999999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Attraction not found"
+
+
+def test_activities_count_includes_attractions_without_activities(client, as_user, activity_refs):
+    malecon = _create_attraction(client, "Malecón")
+    capitolio = _create_attraction(client, "Capitolio")
+    _add_activity(client, as_user, activity_refs, malecon, "Alpha")
+    _add_activity(client, as_user, activity_refs, malecon, "Beta")
+
+    response = client.get("/api/attractions/count_activities_by_attraction")
+
+    assert response.status_code == 200
+    assert response.json() == [[malecon, 2], [capitolio, 0]]
+
+
+def test_activities_count_is_empty_without_attractions(client):
+    response = client.get("/api/attractions/count_activities_by_attraction")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_delete_attraction_with_activities_returns_409(client, as_user, activity_refs):
+    attraction = _create_attraction(client, "Malecón")
+    _add_activity(client, as_user, activity_refs, attraction, "Alpha")
+
+    response = client.delete(f"/api/attractions/{attraction['id']}")
+
+    assert response.status_code == 409
+    assert client.get(f"/api/attractions/{attraction['id']}").status_code == 200

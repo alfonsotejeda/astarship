@@ -160,20 +160,32 @@ def test_delete_guide_without_activities_returns_204(client):
     assert response.status_code == 204
 
 
-def test_delete_guide_with_activities_returns_409(client):
+def test_delete_guide_with_activities_returns_409(client, as_user):
     guide = _create_guide(client)
     category = client.post("/api/categories/create", json={"name": "Adventure"}).json()
     client.post("/api/activity-types", json={"code": "HIKE", "name": "Hiking"})
-    client.post(
-        "/api/activities",
+    attraction = client.post(
+        "/api/attractions",
         json={
-            "name": "Hiking",
-            "effort_level": 3,
-            "activity_type_code": "HIKE",
-            "category_id": category["id"],
-            "guide_id": guide["id"],
+            "name": "Malecón",
+            "address": "Av. del Puerto",
+            "latitude": 23.14,
+            "longitude": -82.36,
         },
-    )
+    ).json()
+    with as_user(guide["id"]):
+        client.post(
+            "/api/activities",
+            json={
+                "name": "Hiking",
+                "effort_level": 3,
+                "duration": 90,
+                "activity_type_code": "HIKE",
+                "category_id": category["id"],
+                "guide_id": guide["id"],
+                "attraction_id": attraction["id"],
+            },
+        )
 
     response = client.delete(f"/api/users/{guide['id']}")
 

@@ -4,10 +4,12 @@ import pytest
 
 from app.schemas.activity import ActivityCreate
 from app.schemas.activity_type import ActivityTypeCreate, ActivityTypeUpdate
+from app.schemas.attraction import AttractionCreate
 from app.schemas.category import CategoryCreate
 from app.schemas.user import GuideCreate
 from app.services import activity as activity_service
 from app.services import activity_type as activity_type_service
+from app.services import attraction as attraction_service
 from app.services import category as category_service
 from app.services import user as user_service
 
@@ -59,14 +61,22 @@ def test_delete_activity_type_with_activities_raises(db_session):
             name="Gil", role="guide", email="gil@example.com", password="x", specialty="History"
         ),
     )
+    attraction = attraction_service.create_attraction(
+        db_session,
+        AttractionCreate(
+            name="Malecón", address="Av. del Puerto", latitude=23.14, longitude=-82.36
+        ),
+    )
     activity_service.create_activity(
         db_session,
         ActivityCreate(
             name="Hiking",
             effort_level=3,
+            duration=90,
             activity_type_code="HIKE",
             category_id=category.id,
             guide_id=guide.id,
+            attraction_id=attraction.id,
         ),
     )
 

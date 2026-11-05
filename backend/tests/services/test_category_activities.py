@@ -4,17 +4,19 @@ import pytest
 
 from app.schemas.activity import ActivityCreate
 from app.schemas.activity_type import ActivityTypeCreate
+from app.schemas.attraction import AttractionCreate
 from app.schemas.category import CategoryCreate
 from app.schemas.user import GuideCreate
 from app.services import activity as activity_service
 from app.services import activity_type as activity_type_service
+from app.services import attraction as attraction_service
 from app.services import category as category_service
 from app.services import user as user_service
 
 
 @pytest.fixture
 def refs(db_session):
-    """The activity type and guide every activity needs."""
+    """The activity type, guide and attraction every activity needs."""
     activity_type = activity_type_service.create_activity_type(
         db_session, ActivityTypeCreate(code="HIKE", name="Hiking")
     )
@@ -24,13 +26,23 @@ def refs(db_session):
             name="Gil", role="guide", email="gil@example.com", password="x", specialty="History"
         ),
     )
-    return {"activity_type_code": activity_type.code, "guide_id": guide.id}
+    attraction = attraction_service.create_attraction(
+        db_session,
+        AttractionCreate(
+            name="Malecón", address="Av. del Puerto", latitude=23.14, longitude=-82.36
+        ),
+    )
+    return {
+        "activity_type_code": activity_type.code,
+        "guide_id": guide.id,
+        "attraction_id": attraction.id,
+    }
 
 
 def _add_activity(db_session, refs, category, name):
     return activity_service.create_activity(
         db_session,
-        ActivityCreate(name=name, effort_level=3, category_id=category.id, **refs),
+        ActivityCreate(name=name, effort_level=3, duration=90, category_id=category.id, **refs),
     )
 
 

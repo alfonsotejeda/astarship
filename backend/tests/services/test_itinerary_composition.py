@@ -5,6 +5,7 @@ from datetime import date, time
 
 from app.schemas.activity import ActivityCreate
 from app.schemas.activity_type import ActivityTypeCreate
+from app.schemas.attraction import AttractionCreate
 from app.schemas.category import CategoryCreate
 from app.schemas.itinerary import ItineraryCreate
 from app.schemas.itinerary_composition import (
@@ -14,6 +15,7 @@ from app.schemas.itinerary_composition import (
 from app.schemas.user import GuideCreate
 from app.services import activity as activity_service
 from app.services import activity_type as activity_type_service
+from app.services import attraction as attraction_service
 from app.services import category as category_service
 from app.services import itinerary as itinerary_service
 from app.services import itinerary_composition as composition_service
@@ -45,8 +47,23 @@ def _create_activity(db_session, name="Museum"):
             specialty="History",
         ),
     )
+    attraction = attraction_service.create_attraction(
+        db_session,
+        AttractionCreate(
+            name=f"Attraction {n}", address="Av. del Puerto", latitude=23.14, longitude=-82.36
+        ),
+    )
     return activity_service.create_activity(
-        db_session, ActivityCreate(name=name, effort_level=1, duration=60)
+        db_session,
+        ActivityCreate(
+            name=name,
+            effort_level=1,
+            duration=60,
+            activity_type_code=activity_type.code,
+            category_id=category.id,
+            guide_id=guide.id,
+            attraction_id=attraction.id,
+        ),
     )
 
 
