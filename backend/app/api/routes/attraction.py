@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps.auth import require_admin
 from app.db.session import get_db
+from app.schemas.activity import ActivityRead
 from app.schemas.attraction import AttractionCreate, AttractionRead, AttractionUpdate
 from app.services import attraction as attraction_service
 
@@ -23,6 +24,21 @@ def _get_attraction_or_404(db: Session, attraction_id: int):
 def list_attractions(db: Session = Depends(get_db)) -> list[AttractionRead]:
     """List all attractions."""
     return attraction_service.list_attractions(db)
+
+
+@router.get("/count_activities_by_attraction", response_model=list[tuple[AttractionRead, int]])
+def activities_count_by_attraction(db: Session = Depends(get_db)):
+    """Get the count of activities for each attraction."""
+    return attraction_service.activities_count_by_attractions(db)
+
+
+@router.get("/activities_by_attraction/{attraction_id}", response_model=list[ActivityRead])
+def get_activities_by_attraction(attraction_id: int, db: Session = Depends(get_db)):
+    """Get all activities for a specific attraction."""
+    try:
+        return attraction_service.activities_by_attraction(db, attraction_id)
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
 
 
 @router.get("/{attraction_id}", response_model=AttractionRead)
@@ -61,4 +77,7 @@ def update_attraction(
 def delete_attraction(attraction_id: int, db: Session = Depends(get_db)) -> None:
     """Delete an attraction."""
     attraction = _get_attraction_or_404(db, attraction_id)
-    attraction_service.delete_attraction(db, attraction)
+    try:
+        attraction_service.delete_attraction(db, attraction)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error

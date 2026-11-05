@@ -50,9 +50,7 @@ def create_activity(data: ActivityCreate, db: Session = Depends(get_db)) -> Acti
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
 
 
-@router.patch(
-    "/{activity_id}", response_model=ActivityRead, dependencies=[Depends(require_guide)]
-)
+@router.patch("/{activity_id}", response_model=ActivityRead, dependencies=[Depends(require_guide)])
 def update_activity(
     activity_id: int, data: ActivityUpdate, db: Session = Depends(get_db)
 ) -> ActivityRead:
@@ -62,6 +60,8 @@ def update_activity(
         return activity_service.update_activity(db, activity, data)
     except LookupError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
 
 
 @router.delete(
@@ -73,7 +73,6 @@ def delete_activity(activity_id: int, db: Session = Depends(get_db)) -> None:
     activity_service.delete_activity(db, activity)
 
 
-# Probar este endpoint
 @router.get("/by_type/{activity_type_code}", response_model=list[ActivityRead])
 def activities_by_type(
     activity_type_code: str, db: Session = Depends(get_db)
