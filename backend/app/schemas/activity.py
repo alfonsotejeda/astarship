@@ -17,9 +17,7 @@ class ActivityCreate(BaseModel):
     activity_type_code: str
     category_id: int
     guide_id: int
-
-
-#   attraction_id: int
+    attraction_id: int
 
 
 class ActivityUpdate(BaseModel):
@@ -32,10 +30,17 @@ class ActivityUpdate(BaseModel):
     activity_type_code: str | None = None
     category_id: int | None = None
     guide_id: int | None = None
-    #   attraction_id: int | None = None
+    attraction_id: int | None = None
 
     @field_validator(
-        "name", "effort_level", "status", "activity_type_code", "category_id", "guide_id"
+        "name",
+        "effort_level",
+        "duration",
+        "status",
+        "activity_type_code",
+        "category_id",
+        "guide_id",
+        "attraction_id",
     )
     @classmethod
     def reject_null(cls, value):
@@ -57,6 +62,4 @@ class ActivityRead(ORMSchema):
     activity_type_code: str
     category_id: int
     guide_id: int
-
-
-#   attraction_id: int | None = None
+    attraction_id: int
