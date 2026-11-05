@@ -1,8 +1,9 @@
 """Attraction service."""
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.models.activity import Activity
 from app.models.attraction import Attraction
 from app.schemas.attraction import AttractionCreate, AttractionUpdate
 
@@ -26,9 +27,7 @@ def create_attraction(db: Session, data: AttractionCreate) -> Attraction:
     return attraction
 
 
-def update_attraction(
-    db: Session, attraction: Attraction, data: AttractionUpdate
-) -> Attraction:
+def update_attraction(db: Session, attraction: Attraction, data: AttractionUpdate) -> Attraction:
     """Apply partial updates to an existing attraction."""
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(attraction, field, value)
@@ -39,5 +38,29 @@ def update_attraction(
 
 def delete_attraction(db: Session, attraction: Attraction) -> None:
     """Delete an attraction."""
+    if attraction.activities:
+        raise ValueError("Attraction still has activities")
     db.delete(attraction)
     db.commit()
+
+
+def activities_by_attraction(db: Session, attraction_id: int) -> list[Activity]:
+    """Return the activities of an attraction ordered by name."""
+    if db.get(Attraction, attraction_id) is None:
+        raise LookupError("Attraction not found")
+    return list(
+        db.scalars(
+            select(Activity).where(Activity.attraction_id == attraction_id).order_by(Activity.name)
+        )
+    )
+
+
+def activities_count_by_attractions(db: Session) -> list[tuple[Attraction, int]]:
+    """Return every attraction with its number of activities, including zero."""
+    rows = db.execute(
+        select(Attraction, func.count(Activity.id))
+        .outerjoin(Activity, Activity.attraction_id == Attraction.id)
+        .group_by(Attraction.id)
+        .order_by(Attraction.id)
+    )
+    return [(attraction, count) for attraction, count in rows]
