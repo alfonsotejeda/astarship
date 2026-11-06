@@ -7,7 +7,7 @@ import pytest
 from app.models.status import ItineraryStatus
 from app.schemas.activity_type import ActivityTypeCreate
 from app.schemas.category import CategoryCreate
-from app.schemas.itinerary import ItineraryCreate, ItineraryUpdate
+from app.schemas.itinerary import ItineraryCreate
 from app.schemas.package import PackageCreate
 from app.schemas.proportion_category import ProportionCategoryCreate
 from app.schemas.proportion_type import ProportionTypeCreate
@@ -49,9 +49,8 @@ def rc1_data(db_session, itinerary_owners):
             ),
         )
         if status is not None:
-            itinerary_service.update_itinerary(
-                db_session, itinerary, ItineraryUpdate(status=status)
-            )
+            itinerary.status = status
+            db_session.commit()
         return itinerary.id
 
     first = create(andes_id, gil_id, date(2026, 1, 10), 4)
