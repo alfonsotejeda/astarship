@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.category import Category
 from app.models.package import Package
 from app.models.user.admin import Admin
+from app.models.user.tourist import Tourist
 from app.models.user.user import User
 
 BASE = "/api/coverage"  # quita "/api" si tus otras rutas no lo usan
@@ -222,3 +223,36 @@ def test_delete_relation_unknown_category(client: TestClient, sample_data: dict)
     response = client.delete(f"{BASE}/rows/99999/{sample_data['pkg1'].id}")
 
     assert response.status_code == 404
+
+@pytest.fixture
+def tourist_id(db_session: Session) -> int:
+    """Create a tourist, who has no permission to change the relations."""
+    user = User(name="Tourist", email="tourist@test.com", password_hash="hash")
+    db_session.add(user)
+    db_session.flush()
+    db_session.add(Tourist(id=user.id, age=30))
+    db_session.flush()
+    return user.id
+
+
+def test_create_relation_requires_an_admin(
+    client: TestClient, as_user, tourist_id: int, sample_data: dict
+) -> None:
+    """Only an admin can link a category to a package."""
+    with as_user(tourist_id):
+        response = link(client, sample_data["cat1"], sample_data["pkg1"])
+
+    assert response.status_code == 403
+
+
+def test_delete_relation_requires_an_admin(
+    client: TestClient, as_user, tourist_id: int, sample_data: dict
+) -> None:
+    """Only an admin can unlink a category from a package."""
+    cat, pkg = sample_data["cat1"], sample_data["pkg1"]
+    link(client, cat, pkg)
+
+    with as_user(tourist_id):
+        response = client.delete(f"{BASE}/rows/{cat.id}/{pkg.id}")
+
+    assert response.status_code == 403

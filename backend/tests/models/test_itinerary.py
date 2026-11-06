@@ -16,5 +16,18 @@ def test_expected_columns():
         "activity_count",
         "status",
         "package_id",
-        "creator_id",
+        "guide_id",
     }
+
+
+def test_foreign_keys():
+    targets = {fk.target_fullname for fk in Itinerary.__table__.foreign_keys}
+
+    assert targets == {"packages.id", "guides.id"}
+
+
+def test_package_and_guide_are_not_nullable():
+    columns = Itinerary.__table__.c
+
+    assert not columns.package_id.nullable
+    assert not columns.guide_id.nullable

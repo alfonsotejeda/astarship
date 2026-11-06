@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import require_admin
 from app.db.session import get_db
 from app.models.coverage import Coverage
 from app.models.category import Category
@@ -33,7 +34,12 @@ def get_packages_by_category(category_id: int, db: Session = Depends(get_db)) ->
 def get_relations(db: Session = Depends(get_db)) -> list[Coverage]:
     return cp_sv.get_relations(db)
 
-@router.post("/create_rows", response_model=CoverageRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/create_rows",
+    response_model=CoverageRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
+)
 def post_create_rows(data: CoverageCreate, db: Session = Depends(get_db)) -> Coverage:
     try:
         return cp_sv.create_relation(data, db)
@@ -42,7 +48,11 @@ def post_create_rows(data: CoverageCreate, db: Session = Depends(get_db)) -> Cov
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
     
-@router.delete("/rows/{category_id}/{package_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/rows/{category_id}/{package_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin)],
+)
 def delete_relations(category_id: int, package_id: int, db: Session = Depends(get_db)) -> None:
     try:
         cp_sv.delete_relation(category_id, package_id, db)
