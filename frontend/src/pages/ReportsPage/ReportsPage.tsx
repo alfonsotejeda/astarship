@@ -1,7 +1,21 @@
-import { useParams } from "react-router";
+import type { ComponentType } from "react";
+import { Navigate, useParams } from "react-router";
+import { findReport } from "./reports";
+import type { ReportKey } from "./reports";
+import { Rc1 } from "./reports/Rc1";
+import { PendingReport } from "./ReportTemplate";
+import "./ReportsPage.css";
 
-// Placeholder: implemented in #105.
+// Each query (#106–#111) adds its report here, from reports/RcN.tsx built on ReportTemplate
+const REPORT_VIEWS: Partial<Record<ReportKey, ComponentType>> = { rc1: Rc1 };
+
 export function ReportsPage() {
   const { rc } = useParams();
-  return <h1>Reporte {rc?.toUpperCase()}</h1>;
+  const report = findReport(rc);
+
+  if (!report) return <Navigate to="/reports/rc1" replace />;
+
+  const View = REPORT_VIEWS[report.key];
+  // The key resets each report's filters when switching tabs
+  return View ? <View key={report.key} /> : <PendingReport rc={report.key} />;
 }
