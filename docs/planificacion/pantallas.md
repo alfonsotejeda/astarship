@@ -352,7 +352,7 @@ Siguen la convención actual de la API (recursos en inglés y en plural, como `/
 | Visits | `PUT /assignments/{itinerary_id}/{user_id}/visits/{activity_id}` `{status, rating, comment}` | P-12, P-14 |
 | Modification requests | `POST /modification-requests` · `GET /modification-requests?mine&status` · `PATCH /modification-requests/{id}` `{status, result, new_itinerary_id}` | P-06, P-15 |
 | Ratings | `GET /ratings?guide=me&package&effort` · `GET /me/ratings` (agrupadas por paquete) | P-07, P-16 |
-| Reports | `GET /reports/rc1` … `GET /reports/rc6` con los filtros de cada uno | P-22–P-27 |
+| Reports | ✅ `GET /reports/rc1?package_id&date_from&date_to&sort&order` · `GET /reports/rc2` … `GET /reports/rc6` con los filtros de cada uno | P-22–P-27 |
 
 El PDF se genera en el cliente con los datos ya cargados, así sale exactamente lo que se
 ve, en el orden elegido.
