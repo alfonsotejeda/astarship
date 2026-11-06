@@ -107,6 +107,25 @@ async def test_notification_has_the_error_type_route_and_message(webhook):
     assert "something broke" in content
 
 
+async def test_notification_title_marks_production_errors(webhook, monkeypatch):
+    monkeypatch.setattr(get_settings(), "environment", "production")
+
+    await errors.notify_error("GET", "/boom", RuntimeError("something broke"))
+
+    [request] = webhook
+    assert json.loads(request.content)["content"].startswith("**Error en producción**\n")
+
+
+async def test_notification_title_names_the_machine_outside_production(webhook, monkeypatch):
+    monkeypatch.setattr(get_settings(), "environment", "development")
+    monkeypatch.setattr(errors.socket, "gethostname", lambda: "alfonso-mac")
+
+    await errors.notify_error("GET", "/boom", RuntimeError("something broke"))
+
+    [request] = webhook
+    assert json.loads(request.content)["content"].startswith("**Error en local de alfonso-mac**\n")
+
+
 async def test_long_errors_fit_in_a_discord_message(webhook):
     await errors.notify_error("GET", "/boom", RuntimeError("x" * 5000))
 
