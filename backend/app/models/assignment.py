@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.models.modification_request import ModificationRequest
 from app.models.status import AssignmentStatus, status_enum
+from app.models.visit import Visit
 
 
 class Assignment(Base):
@@ -31,4 +32,9 @@ class Assignment(Base):
 
     modification_requests: Mapped[list[ModificationRequest]] = relationship(
         cascade="all, delete-orphan"
+    )
+    visits: Mapped[list["Visit"]] = relationship(
+        back_populates="assignment",
+        passive_deletes=True,
+        overlaps="itinerary_composition",
     )
