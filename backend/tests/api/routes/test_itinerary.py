@@ -5,10 +5,14 @@ import pytest
 from app.models.status import ItineraryStatus, ReviewStatus
 from app.schemas.activity import ActivityCreate, ActivityUpdate
 from app.schemas.activity_type import ActivityTypeCreate
+from app.schemas.attraction import AttractionCreate
 from app.schemas.category import CategoryCreate
+from app.schemas.user import GuideCreate
 from app.services import activity as activity_service
 from app.services import activity_type as activity_type_service
+from app.services import attraction as attraction_service
 from app.services import category as category_service
+from app.services import user as user_service
 
 
 def _create_guide(client, email="gil@example.com") -> int:
@@ -41,7 +45,7 @@ def _authorize(client, package_id, guide_id, can_generate=True) -> None:
 
 
 def _create_activity(
-    db_session, name, type_code, category_id, effort_level, duration, approved=True
+    db_session, authors, name, type_code, category_id, effort_level, duration, approved=True
 ) -> int:
     activity = activity_service.create_activity(
         db_session,
@@ -51,6 +55,7 @@ def _create_activity(
             duration=duration,
             activity_type_code=type_code,
             category_id=category_id,
+            **authors,
         ),
     )
     if approved:
@@ -70,6 +75,24 @@ def admin_id(client):
 
 
 @pytest.fixture
+def authors(db_session):
+    """Guide and attraction that every candidate activity needs."""
+    guide = user_service.create_user(
+        db_session,
+        GuideCreate(
+            name="Author", role="guide", email="author@example.com", password="x", specialty="Art"
+        ),
+    )
+    attraction = attraction_service.create_attraction(
+        db_session,
+        AttractionCreate(
+            name="Malecón", address="Av. del Puerto", latitude=23.14, longitude=-82.36
+        ),
+    )
+    return {"guide_id": guide.id, "attraction_id": attraction.id}
+
+
+@pytest.fixture
 def categories(db_session):
     """Ids of the categories of the candidate activities, by name."""
     return {
@@ -79,7 +102,7 @@ def categories(db_session):
 
 
 @pytest.fixture
-def activities(db_session, categories):
+def activities(db_session, categories, authors):
     """Ids of approved candidate activities, by name."""
     for code in ("walk", "show"):
         activity_type_service.create_activity_type(
@@ -87,11 +110,11 @@ def activities(db_session, categories):
         )
     culture, food = categories["Culture"], categories["Food"]
     return {
-        "Museum": _create_activity(db_session, "Museum", "walk", culture, 2, 90),
-        "Hike": _create_activity(db_session, "Hike", "walk", culture, 5, 120),
-        "Tasting": _create_activity(db_session, "Tasting", "show", food, 1, 60),
-        "Concert": _create_activity(db_session, "Concert", "show", culture, 1, 120),
-        "Market": _create_activity(db_session, "Market", "walk", food, 3, 60),
+        "Museum": _create_activity(db_session, authors, "Museum", "walk", culture, 2, 90),
+        "Hike": _create_activity(db_session, authors, "Hike", "walk", culture, 5, 120),
+        "Tasting": _create_activity(db_session, authors, "Tasting", "show", food, 1, 60),
+        "Concert": _create_activity(db_session, authors, "Concert", "show", culture, 1, 120),
+        "Market": _create_activity(db_session, authors, "Market", "walk", food, 3, 60),
     }
 
 
@@ -235,8 +258,12 @@ def test_create_itinerary_returns_404_when_activity_missing(generate):
     assert generate(candidate_ids=[999]).status_code == 404
 
 
-def test_create_itinerary_returns_409_when_activity_not_approved(db_session, generate):
-    pending_id = _create_activity(db_session, "Cave", "walk", None, 4, 60, approved=False)
+def test_create_itinerary_returns_409_when_activity_not_approved(
+    db_session, authors, categories, generate
+):
+    pending_id = _create_activity(
+        db_session, authors, "Cave", "walk", categories["Culture"], 4, 60, approved=False
+    )
 
     assert generate(candidate_ids=[pending_id]).status_code == 409
 
@@ -257,8 +284,14 @@ def test_create_itinerary_returns_422_with_more_days_than_activities(generate):
     assert generate(days=5).status_code == 422
 
 
-def test_create_itinerary_returns_422_when_a_day_overflows(db_session, generate):
-    long_ids = [_create_activity(db_session, f"Trek {n}", "walk", None, 5, 600) for n in range(2)]
+def test_create_itinerary_returns_422_when_a_day_overflows(
+    db_session, authors, categories, generate
+):
+    culture = categories["Culture"]
+    long_ids = [
+        _create_activity(db_session, authors, f"Trek {n}", "walk", culture, 5, 600)
+        for n in range(2)
+    ]
 
     response = generate(days=1, activity_count=2, candidate_ids=long_ids)
 

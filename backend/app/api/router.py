@@ -7,6 +7,7 @@ from app.api.routes import (
     activity,
     activity_type,
     assignment,
+    attraction,
     auth,
     authorization,
     category,
@@ -46,6 +47,7 @@ api_router.include_router(proportion_type.router, dependencies=authenticated)
 api_router.include_router(itinerary_composition.router, dependencies=authenticated)
 api_router.include_router(membership.router, dependencies=authenticated)
 api_router.include_router(authorization.router, dependencies=authenticated)
+api_router.include_router(attraction.router, dependencies=authenticated)
 api_router.include_router(itinerary_validation.router, dependencies=authenticated)
 api_router.include_router(itinerary_approval.router, dependencies=authenticated)
 api_router.include_router(report.router, dependencies=authenticated)
