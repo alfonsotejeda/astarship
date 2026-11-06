@@ -1,6 +1,7 @@
 """Handling of the exceptions that no endpoint handles."""
 
 import logging
+import socket
 import traceback
 
 import httpx
@@ -18,11 +19,16 @@ _MAX_TRACEBACK_LENGTH = 1500
 
 async def notify_error(method: str, path: str, exc: Exception) -> None:
     """Post the error to the configured webhook; a failure is logged and never raised."""
-    webhook_url = get_settings().error_webhook_url
+    settings = get_settings()
+    webhook_url = settings.error_webhook_url
     if not webhook_url:
         return
     trace = "".join(traceback.format_exception(exc))[-_MAX_TRACEBACK_LENGTH:]
-    text = f"**{type(exc).__name__}** en `{method} {path}`\n```\n{trace}\n```"
+    if settings.environment == "production":
+        title = "Error en producción"
+    else:
+        title = f"Error en local de {socket.gethostname()}"
+    text = f"**{title}**\n**{type(exc).__name__}** en `{method} {path}`\n```\n{trace}\n```"
     try:
         async with httpx.AsyncClient(timeout=5) as client:
             response = await client.post(webhook_url, json={"content": text})
