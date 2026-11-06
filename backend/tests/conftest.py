@@ -15,6 +15,7 @@ from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from app.models.status import ItineraryStatus
 from app.models.user.admin import Admin
 from app.models.user.user import User
 from app.schemas.authorization import AuthorizationUpsert
@@ -111,10 +112,13 @@ def itinerary_owners(db_session: Session) -> dict[str, int]:
 def create_itinerary(db_session: Session, itinerary_owners) -> Callable[..., int]:
     """Return a function that stores an itinerary of the authorized guide and returns its id."""
 
-    def create(activity_count: int = 2) -> int:
+    def create(activity_count: int = 2, status: ItineraryStatus = ItineraryStatus.PENDING) -> int:
         data = ItineraryCreate(
             creation_date=date(2026, 1, 1), activity_count=activity_count, **itinerary_owners
         )
-        return itinerary_service.create_itinerary(db_session, data).id
+        itinerary = itinerary_service.create_itinerary(db_session, data)
+        itinerary.status = status
+        db_session.commit()
+        return itinerary.id
 
     return create

@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.models.status import ReviewStatus
+from app.models.status import ItineraryStatus, ReviewStatus
 from app.schemas.activity import ActivityCreate, ActivityUpdate
 from app.schemas.activity_type import ActivityTypeCreate
 from app.schemas.category import CategoryCreate
@@ -280,13 +280,22 @@ def test_get_itinerary_returns_404_when_missing(client):
     assert response.status_code == 404
 
 
-def test_update_itinerary_changes_status(client, create_itinerary):
+def test_update_itinerary_changes_activity_count(client, create_itinerary):
     itinerary_id = create_itinerary()
 
-    response = client.patch(f"/api/itineraries/{itinerary_id}", json={"status": "validated"})
+    response = client.patch(f"/api/itineraries/{itinerary_id}", json={"activity_count": 3})
 
     assert response.status_code == 200
-    assert response.json()["status"] == "validated"
+    assert response.json()["activity_count"] == 3
+
+
+def test_update_itinerary_does_not_change_status(client, create_itinerary):
+    itinerary_id = create_itinerary()
+
+    response = client.patch(f"/api/itineraries/{itinerary_id}", json={"status": "approved"})
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "pending"
 
 
 def test_update_itinerary_returns_403_for_another_guide(client, as_user, create_itinerary):
@@ -294,7 +303,7 @@ def test_update_itinerary_returns_403_for_another_guide(client, as_user, create_
     other_guide_id = _create_guide(client, email="gus@example.com")
 
     with as_user(other_guide_id):
-        response = client.patch(f"/api/itineraries/{itinerary_id}", json={"status": "validated"})
+        response = client.patch(f"/api/itineraries/{itinerary_id}", json={"activity_count": 3})
 
     assert response.status_code == 403
 
@@ -320,11 +329,68 @@ def test_delete_itinerary_returns_403_for_guide(
 
 
 def test_list_itineraries_filters_by_status(client, create_itinerary):
-    validated_id = create_itinerary()
+    validated_id = create_itinerary(status=ItineraryStatus.VALIDATED)
     create_itinerary()
-    client.patch(f"/api/itineraries/{validated_id}", json={"status": "validated"})
 
     response = client.get("/api/itineraries", params={"status": "validated"})
 
     assert response.status_code == 200
     assert [i["id"] for i in response.json()] == [validated_id]
+
+
+def test_review_queue_of_a_validator_guide_lists_pending_itineraries(
+    client, as_user, itinerary_owners, create_itinerary
+):
+    pending_id = create_itinerary()
+    create_itinerary(status=ItineraryStatus.VALIDATED)
+    reviewer_id = _create_guide(client, email="gus@example.com")
+    client.put(
+        f"/api/authorizations/packages/{itinerary_owners['package_id']}/guides/{reviewer_id}",
+        json={"can_generate": False, "can_validate": True},
+    )
+
+    with as_user(reviewer_id):
+        response = client.get("/api/itineraries/review-queue")
+
+    assert response.status_code == 200
+    assert [i["id"] for i in response.json()] == [pending_id]
+
+
+def test_review_queue_of_a_guide_without_can_validate_is_empty(
+    client, as_user, itinerary_owners, create_itinerary
+):
+    create_itinerary()
+
+    with as_user(itinerary_owners["guide_id"]):
+        response = client.get("/api/itineraries/review-queue")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_review_queue_of_a_manager_lists_validated_itineraries(
+    client, as_user, create_itinerary
+):
+    create_itinerary()
+    validated_id = create_itinerary(status=ItineraryStatus.VALIDATED)
+    manager_id = client.post(
+        "/api/users",
+        json={
+            "name": "Olga",
+            "role": "operations_manager",
+            "email": "olga@example.com",
+            "password": "x",
+        },
+    ).json()["id"]
+
+    with as_user(manager_id):
+        response = client.get("/api/itineraries/review-queue")
+
+    assert response.status_code == 200
+    assert [i["id"] for i in response.json()] == [validated_id]
+
+
+def test_review_queue_returns_403_for_admin(client):
+    response = client.get("/api/itineraries/review-queue")
+
+    assert response.status_code == 403

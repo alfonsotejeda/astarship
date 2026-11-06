@@ -5,7 +5,6 @@ from datetime import date
 import pytest
 from pydantic import ValidationError
 
-from app.models.status import ItineraryStatus
 from app.schemas.itinerary import ItineraryCreate, ItineraryGenerate, ItineraryUpdate
 
 
@@ -26,10 +25,16 @@ def test_create_accepts_valid_data():
 
 
 def test_update_allows_partial_data():
-    update = ItineraryUpdate(status="validated")
+    update = ItineraryUpdate(activity_count=3)
 
-    assert update.status is ItineraryStatus.VALIDATED
-    assert update.activity_count is None
+    assert update.activity_count == 3
+    assert update.creation_date is None
+
+
+def test_update_ignores_the_status():
+    update = ItineraryUpdate(status="approved")
+
+    assert "status" not in update.model_dump()
 
 
 def _generate(**overrides) -> ItineraryGenerate:
