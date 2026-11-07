@@ -12,11 +12,11 @@ from app.models.user.admin import Admin
 from app.models.user.user import User
 
 
-def _add_participants(db_session) -> tuple[Activity, Admin]:
-    activity = Activity(name="Hiking", effort_level=3)
+def _add_participants(db_session, insert_activity) -> tuple[Activity, Admin]:
+    activity = insert_activity()
     user = User(name="Ana", email="ana@example.com", password_hash="x")
     user.admin = Admin()
-    db_session.add_all([activity, user])
+    db_session.add(user)
     db_session.flush()
     return activity, user.admin
 
@@ -50,8 +50,8 @@ def test_result_is_required_and_observations_are_optional():
     assert columns.observations.nullable
 
 
-def test_date_defaults_to_now(db_session):
-    activity, admin = _add_participants(db_session)
+def test_date_defaults_to_now(db_session, insert_activity):
+    activity, admin = _add_participants(db_session, insert_activity)
     before = datetime.now(UTC).replace(tzinfo=None) - timedelta(seconds=1)
     validation = ActivityValidation(
         activity_id=activity.id, admin_id=admin.id, result=ValidationResult.APPROVED
@@ -62,8 +62,8 @@ def test_date_defaults_to_now(db_session):
     assert validation.validation_date.replace(tzinfo=None) >= before
 
 
-def test_same_pair_can_validate_at_different_moments(db_session):
-    activity, admin = _add_participants(db_session)
+def test_same_pair_can_validate_at_different_moments(db_session, insert_activity):
+    activity, admin = _add_participants(db_session, insert_activity)
     first = datetime(2026, 1, 1, tzinfo=UTC)
     db_session.add_all(
         ActivityValidation(
@@ -78,8 +78,8 @@ def test_same_pair_can_validate_at_different_moments(db_session):
     db_session.flush()
 
 
-def test_same_pair_at_the_same_moment_is_rejected(db_session):
-    activity, admin = _add_participants(db_session)
+def test_same_pair_at_the_same_moment_is_rejected(db_session, insert_activity):
+    activity, admin = _add_participants(db_session, insert_activity)
     moment = datetime(2026, 1, 1, tzinfo=UTC)
     db_session.add_all(
         ActivityValidation(
@@ -95,8 +95,8 @@ def test_same_pair_at_the_same_moment_is_rejected(db_session):
         db_session.flush()
 
 
-def test_unknown_result_is_rejected(db_session):
-    activity, admin = _add_participants(db_session)
+def test_unknown_result_is_rejected(db_session, insert_activity):
+    activity, admin = _add_participants(db_session, insert_activity)
     db_session.add(
         ActivityValidation(activity_id=activity.id, admin_id=admin.id, result="pending")
     )
@@ -105,8 +105,8 @@ def test_unknown_result_is_rejected(db_session):
         db_session.flush()
 
 
-def test_deleting_the_activity_deletes_its_validations(db_session):
-    activity, admin = _add_participants(db_session)
+def test_deleting_the_activity_deletes_its_validations(db_session, insert_activity):
+    activity, admin = _add_participants(db_session, insert_activity)
     db_session.add(
         ActivityValidation(
             activity_id=activity.id, admin_id=admin.id, result=ValidationResult.APPROVED

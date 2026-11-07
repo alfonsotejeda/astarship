@@ -1,6 +1,16 @@
 """Tests for the Activity model."""
 
+import pytest
+from sqlalchemy import UniqueConstraint
+
 from app.models.activity import Activity
+
+FOREIGN_KEYS = {
+    "activity_type_code": "activity_types.code",
+    "category_id": "categories.id",
+    "guide_id": "guides.id",
+    "attraction_id": "attractions.id",
+}
 
 
 def test_table_name():
@@ -14,9 +24,39 @@ def test_expected_columns():
         "id",
         "name",
         "effort_level",
+        "duration",
         "status",
         "creation_date",
         "activity_type_code",
         "category_id",
-        "user_id",
+        "guide_id",
+        "attraction_id",
+    }
+
+
+@pytest.mark.parametrize("column, target", FOREIGN_KEYS.items())
+def test_foreign_key_targets(column, target):
+    (fk,) = Activity.__table__.c[column].foreign_keys
+
+    assert fk.target_fullname == target
+
+
+@pytest.mark.parametrize("column", FOREIGN_KEYS)
+def test_foreign_keys_restrict_delete_and_cascade_update(column):
+    (fk,) = Activity.__table__.c[column].foreign_keys
+
+    assert fk.ondelete == "RESTRICT"
+    assert fk.onupdate == "CASCADE"
+
+
+@pytest.mark.parametrize("column", FOREIGN_KEYS)
+def test_foreign_keys_are_required(column):
+    assert Activity.__table__.c[column].nullable is False
+
+
+def test_name_is_unique_per_attraction():
+    uniques = [c for c in Activity.__table__.constraints if isinstance(c, UniqueConstraint)]
+
+    assert {frozenset(col.name for col in c.columns) for c in uniques} == {
+        frozenset({"name", "attraction_id"})
     }

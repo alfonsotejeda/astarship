@@ -1,10 +1,6 @@
 """Tests for the activity validation routes."""
 
 
-def _create_activity(client, name="Hiking") -> int:
-    return client.post("/api/activities", json={"name": name, "effort_level": 3}).json()["id"]
-
-
 def _create_admin(client, email="ana@example.com") -> int:
     return client.post(
         "/api/users",
@@ -19,8 +15,8 @@ def _validate(client, activity_id, admin_id, result="approved", **fields):
     )
 
 
-def test_create_validation_returns_201(client):
-    activity_id = _create_activity(client)
+def test_create_validation_returns_201(client, insert_activity):
+    activity_id = insert_activity().id
     admin_id = _create_admin(client)
 
     response = _validate(client, activity_id, admin_id, observations="Not a duplicate")
@@ -34,8 +30,8 @@ def test_create_validation_returns_201(client):
     assert body["validation_date"]
 
 
-def test_create_validation_observations_are_optional(client):
-    activity_id = _create_activity(client)
+def test_create_validation_observations_are_optional(client, insert_activity):
+    activity_id = insert_activity().id
     admin_id = _create_admin(client)
 
     response = _validate(client, activity_id, admin_id)
@@ -44,8 +40,8 @@ def test_create_validation_observations_are_optional(client):
     assert response.json()["observations"] is None
 
 
-def test_approving_sets_the_activity_status_to_approved(client):
-    activity_id = _create_activity(client)
+def test_approving_sets_the_activity_status_to_approved(client, insert_activity):
+    activity_id = insert_activity().id
     admin_id = _create_admin(client)
 
     _validate(client, activity_id, admin_id, "approved")
@@ -53,8 +49,8 @@ def test_approving_sets_the_activity_status_to_approved(client):
     assert client.get(f"/api/activities/{activity_id}").json()["status"] == "approved"
 
 
-def test_rejecting_sets_the_activity_status_to_rejected(client):
-    activity_id = _create_activity(client)
+def test_rejecting_sets_the_activity_status_to_rejected(client, insert_activity):
+    activity_id = insert_activity().id
     admin_id = _create_admin(client)
 
     _validate(client, activity_id, admin_id, "rejected", observations="Duplicate of #3")
@@ -62,8 +58,8 @@ def test_rejecting_sets_the_activity_status_to_rejected(client):
     assert client.get(f"/api/activities/{activity_id}").json()["status"] == "rejected"
 
 
-def test_latest_validation_decides_the_activity_status(client):
-    activity_id = _create_activity(client)
+def test_latest_validation_decides_the_activity_status(client, insert_activity):
+    activity_id = insert_activity().id
     admin_id = _create_admin(client)
     _validate(client, activity_id, admin_id, "rejected")
 
@@ -80,8 +76,8 @@ def test_create_validation_returns_404_when_activity_missing(client):
     assert response.status_code == 404
 
 
-def test_create_validation_returns_404_when_admin_missing(client):
-    activity_id = _create_activity(client)
+def test_create_validation_returns_404_when_admin_missing(client, insert_activity):
+    activity_id = insert_activity().id
 
     response = _validate(client, activity_id, 999999)
 
@@ -89,8 +85,8 @@ def test_create_validation_returns_404_when_admin_missing(client):
     assert client.get(f"/api/activities/{activity_id}").json()["status"] == "pending"
 
 
-def test_create_validation_returns_404_when_user_is_not_an_admin(client):
-    activity_id = _create_activity(client)
+def test_create_validation_returns_404_when_user_is_not_an_admin(client, insert_activity):
+    activity_id = insert_activity().id
     tourist_id = client.post(
         "/api/users",
         json={
@@ -107,8 +103,8 @@ def test_create_validation_returns_404_when_user_is_not_an_admin(client):
     assert response.status_code == 404
 
 
-def test_create_validation_returns_422_for_unknown_result(client):
-    activity_id = _create_activity(client)
+def test_create_validation_returns_422_for_unknown_result(client, insert_activity):
+    activity_id = insert_activity().id
     admin_id = _create_admin(client)
 
     response = _validate(client, activity_id, admin_id, "pending")
@@ -117,8 +113,8 @@ def test_create_validation_returns_422_for_unknown_result(client):
     assert client.get(f"/api/activities/{activity_id}").json()["status"] == "pending"
 
 
-def test_list_validations_returns_empty_list_for_a_new_activity(client):
-    activity_id = _create_activity(client)
+def test_list_validations_returns_empty_list_for_a_new_activity(client, insert_activity):
+    activity_id = insert_activity().id
 
     response = client.get(f"/api/activities/{activity_id}/validations")
 
@@ -126,8 +122,8 @@ def test_list_validations_returns_empty_list_for_a_new_activity(client):
     assert response.json() == []
 
 
-def test_list_validations_returns_the_most_recent_first(client):
-    activity_id = _create_activity(client)
+def test_list_validations_returns_the_most_recent_first(client, insert_activity):
+    activity_id = insert_activity().id
     admin_id = _create_admin(client)
     _validate(client, activity_id, admin_id, "rejected")
     _validate(client, activity_id, admin_id, "approved")
@@ -138,9 +134,9 @@ def test_list_validations_returns_the_most_recent_first(client):
     assert [v["result"] for v in response.json()] == ["approved", "rejected"]
 
 
-def test_list_validations_only_returns_those_of_the_activity(client):
-    first = _create_activity(client, "Hiking")
-    second = _create_activity(client, "Museum")
+def test_list_validations_only_returns_those_of_the_activity(client, insert_activity):
+    first = insert_activity("Hiking").id
+    second = insert_activity("Museum").id
     admin_id = _create_admin(client)
     _validate(client, first, admin_id)
     _validate(client, second, admin_id, "rejected")
@@ -156,8 +152,8 @@ def test_list_validations_returns_404_when_activity_missing(client):
     assert response.status_code == 404
 
 
-def test_deleting_an_activity_removes_its_validations(client):
-    activity_id = _create_activity(client)
+def test_deleting_an_activity_removes_its_validations(client, insert_activity):
+    activity_id = insert_activity().id
     admin_id = _create_admin(client)
     _validate(client, activity_id, admin_id)
 

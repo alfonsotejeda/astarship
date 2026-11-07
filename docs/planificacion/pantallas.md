@@ -114,8 +114,25 @@ src/
 ├── pages/        una carpeta por página (§5.1): ActivitiesPage/, ItinerariesPage/, TripPage/…
 ├── hooks/        hooks compartidos (useMediaQuery…)
 ├── lib/          cliente de la API, hooks de react-query, exportar PDF, formato de fechas y números
+│   └── api/        un archivo por recurso (packages.ts, activities.ts…): tipos del contrato, llamadas y hooks
+├── mocks/        backend falso mientras no existan los endpoints de §6
+│   ├── data/       las «tablas» de ejemplo, sacadas de los artboards
+│   ├── handlers/   un archivo por recurso con sus rutas (`GET /packages`…)
+│   └── router.ts   reúne los handlers; `request()` lo usa si `VITE_USE_MOCKS=true`
 └── styles/       tokens.css (copiado del Design System), index.css
 ```
+
+**Datos de las páginas:** una página nunca trae datos escritos a mano. Pide todo con los
+hooks de `lib/api/<recurso>.ts`, cuyos tipos siguen la respuesta del backend (snake_case).
+Mientras el endpoint no exista, se añade su handler en `mocks/handlers/` con los datos del
+artboard en `mocks/data/`. Con `VITE_USE_MOCKS=true` (por defecto en `.env.development`) la
+app responde desde ahí; cuando el backend lo implemente, se pone a `false` y la página no cambia.
+
+Los permisos (qué ve cada rol, quién puede validar) los aplica la API, no la página: la
+respuesta ya trae lo que el usuario puede ver y campos como `is_mine` o `review`. En los
+mocks, el login de demostración guarda el token `mock-<id>` y el router lo usa para saber
+quién pide. Lo que comparten varias páginas sobre un mismo dominio (estados, paradas,
+criterios, PDF de un itinerario) va en `lib/<dominio>.ts`, como `lib/itinerary.ts`.
 
 **Convenciones:**
 - Los colores, espacios y radios **siempre** con las variables de `tokens.css`, nunca un hex suelto.
@@ -209,19 +226,22 @@ pantalla. Las rutas no llevan prefijo de rol: el rol sale de la sesión.
 | Página | Ruta | Pantallas | Roles | Navegación interna | Issue |
 |---|---|---|---|---|---|
 | LoginPage | `/login` | P-01 | — | — | #95 |
-| ActivitiesPage | `/actividades` | P-02 · P-21 | guía, admin | pestaña «Duplicados» para el admin; panel lateral de alta | #96 |
-| GeneratorPage | `/itinerarios/nuevo` | P-03 | guía | parámetros → candidatas → resultado | #97 |
-| ItinerariesPage | `/itinerarios` · `/itinerarios/:id` | P-04 · P-08 · P-10 · P-05 · P-09 | guía, jefe | pestañas «Por revisar / Todos / Míos / De otros»; el detalle muestra ReviewPanel solo al jefe | #98 |
-| PackagesPage | `/paquetes` | P-17 · P-28 · P-29 | admin, guía, jefe | panel lateral; acciones según permisos | #99 |
-| RequestsPage | `/solicitudes` | P-06 · P-15 | guía, turista | el guía atiende y registra el resultado; el turista crea y sigue | #100 |
-| RatingsPage | `/valoraciones` | P-07 · P-16 | guía, turista | el guía ve sus actividades; el turista, las suyas por paquete | #101 |
-| TripPage | `/viaje/hoy` · `/viaje/itinerarios` · `/viaje/itinerarios/:id/valorar` | P-12 · P-13 · P-14 | turista | subrutas | #102 |
-| PeoplePage | `/personas` | P-18 · P-19 | admin | pestañas «Guías y permisos / Turistas y grupos» | #103 |
-| AssignmentsPage | `/asignaciones` | P-20 | admin | — | #104 |
-| ReportsPage | `/reportes/:rc` | P-22–P-27 · P-11 | todos | pestañas RC-1 a RC-6 | #105 (+ #106–#111) |
+| ActivitiesPage | `/activities` · `/activities/duplicates` | P-02 · P-21 | guía, admin | pestaña «Duplicados» para el admin; panel lateral de alta | #96 |
+| AttractionsPage | `/attractions` · `/attractions/:id` | — | todos | listado con mapa y ficha; el guía da de alta, el admin edita y borra | [revisión §2](revision-frontend.md#2-atracciones) |
+| GeneratorPage | `/itineraries/new` | P-03 | guía | parámetros → candidatas → resultado | #97 |
+| ItinerariesPage | `/itineraries` · `/itineraries/:id` | P-04 · P-08 · P-10 · P-05 · P-09 | guía, jefe | pestañas «Por revisar / Todos / Míos / De otros» (`?tab=review\|all\|mine\|others`); el detalle muestra ReviewPanel solo al jefe | #98 |
+| PackagesPage | `/packages` | P-17 · P-28 · P-29 | admin, guía, jefe | panel lateral; acciones según permisos | #99 |
+| RequestsPage | `/requests` | P-06 · P-15 | guía, turista | el guía atiende y registra el resultado; el turista crea y sigue | #100 |
+| RatingsPage | `/ratings` | P-07 · P-16 | guía, turista | el guía ve sus actividades; el turista, las suyas por paquete | #101 |
+| TripPage | `/trip/today` · `/trip/itineraries` · `/trip/itineraries/:id` · `/trip/itineraries/:id/rate` | P-12 · P-13 · P-14 | turista | subrutas | #102 |
+| CatalogPage | `/catalog` · `/catalog/:packageId` | — | turista | paquete → itinerarios → atracciones; «Seleccionar paquete» | [revisión §1](revision-frontend.md#1-catálogo-del-turista-y-reserva-de-paquetes) |
+| PeoplePage | `/people/guides` · `/people/tourists` | P-18 · P-19 | admin | pestañas «Guías y permisos / Turistas y grupos» | #103 |
+| AssignmentsPage | `/assignments` · `/assignments/pending` | P-20 | admin | pestañas «Por grupo / Pendientes» | #104 |
+| ReportsPage | `/reports/:rc` | P-22–P-27 · P-11 | todos | pestañas RC-1 a RC-6 | #105 (+ #106–#111) |
 
-Página inicial de cada rol: guía `/actividades`, jefe `/itinerarios`, turista `/viaje/hoy`,
-admin `/paquetes`.
+Página inicial de cada rol: guía `/activities`, jefe `/itineraries`, turista `/trip/today`,
+admin `/packages`. Las rutas están en inglés desde la [revisión del frontend](revision-frontend.md#4-rutas-en-inglés);
+cada ruta declara en `routes.tsx` los roles que pueden abrirla.
 
 ### 5.2 Pantallas
 
@@ -244,43 +264,43 @@ La columna *Artboard* es el título en el canvas (página del canvas → artboar
 
 | ID | Pantalla | Página · ruta | Artboard | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-02 | Banco de actividades | ActivitiesPage · `/actividades` | 2 · Guía → P-02 | Listado | FilterBar, DataTable, Field, Alert (duplicado) | RF-01–07, RN-01, RN-03 |
-| P-03 | Generar itinerario | GeneratorPage · `/itinerarios/nuevo` | 2 · Guía → P-03 | propia | ProportionInput, ChipSelect, ActivityRow, RouteTimeline, CriteriaCheck | RF-13–17 |
-| P-04 | Itinerarios del paquete | ItinerariesPage · `/itinerarios` | 2 · Guía → P-04 | Listado | Tabs (míos / de otros), DataTable, EffortSplit | RF-18 |
-| P-05 | Detalle de itinerario | ItinerariesPage · `/itinerarios/:id` | (= P-09 sin ReviewPanel) | Detalle | Tabs, RouteTimeline, ChartPanel, CriteriaCheck | RF-16, RF-21 |
-| P-28 | Paquetes | PackagesPage · `/paquetes` | 2 · Guía → P-28 | Listado | DataTable con «Tus permisos», panel de edición o solo lectura | RF-08, §2.1 |
-| P-06 | Solicitudes de modificación | RequestsPage · `/solicitudes` | 2 · Guía → P-06 | propia | Tabs, RequestCard, Field, Checkbox | RF-30, RF-31, RN-08 |
-| P-07 | Valoraciones | RatingsPage · `/valoraciones` | 2 · Guía → P-07 | Listado | StatTile, DataTable, Rating | RF-27 |
+| P-02 | Banco de actividades | ActivitiesPage · `/activities` | 2 · Guía → P-02 | Listado | FilterBar, DataTable, Field, Alert (duplicado) | RF-01–07, RN-01, RN-03 |
+| P-03 | Generar itinerario | GeneratorPage · `/itineraries/new` | 2 · Guía → P-03 | propia | ProportionInput, ChipSelect, ActivityRow, RouteTimeline, CriteriaCheck | RF-13–17 |
+| P-04 | Itinerarios del paquete | ItinerariesPage · `/itineraries` | 2 · Guía → P-04 | Listado | Tabs (míos / de otros), DataTable, EffortSplit | RF-18 |
+| P-05 | Detalle de itinerario | ItinerariesPage · `/itineraries/:id` | (= P-09 sin ReviewPanel) | Detalle | Tabs, RouteTimeline, ChartPanel, CriteriaCheck | RF-16, RF-21 |
+| P-28 | Paquetes | PackagesPage · `/packages` | 2 · Guía → P-28 | Listado | DataTable con «Tus permisos», panel de edición o solo lectura | RF-08, §2.1 |
+| P-06 | Solicitudes de modificación | RequestsPage · `/requests` | 2 · Guía → P-06 | propia | Tabs, RequestCard, Field, Checkbox | RF-30, RF-31, RN-08 |
+| P-07 | Valoraciones | RatingsPage · `/ratings` | 2 · Guía → P-07 | Listado | StatTile, DataTable, Rating | RF-27 |
 
 #### Jefe de operaciones
 
 | ID | Pantalla | Página · ruta | Artboard | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-08 | Por revisar | ItinerariesPage · `/itinerarios` (pestaña «Por revisar») | 3 · Jefe → P-08 | propia | ItineraryCard, DataTable | RF-19 |
-| P-09 | Revisar itinerario | ItinerariesPage · `/itinerarios/:id` | 3 · Jefe → P-09 | Detalle | RouteTimeline, ChartPanel, CriteriaCheck, ReviewPanel | RF-19–21, RN-07 |
-| P-10 | Itinerarios | ItinerariesPage · `/itinerarios` (pestaña «Todos») | (= P-04 sin «Míos») | Listado | DataTable | RF-19 |
-| P-29 | Paquetes por validar | PackagesPage · `/paquetes` | 3 · Jefe → P-29 | Listado | DataTable, lista de comprobación, «Validar paquete» / «Devolver» | §2.1, RN-09 |
-| P-11 | Mis validaciones | ReportsPage · `/reportes/rc3` (filtrado por el usuario) | (= RC-3) | Reporte | ver RC-3 | RC-3 |
+| P-08 | Por revisar | ItinerariesPage · `/itineraries` (pestaña «Por revisar») | 3 · Jefe → P-08 | propia | ItineraryCard, DataTable | RF-19 |
+| P-09 | Revisar itinerario | ItinerariesPage · `/itineraries/:id` | 3 · Jefe → P-09 | Detalle | RouteTimeline, ChartPanel, CriteriaCheck, ReviewPanel | RF-19–21, RN-07 |
+| P-10 | Itinerarios | ItinerariesPage · `/itineraries` (pestaña «Todos») | (= P-04 sin «Míos») | Listado | DataTable | RF-19 |
+| P-29 | Paquetes por validar | PackagesPage · `/packages` | 3 · Jefe → P-29 | Listado | DataTable, lista de comprobación, «Validar paquete» / «Devolver» | §2.1, RN-09 |
+| P-11 | Mis validaciones | ReportsPage · `/reports/rc3` (filtrado por el usuario) | (= RC-3) | Reporte | ver RC-3 | RC-3 |
 
 #### Turista
 
 | ID | Pantalla | Página · ruta | Artboard (ordenador · móvil) | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-12 | Hoy | TripPage · `/viaje/hoy` | 4 · Turista → P-12 · P-12 móvil · P-12 móvil oscuro | propia | RouteTimeline (modo turista), Skeleton, Alert, Toast, EffortSplit | RF-24, RF-25, RF-33, RNF-01 |
-| P-13 | Mis itinerarios | TripPage · `/viaje/itinerarios` | 4 · Turista → P-13 · P-13 móvil | propia | ItineraryCard, Rating | RF-24 |
-| P-14 | Valorar el viaje | TripPage · `/viaje/itinerarios/:id/valorar` | 4 · Turista → P-14 · P-14 móvil | propia | Rating, Field, EffortMeter | RF-26 |
-| P-15 | Pedir modificación | RequestsPage · `/solicitudes` | 4 · Turista → P-15 · P-15 móvil | propia | Field, ChipSelect, Checkbox, RequestCard | RF-29, RF-30 |
-| P-16 | Mis valoraciones | RatingsPage · `/valoraciones` | 4 · Turista → P-16 · P-16 móvil | Listado | StatTile, DataTable por paquete, Rating | RF-27, RF-28 |
+| P-12 | Hoy | TripPage · `/trip/today` | 4 · Turista → P-12 · P-12 móvil · P-12 móvil oscuro | propia | RouteTimeline (modo turista), Skeleton, Alert, Toast, EffortSplit | RF-24, RF-25, RF-33, RNF-01 |
+| P-13 | Mis itinerarios | TripPage · `/trip/itineraries` | 4 · Turista → P-13 · P-13 móvil | propia | ItineraryCard, Rating | RF-24 |
+| P-14 | Valorar el viaje | TripPage · `/trip/itineraries/:id/rate` | 4 · Turista → P-14 · P-14 móvil | propia | Rating, Field, EffortMeter | RF-26 |
+| P-15 | Pedir modificación | RequestsPage · `/requests` | 4 · Turista → P-15 · P-15 móvil | propia | Field, ChipSelect, Checkbox, RequestCard | RF-29, RF-30 |
+| P-16 | Mis valoraciones | RatingsPage · `/ratings` | 4 · Turista → P-16 · P-16 móvil | Listado | StatTile, DataTable por paquete, Rating | RF-27, RF-28 |
 
 #### Administrador
 
 | ID | Pantalla | Página · ruta | Artboard | Plantilla | Componentes clave | Requisitos |
 |---|---|---|---|---|---|---|
-| P-17 | Paquetes turísticos | PackagesPage · `/paquetes` | 5 · Administrador → P-17 | Listado | DataTable, ChipSelect, estado de validación y quién validó | RF-08 |
-| P-18 | Guías y permisos | PeoplePage · `/personas` (pestaña) | 5 · Administrador → P-18 | propia | matriz persona × paquete con 4 casillas (itinerarios: genera/valida; paquete: edita/valida) y «Crea paquetes» | RF-09, RF-11, RN-02, RN-10 |
-| P-19 | Turistas y grupos | PeoplePage · `/personas` (pestaña) | 5 · Administrador → P-19 | Listado | lista de grupos, DataTable | RF-10, RF-12 |
-| P-20 | Asignaciones | AssignmentsPage · `/asignaciones` | 5 · Administrador → P-20 | propia | Field, Checkbox, Alert, Dialog, ItineraryCard | RF-22, RF-23, RN-04 |
-| P-21 | Actividades duplicadas | ActivitiesPage · `/actividades` (pestaña «Duplicados») | 5 · Administrador → P-21 | propia | Tabs, comparación lado a lado, Button danger | RF-06, RN-03 |
+| P-17 | Paquetes turísticos | PackagesPage · `/packages` | 5 · Administrador → P-17 | Listado | DataTable, ChipSelect, estado de validación y quién validó | RF-08 |
+| P-18 | Guías y permisos | PeoplePage · `/people/guides` | 5 · Administrador → P-18 | propia | matriz persona × paquete con 4 casillas (itinerarios: genera/valida; paquete: edita/valida) y «Crea paquetes» | RF-09, RF-11, RN-02, RN-10 |
+| P-19 | Turistas y grupos | PeoplePage · `/people/tourists` | 5 · Administrador → P-19 | Listado | lista de grupos, DataTable | RF-10, RF-12 |
+| P-20 | Asignaciones | AssignmentsPage · `/assignments` | 5 · Administrador → P-20 | propia | Field, Checkbox, Alert, Dialog, ItineraryCard | RF-22, RF-23, RN-04 |
+| P-21 | Actividades duplicadas | ActivitiesPage · `/activities/duplicates` | 5 · Administrador → P-21 | propia | Tabs, comparación lado a lado, Button danger | RF-06, RN-03 |
 
 P-17, P-28 y P-29 son la misma PackagesPage: el admin ve todos los paquetes; el guía y el
 jefe, solo aquellos en los que tienen algún permiso, y las acciones dependen de esos
@@ -288,18 +308,18 @@ permisos. En el canvas es `AdminPaquetes.dc.html` con `role`.
 
 #### Reportes (todos los roles)
 
-ReportsPage `/reportes/:rc` con pestañas; cada reporte es una configuración de la
+ReportsPage `/reports/:rc` con pestañas; cada reporte es una configuración de la
 plantilla Reporte. En el canvas, RC-1 a RC-5 comparten `Reportes.dc.html` y RC-6 tiene
 artboard propio.
 
 | ID | Reporte | Ruta | Filtros | Gráfico | Tabla | Requisitos |
 |---|---|---|---|---|---|---|
-| P-22 | RC-1 Itinerarios generados | `/reportes/rc1` | paquete, fechas | apilado: creador × estado | ID, creador, fecha, parámetros, estado | RC-1 |
-| P-23 | RC-2 Actividades más utilizadas | `/reportes/rc2` | paquete, fechas | apilado: categoría × esfuerzo | actividad, categoría, tipo, esfuerzo, usos, % | RC-2 |
-| P-24 | RC-3 Validaciones por revisor | `/reportes/rc3` | revisor, fechas | agrupado: mes × aprobados/devueltos | ID, paquete, creador, fecha, resultado, observaciones | RC-3 |
-| P-25 | RC-4 Experiencia en un itinerario | `/reportes/rc4` | itinerario, grupo | agrupado: esfuerzo × satisfacción/abandono | actividad, esfuerzo, visitas, valoración, satisfacción, abandono | RC-4 |
-| P-26 | RC-5 Comparar paquetes | `/reportes/rc5` | conjunto, fechas | dos apilados: paquete × tipo y paquete × esfuerzo | itinerario, paquete, reparto, cobertura, esfuerzo alto, equilibrio | RC-5 |
-| P-27 | RC-6 Esfuerzo y valoración | `/reportes/rc6` | paquete, fechas | dispersión con tendencia + agrupado por paquete | top 10 de abandono; solicitantes frente a su grupo | RC-6 |
+| P-22 | RC-1 Itinerarios generados | `/reports/rc1` | paquete, fechas | apilado: creador × estado | ID, creador, fecha, parámetros, estado | RC-1 |
+| P-23 | RC-2 Actividades más utilizadas | `/reports/rc2` | paquete, fechas | apilado: categoría × esfuerzo | actividad, categoría, tipo, esfuerzo, usos, % | RC-2 |
+| P-24 | RC-3 Validaciones por revisor | `/reports/rc3` | revisor, fechas | agrupado: mes × aprobados/devueltos | ID, paquete, creador, fecha, resultado, observaciones | RC-3 |
+| P-25 | RC-4 Experiencia en un itinerario | `/reports/rc4` | itinerario, grupo | agrupado: esfuerzo × satisfacción/abandono | actividad, esfuerzo, visitas, valoración, satisfacción, abandono | RC-4 |
+| P-26 | RC-5 Comparar paquetes | `/reports/rc5` | conjunto, fechas | dos apilados: paquete × tipo y paquete × esfuerzo | itinerario, paquete, reparto, cobertura, esfuerzo alto, equilibrio | RC-5 |
+| P-27 | RC-6 Esfuerzo y valoración | `/reports/rc6` | paquete, fechas | dispersión con tendencia + agrupado por paquete | top 10 de abandono; solicitantes frente a su grupo | RC-6 |
 
 Todas las tablas ordenan por cualquier columna (RF-37) y exportan a PDF (RF-36).
 
@@ -317,13 +337,14 @@ Siguen la convención actual de la API (recursos en inglés y en plural, como `/
 | Permissions | ✅ `GET/POST/DELETE /permissions` (permisos de aplicación) | — |
 | Activities | ✅ CRUD `/activities` · filtros `?type&category&effort&author&q` | P-02, P-03 |
 | Duplicates | `GET /activities/duplicates` · `POST /activities/{id}/merge` `{into}` · `POST /activities/duplicates/{pair_id}/dismiss` | P-21 |
-| Attractions | CRUD `/attractions` · `GET /attractions/{id}/alternatives?activity&time` (Dijkstra tras Strategy, RF-33) | P-02, P-12 |
+| Attractions | CRUD `/attractions` (`POST` guía; `PATCH`/`DELETE` admin, 409 si tiene actividades) · `GET /attractions/{id}` con sus actividades y sus conexiones (RF-32) · `GET /attractions/{id}/alternatives?activity&time` (Dijkstra tras Strategy, RF-33) | P-02, P-12, AttractionsPage |
+| Catalog | `GET /catalog/packages` (paquetes validados con algún itinerario aprobado) · `GET /catalog/packages/{id}` (itinerarios aprobados y atracciones) | CatalogPage |
 | Catálogos | `GET /categories` · `GET /activity-types` | varias |
 | Packages | CRUD `/packages` (filtro `?mine` para ver solo los paquetes con permisos del usuario) · `PUT /packages/{id}/categories` | P-17, P-28, P-29 |
 | Permissions (matriz) | ✅ `/permissions` (CRUD de filas `Permission`) · `GET/PUT /permissions/{id}/packages` (ToPackage) · `GET/PUT /permissions/{id}/itineraries` (ToItinerary) · `GET/PUT /users/{id}/permissions` (Have) · `GET /permissions/matrix` (vista persona × paquete para P-18; 422 si un cambio viola RN-10) | P-18 |
 | Package validations | `POST /packages/{id}/validations` `{result, observations}` · `GET /packages/{id}/validations` | P-17, P-29 |
 | Travel groups | CRUD `/travel-groups` · `GET /travel-groups/{id}/members` | P-19, P-20 |
-| Bookings | `POST/DELETE /packages/{id}/bookings` | P-19 |
+| Bookings | `POST /packages/{id}/bookings` (el admin con `{tourist_id}`; el turista con `{requested_start_date, preferred_itinerary_id}`) · `PATCH /packages/{id}/bookings/{tourist_id}` `{status: cancelled}` (turista) o `{status: rejected, rejection_reason}` (admin) · `DELETE /packages/{id}/bookings/{tourist_id}` (admin) · `GET /me/bookings` · `GET /bookings?status=pending` (admin). Asignar el itinerario (`POST /itineraries/{id}/assignments`) pasa la reserva a `assigned` | P-19, P-20, CatalogPage, P-13 |
 | Itineraries | `GET /itineraries?package&creator&status` · `GET /itineraries/{id}` (días, parámetros, criterios) · `POST /itineraries/generate` (vista previa) · `POST /itineraries` · `POST /itineraries/{id}/submit` | P-03–P-05, P-08, P-10 |
 | Validations | `POST /itineraries/{id}/validations` `{result, observations}` · `GET /itineraries/{id}/validations` | P-09 |
 | Assignments | `POST /itineraries/{id}/assignments` `{user_ids}` (409 si hay asignación doble) · `GET /me/assignments` · `PATCH /assignments/{itinerary_id}/{user_id}` `{rating, comment}` | P-13, P-14, P-20 |
@@ -331,7 +352,7 @@ Siguen la convención actual de la API (recursos en inglés y en plural, como `/
 | Visits | `PUT /assignments/{itinerary_id}/{user_id}/visits/{activity_id}` `{status, rating, comment}` | P-12, P-14 |
 | Modification requests | `POST /modification-requests` · `GET /modification-requests?mine&status` · `PATCH /modification-requests/{id}` `{status, result, new_itinerary_id}` | P-06, P-15 |
 | Ratings | `GET /ratings?guide=me&package&effort` · `GET /me/ratings` (agrupadas por paquete) | P-07, P-16 |
-| Reports | `GET /reports/rc1` … `GET /reports/rc6` con los filtros de cada uno | P-22–P-27 |
+| Reports | ✅ `GET /reports/rc1?package_id&date_from&date_to&sort&order` · `GET /reports/rc2` … `GET /reports/rc6` con los filtros de cada uno | P-22–P-27 |
 
 El PDF se genera en el cliente con los datos ya cargados, así sale exactamente lo que se
 ve, en el orden elegido.

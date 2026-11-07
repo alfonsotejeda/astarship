@@ -3,21 +3,14 @@
 import pytest
 
 
-def _create_itinerary(client, owners) -> int:
-    return client.post(
-        "/api/itineraries",
-        json={"creation_date": "2026-01-01", "activity_count": 4, **owners},
-    ).json()["id"]
-
-
 def _create_activity_type(client, code="visit") -> str:
     return client.post(
         "/api/activity-types", json={"code": code, "name": code.title()}
     ).json()["code"]
 
 
-def test_create_proportion_type_returns_201(client, itinerary_owners):
-    itinerary_id = _create_itinerary(client, itinerary_owners)
+def test_create_proportion_type_returns_201(client, create_itinerary):
+    itinerary_id = create_itinerary(activity_count=4)
     code = _create_activity_type(client)
 
     response = client.post(
@@ -32,8 +25,8 @@ def test_create_proportion_type_returns_201(client, itinerary_owners):
     }
 
 
-def test_create_proportion_type_twice_returns_409(client, itinerary_owners):
-    itinerary_id = _create_itinerary(client, itinerary_owners)
+def test_create_proportion_type_twice_returns_409(client, create_itinerary):
+    itinerary_id = create_itinerary(activity_count=4)
     code = _create_activity_type(client)
     url = f"/api/itineraries/{itinerary_id}/proportion-types/{code}"
     client.post(url, json={"value": 40})
@@ -45,9 +38,9 @@ def test_create_proportion_type_twice_returns_409(client, itinerary_owners):
 
 @pytest.mark.parametrize("value", [-1, 101])
 def test_create_proportion_type_returns_422_when_value_out_of_range(
-    client, value, itinerary_owners
+    client, value, create_itinerary
 ):
-    itinerary_id = _create_itinerary(client, itinerary_owners)
+    itinerary_id = create_itinerary(activity_count=4)
     code = _create_activity_type(client)
 
     response = client.post(
@@ -67,8 +60,8 @@ def test_create_proportion_type_returns_404_when_itinerary_missing(client):
     assert response.status_code == 404
 
 
-def test_create_proportion_type_returns_404_when_activity_type_missing(client, itinerary_owners):
-    itinerary_id = _create_itinerary(client, itinerary_owners)
+def test_create_proportion_type_returns_404_when_activity_type_missing(client, create_itinerary):
+    itinerary_id = create_itinerary(activity_count=4)
 
     response = client.post(
         f"/api/itineraries/{itinerary_id}/proportion-types/missing", json={"value": 40}
@@ -77,8 +70,8 @@ def test_create_proportion_type_returns_404_when_activity_type_missing(client, i
     assert response.status_code == 404
 
 
-def test_update_proportion_type_changes_the_value(client, itinerary_owners):
-    itinerary_id = _create_itinerary(client, itinerary_owners)
+def test_update_proportion_type_changes_the_value(client, create_itinerary):
+    itinerary_id = create_itinerary(activity_count=4)
     code = _create_activity_type(client)
     url = f"/api/itineraries/{itinerary_id}/proportion-types/{code}"
     client.post(url, json={"value": 40})
@@ -91,9 +84,9 @@ def test_update_proportion_type_changes_the_value(client, itinerary_owners):
 
 @pytest.mark.parametrize("value", [-1, 101])
 def test_update_proportion_type_returns_422_when_value_out_of_range(
-    client, value, itinerary_owners
+    client, value, create_itinerary
 ):
-    itinerary_id = _create_itinerary(client, itinerary_owners)
+    itinerary_id = create_itinerary(activity_count=4)
     code = _create_activity_type(client)
     url = f"/api/itineraries/{itinerary_id}/proportion-types/{code}"
     client.post(url, json={"value": 40})
@@ -103,8 +96,8 @@ def test_update_proportion_type_returns_422_when_value_out_of_range(
     assert response.status_code == 422
 
 
-def test_update_proportion_type_returns_404_when_missing(client, itinerary_owners):
-    itinerary_id = _create_itinerary(client, itinerary_owners)
+def test_update_proportion_type_returns_404_when_missing(client, create_itinerary):
+    itinerary_id = create_itinerary(activity_count=4)
     code = _create_activity_type(client)
 
     response = client.patch(
@@ -114,8 +107,8 @@ def test_update_proportion_type_returns_404_when_missing(client, itinerary_owner
     assert response.status_code == 404
 
 
-def test_list_proportion_types_returns_the_itinerary_ones(client, itinerary_owners):
-    itinerary_id = _create_itinerary(client, itinerary_owners)
+def test_list_proportion_types_returns_the_itinerary_ones(client, create_itinerary):
+    itinerary_id = create_itinerary(activity_count=4)
     visit = _create_activity_type(client, "visit")
     workshop = _create_activity_type(client, "workshop")
     client.post(f"/api/itineraries/{itinerary_id}/proportion-types/{visit}", json={"value": 70})
@@ -138,8 +131,8 @@ def test_list_proportion_types_returns_404_when_itinerary_missing(client):
     assert response.status_code == 404
 
 
-def test_delete_proportion_type_returns_204(client, itinerary_owners):
-    itinerary_id = _create_itinerary(client, itinerary_owners)
+def test_delete_proportion_type_returns_204(client, create_itinerary):
+    itinerary_id = create_itinerary(activity_count=4)
     code = _create_activity_type(client)
     client.post(f"/api/itineraries/{itinerary_id}/proportion-types/{code}", json={"value": 40})
 
@@ -149,8 +142,8 @@ def test_delete_proportion_type_returns_204(client, itinerary_owners):
     assert client.get(f"/api/itineraries/{itinerary_id}/proportion-types").json() == []
 
 
-def test_delete_proportion_type_returns_404_when_missing(client, itinerary_owners):
-    itinerary_id = _create_itinerary(client, itinerary_owners)
+def test_delete_proportion_type_returns_404_when_missing(client, create_itinerary):
+    itinerary_id = create_itinerary(activity_count=4)
     code = _create_activity_type(client)
 
     response = client.delete(f"/api/itineraries/{itinerary_id}/proportion-types/{code}")
