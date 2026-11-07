@@ -1,4 +1,5 @@
 import type { KeyboardEvent, ReactNode } from "react";
+import { Link } from "react-router";
 import { Badge } from "@/components/Badge/Badge";
 import type { ActivityType } from "@/components/Badge/Badge";
 import { EffortMeter } from "@/components/EffortMeter/EffortMeter";
@@ -11,6 +12,8 @@ export type Activity = {
   id?: string | number;
   name: string;
   attraction?: string;
+  // The attraction's page, when its name links to it
+  attractionTo?: string;
   author?: string;
   type?: ActivityType;
   category?: string;
@@ -102,7 +105,14 @@ export function ActivityRow({
       <div className="activity-row__main">
         <div className="activity-row__name">{activity.name}</div>
         <div className="activity-row__sub">
-          {activity.attraction && <span>{activity.attraction}</span>}
+          {activity.attraction &&
+            (activity.attractionTo ? (
+              <Link to={activity.attractionTo} className="activity-row__link">
+                {activity.attraction}
+              </Link>
+            ) : (
+              <span>{activity.attraction}</span>
+            ))}
           {activity.author && <span>por {activity.author}</span>}
         </div>
       </div>

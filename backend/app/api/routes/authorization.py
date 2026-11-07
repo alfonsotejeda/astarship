@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import require_admin
 from app.db.session import get_db
 from app.schemas.authorization import AuthorizationRead, AuthorizationUpsert
 from app.services import authorization as authorization_service
@@ -24,7 +25,11 @@ def list_authorizations(package_id: int, db: Session = Depends(get_db)) -> list[
     return authorization_service.list_authorizations(db, package_id)
 
 
-@router.put("/packages/{package_id}/guides/{guide_id}", response_model=AuthorizationRead)
+@router.put(
+    "/packages/{package_id}/guides/{guide_id}",
+    response_model=AuthorizationRead,
+    dependencies=[Depends(require_admin)],
+)
 def put_authorization(
     package_id: int,
     guide_id: int,
@@ -43,12 +48,18 @@ def put_authorization(
     return authorization_service.create_authorization(db, package_id, guide_id, data)
 
 
-@router.delete("/packages/{package_id}/guides/{guide_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/packages/{package_id}/guides/{guide_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin)],
+)
 def delete_authorization(package_id: int, guide_id: int, db: Session = Depends(get_db)) -> None:
     """Revoke a guide's authorization on a package."""
     authorization = authorization_service.get_authorization(db, package_id, guide_id)
     if authorization is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Authorization not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Authorization not found"
+        )
     authorization_service.delete_authorization(db, authorization)
 
 

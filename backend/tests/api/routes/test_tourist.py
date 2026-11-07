@@ -1,5 +1,7 @@
 """Tests for the tourist routes."""
 
+from uuid import uuid4
+
 
 def _create_tourist(client, email="ada@example.com"):
     return client.post(
@@ -15,7 +17,19 @@ def _create_tourist(client, email="ada@example.com"):
 
 
 def _create_package(client, name="Europa Capitales", destination="París"):
-    return client.post("/api/packages", json={"name": name, "destination": destination}).json()
+    admin = client.post(
+        "/api/users",
+        json={
+            "name": "Owner",
+            "role": "admin",
+            "email": f"{uuid4().hex}@example.com",
+            "password": "s3cret",
+        },
+    ).json()
+    return client.post(
+        "/api/packages",
+        json={"name": name, "destination": destination, "admin_id": admin["id"]},
+    ).json()
 
 
 def _create_booking(client, tourist_id, package_id, booking_date="2026-10-01"):

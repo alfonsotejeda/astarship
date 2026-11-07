@@ -4,8 +4,12 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /srv
 
 # Install dependencies before copying the code to keep Docker's cache.
+# The uv cache mount keeps downloaded packages between builds.
+ENV UV_LINK_MODE=copy \
+    UV_HTTP_TIMEOUT=120
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project
 
 COPY app ./app
 COPY alembic.ini ./

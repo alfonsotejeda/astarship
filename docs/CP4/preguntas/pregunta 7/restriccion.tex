@@ -1,0 +1,257 @@
+\phantomsection
+\addcontentsline{toc}{subsection}{Restricción final}
+\subsection*{Restricción final}
+
+% Seccion con nombres de clase largos, que no se parten con guion.
+\sloppy
+
+\textit{El Facade debe poder configurarse desde un archivo YAML para definir secuencias de
+actividades.}
+
+\vspace{0.4cm}
+
+\subsubsection*{Por qué esta restricción es la prueba de fuego del diseño}
+
+Una secuencia que vive en un archivo solo es posible si la actividad es un \emph{dato}. Con la
+fachada del inciso (b), donde cada actividad era un método con su cuerpo escrito, esta
+restricción no tenía por dónde empezar: no hay forma de que un archivo añada un método a una
+clase ya compilada.
+
+El inciso (c) hizo el trabajo decisivo al convertir la actividad en un objeto. Aquí solo queda
+construir ese objeto desde otra fuente, y por eso la clase que lo representa implementa la
+misma interfaz:
+
+{\small
+\begin{verbatim}
+public sealed class ActividadConfigurada : IActividad
+{
+    private readonly IReadOnlyList<PasoConfigurado> _pasos;
+    private readonly IReadOnlyList<PasoConfigurado> _deshacer;
+
+    public void Ejecutar()
+    {
+        foreach (PasoConfigurado paso in _pasos) { paso.Ejecutar(); }
+    }
+}
+\end{verbatim}
+}
+
+Para la fachada no hay diferencia entre una actividad escrita en C\# y una definida en YAML.
+Esa indiferencia es la restricción resuelta. También es la confirmación del argumento del
+inciso (a) contra el método estático: una secuencia escrita en el cuerpo de un método estático
+no se puede cargar de ninguna parte.
+
+\subsubsection*{El archivo}
+
+{\small
+\begin{verbatim}
+actividades:
+
+  noche-de-cine:
+    pasos:
+      - luces.atenuar: 15
+      - pantalla.bajar
+      - proyector.encender
+      - proyector.entrada: dvd
+      - proyector.formato: 16:9
+      - amplificador.encender
+      - amplificador.entrada: dvd
+      - amplificador.envolvente: si
+      - amplificador.volumen: 6
+      - dvd.encender
+      - dvd.reproducir: El tercer hombre
+    deshacer:
+      - dvd.detener
+      - dvd.apagar
+      - amplificador.apagar
+      - proyector.apagar
+      - pantalla.subir
+      - luces.encender
+\end{verbatim}
+}
+
+Cada paso es \texttt{componente.accion} con un argumento opcional. La sección
+\texttt{deshacer} no es un adorno: es lo que permite que una actividad leída de un archivo
+cumpla el contrato completo de \texttt{IActividad}, incluido el \texttt{Deshacer} que el
+inciso (c) introdujo.
+
+\subsubsection*{Un lector escrito a mano, y por qué}
+
+El ejercicio no tiene dependencias externas, así que el lector cubre a mano el subconjunto de
+YAML que el archivo usa: mapas anidados por sangría de dos espacios, listas con guion,
+escalares sin comillas y comentarios. No hay anclas, ni listas en línea, ni cadenas
+multilínea, ni tipos.
+
+Conviene decirlo claro: \textbf{en producción la elección correcta sería YamlDotNet}. Escribir
+un analizador de un formato ajeno es una fuente conocida de sorpresas, y el valor de hacerlo
+aquí es doble: no se añade una dependencia a un ejercicio de clase, y el subconjunto admitido
+queda acotado y escrito en lugar de ser ``lo que la biblioteca acepte''.
+
+\subsubsection*{La frontera entre el mundo tipado y el archivo}
+
+Un archivo de configuración es, inevitablemente, cadenas. La pregunta de diseño es
+\emph{dónde} se cruza esa frontera, y la respuesta elegida es un catálogo explícito:
+
+{\small
+\begin{verbatim}
+public sealed class CatalogoAcciones
+{
+    private readonly Dictionary<string, Action<string?>> _acciones =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public CatalogoAcciones(Amplificador amplificador, ...)
+    {
+        _acciones["amplificador.encender"] = _ => amplificador.Encender();
+        _acciones["amplificador.volumen"] =
+            v => amplificador.PonerVolumen(Entero("amplificador.volumen", v));
+        _acciones["luces.atenuar"] =
+            v => luces.Atenuar(Entero("luces.atenuar", v));
+        // ... veinte acciones en total
+    }
+}
+\end{verbatim}
+}
+
+\textbf{Se construye a mano y sin reflexión, a propósito.} Resolver
+\texttt{"amplificador.volumen"} con \texttt{Type.GetType} y \texttt{MethodInfo.Invoke} sería
+más corto y bastante peor: cualquier nombre escrito en un archivo podría alcanzar cualquier
+método de cualquier clase, incluidos los que nadie quiso exponer. El catálogo es una lista
+blanca legible, y la guía metodológica del curso usa precisamente reflexión en el problema 1,
+así que conviene nombrar el compromiso en lugar de copiarlo sin pensar.
+
+\subsubsection*{Validar al cargar, no al ejecutar}
+
+Es la decisión más importante de esta sección. El lector resuelve cada paso contra el catálogo
+\emph{en el momento de cargar} y guarda la acción ya resuelta, no su nombre:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item Un paso inexistente hace fallar \textbf{la carga entera}, con el número de línea y
+          el nombre que no existe.
+    \item Se acumulan \emph{todos} los errores del archivo y se informan juntos, en vez de
+          parar en el primero.
+    \item Ninguno de los pasos válidos llega a ejecutarse. La alternativa —descubrir el error
+          a mitad de la actividad— dejaría la sala a oscuras con el proyector encendido y la
+          pantalla a medio bajar, que es exactamente el estado inconsistente que el usuario
+          no sabe deshacer.
+\end{itemize}
+
+La parte 6 de la demostración lo comprueba con un archivo que pide
+\texttt{amplificador.subir-mucho}.
+
+\textbf{Y lo que queda sin comprobar.} El \emph{argumento} no se valida al cargar:
+\texttt{luces.atenuar: muchisimo} pasa la carga y falla al ejecutarse, porque el catálogo
+guarda un \texttt{Action<string?>} y la conversión ocurre dentro. Comprobar que la acción
+existe es barato; comprobar que su argumento sirve exigiría que el catálogo declarara el tipo
+esperado de cada acción. Es una limitación real, está dicha en el código y se arregla tipando
+el catálogo si alguna vez importa.
+
+\subsubsection*{Qué habilita}
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item Un instalador puede definir ``noche de cine'' para un cliente concreto sin
+          compilar nada.
+    \item Las actividades dejan de ser código y pasan a ser configuración, con lo que eso
+          implica: se versionan aparte, se revisan sin saber C\# y se cambian sin desplegar.
+    \item Y el reverso, que conviene no olvidar: ahora hay un archivo más que puede estar mal,
+          y la seguridad que antes daba el compilador la tiene que dar la validación de carga.
+\end{itemize}
+
+\subsubsection*{Evidencia de ejecución}
+
+Salida literal de \texttt{DemoYaml}:
+
+{\footnotesize
+\begin{verbatim}
+1. El archivo que define las secuencias
+---------------------------------------
+  actividades.yaml, copiado junto al ejecutable
+  acciones invocables publicadas por el catalogo: 20
+
+2. Cargar y registrar lo que diga el archivo
+--------------------------------------------
+  noche-de-cine       11 pasos
+  tarde-de-consola    9 pasos
+
+  la fachada no se recompilo ni se modifico para esto
+
+3. Ejecutar una actividad que nadie escribio en C#
+--------------------------------------------------
+  cine.Ejecutar("noche-de-cine");
+    luces         atenuadas al 15%
+    pantalla      bajada
+    proyector     encendido
+    proyector     entrada -> dvd
+    proyector     formato 16:9
+    amplificador  encendido
+    amplificador  entrada -> dvd
+    amplificador  modo envolvente
+    amplificador  volumen 6
+    dvd           encendido
+    dvd           reproduciendo "El tercer hombre"
+
+4. Y deshacerla, porque el archivo tambien dice como
+----------------------------------------------------
+    dvd           detenido
+    dvd           apagado
+    amplificador  apagado
+    proyector     apagado
+    pantalla      subida
+    luces         al 100%
+
+5. La otra actividad del archivo
+--------------------------------
+  cine.Ejecutar("tarde-de-consola");
+    luces         atenuadas al 65%
+    pantalla      bajada
+    proyector     encendido
+    proyector     entrada -> consola
+    amplificador  encendido
+    amplificador  entrada -> consola
+    amplificador  volumen 9
+    consola       encendida
+    consola       cargando "Celeste"
+    consola       apagada
+    amplificador  apagado
+    proyector     apagado
+    pantalla      subida
+    luces         al 100%
+
+6. Un archivo con errores falla al CARGAR, no a mitad de la sala
+----------------------------------------------------------------
+  el archivo pide "amplificador.subir-mucho", que no existe:
+    El archivo de actividades tiene 1 problema(s):
+      linea 5: no existe la accion "amplificador.subir-mucho"
+
+  Ninguno de los tres pasos validos llego a ejecutarse: la sala
+  no se quedo a oscuras con el proyector encendido.
+  El valor "muchisimo" si pasa la carga y falla al ejecutarse:
+  comprobar que existe la accion es barato, comprobar que el
+  argumento sirve exigiria tipar el catalogo.
+\end{verbatim}
+}
+
+\subsubsection*{Resumen del proceso}
+
+El camino seguido en este ejercicio, que es el mismo que serviría para cualquier problema de
+diseño:
+
+\begin{enumerate}[leftmargin=1.2cm]
+    \item Leer el enunciado buscando \emph{dónde está la dificultad}. Aquí no estaba en los
+          componentes sino en el orden, que no vivía en ninguna clase.
+    \item Escribir la solución ingenua y nombrar lo que rompe, sin caricaturizarla: con un
+          cliente y una actividad habría sido la correcta.
+    \item Elegir el patrón descartando candidatos con argumentos, incluidos los que se
+          confunden con él, y responder expresamente a los dos que el enunciado nombra
+          (inciso a).
+    \item Implementar las tres actividades sobre los seis componentes de modo que cada
+          actividad sea una coreografía distinta y no un parámetro (inciso b).
+    \item Atacar la rigidez del resultado antes de que la pidan: Command para añadir
+          actividades, Strategy para variar las existentes, midiendo el coste real de cada
+          una (inciso c).
+    \item Integrar los patrones que el enunciado pide diciendo lo que cuestan, no solo lo que
+          dan: Observer salió casi gratis, Singleton no (inciso d).
+    \item Cerrar con la restricción, que es la que comprueba si el diseño era de verdad
+          extensible o solo lo parecía (esta sección).
+\end{enumerate}
+
+\fussy

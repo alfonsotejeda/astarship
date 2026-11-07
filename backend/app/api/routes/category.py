@@ -3,7 +3,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import require_admin
 from app.db.session import get_db
+from app.schemas.activity import ActivityRead
 from app.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
 from app.services import category as category_sv
 
@@ -24,6 +26,13 @@ def list_categories(db: Session = Depends(get_db)) -> list[CategoryRead]:
     return category_sv.list_categories(db)
 
 
+# Probar este endpoint
+@router.get("/activities_count", response_model=list[tuple[CategoryRead, int]])
+def activities_count_by_categories(db: Session = Depends(get_db)) -> list[tuple[CategoryRead, int]]:
+    """Return the count of activities for each category."""
+    return category_sv.activities_count_by_categories(db)
+
+
 @router.get("/{category_id}", response_model=CategoryRead)
 def get_category_by_id(category_id: int, db: Session = Depends(get_db)) -> CategoryRead:
     """Return a category by its ID."""
@@ -39,7 +48,13 @@ def get_category_name(category_name: str, db: Session = Depends(get_db)) -> Cate
     return category
 
 
-@router.post("/create", response_model=CategoryRead, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/create",
+    response_model=CategoryRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
+)
 def create_category_end(data: CategoryCreate, db: Session = Depends(get_db)) -> CategoryRead:
     """Create a new category."""
     try:
@@ -48,7 +63,10 @@ def create_category_end(data: CategoryCreate, db: Session = Depends(get_db)) -> 
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
 
 
-@router.put("/{category_id}", response_model=CategoryRead)
+
+@router.put(
+    "/{category_id}", response_model=CategoryRead, dependencies=[Depends(require_admin)]
+)
 def update_category(
     data: CategoryUpdate, category_id: int, db: Session = Depends(get_db)
 ) -> CategoryRead:
@@ -60,7 +78,10 @@ def update_category(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
 
 
-@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+
+@router.delete(
+    "/{category_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)]
+)
 def delete_category(category_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a category."""
     category = get_category(db, category_id)
@@ -68,3 +89,13 @@ def delete_category(category_id: int, db: Session = Depends(get_db)) -> None:
         return category_sv.delete_category(db, category)
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
+
+
+# Probar este endopoint
+@router.get("/{category_id}/activities", response_model=list[ActivityRead])
+def activities_by_category(category_id: int, db: Session = Depends(get_db)) -> list[ActivityRead]:
+    """Return the activities for a specific category."""
+    try:
+        return category_sv.activities_by_category(db, category_id)
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
