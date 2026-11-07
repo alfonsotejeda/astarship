@@ -186,14 +186,14 @@ def test_update_activity_with_only_effort_level_keeps_the_rest(client, as_guide,
     assert body["attraction_id"] == refs["attraction_id"]
 
 
-def test_update_activity_changes_status(client, as_guide, refs):
+def test_update_activity_ignores_status(client, as_guide, refs):
     created = _create(client, as_guide, refs).json()
 
     with as_guide():
-        response = client.patch(f"/api/activities/{created['id']}", json={"status": "rejected"})
+        response = client.patch(f"/api/activities/{created['id']}", json={"status": "approved"})
 
     assert response.status_code == 200
-    assert response.json()["status"] == "rejected"
+    assert response.json()["status"] == "pending"
 
 
 @pytest.mark.parametrize(
@@ -247,11 +247,10 @@ def test_delete_activity_returns_403_for_guide(client, as_guide, refs):
     assert response.status_code == 403
 
 
-def test_list_activities_filters_by_status(client, as_guide, refs):
+def test_list_activities_filters_by_status(client, as_guide, refs, approve_activity):
     approved = _create(client, as_guide, refs, name="A", effort_level=1).json()
     _create(client, as_guide, refs, name="B", effort_level=1)
-    with as_guide():
-        client.patch(f"/api/activities/{approved['id']}", json={"status": "approved"})
+    approve_activity(approved["id"])
 
     response = client.get("/api/activities", params={"status": "approved"})
 

@@ -21,12 +21,11 @@ class ActivityCreate(BaseModel):
 
 
 class ActivityUpdate(BaseModel):
-    """Fields allowed when updating an activity."""
+    """Fields allowed when updating an activity; its status only changes by validation."""
 
     name: str | None = None
     effort_level: int | None = None
     duration: int | None = Field(default=None, ge=1)
-    status: ReviewStatus | None = None
     activity_type_code: str | None = None
     category_id: int | None = None
     guide_id: int | None = None
@@ -36,7 +35,6 @@ class ActivityUpdate(BaseModel):
         "name",
         "effort_level",
         "duration",
-        "status",
         "activity_type_code",
         "category_id",
         "guide_id",

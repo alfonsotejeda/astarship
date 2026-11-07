@@ -3,7 +3,7 @@
 import pytest
 
 from app.models.status import ItineraryStatus, ReviewStatus
-from app.schemas.activity import ActivityCreate, ActivityUpdate
+from app.schemas.activity import ActivityCreate
 from app.schemas.activity_type import ActivityTypeCreate
 from app.schemas.attraction import AttractionCreate
 from app.schemas.category import CategoryCreate
@@ -59,9 +59,8 @@ def _create_activity(
         ),
     )
     if approved:
-        activity_service.update_activity(
-            db_session, activity, ActivityUpdate(status=ReviewStatus.APPROVED)
-        )
+        activity.status = ReviewStatus.APPROVED
+        db_session.commit()
     return activity.id
 
 

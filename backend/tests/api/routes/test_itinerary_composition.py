@@ -6,7 +6,7 @@ COMPOSITION = {"order": 1, "day": 1, "start_time": "09:00:00"}
 
 
 @pytest.fixture
-def create_activity(client, as_user, itinerary_owners):
+def create_activity(client, as_user, itinerary_owners, approve_activity):
     """Return a function that creates an activity as the guide of the test itineraries."""
     category_id = client.post("/api/categories/create", json={"name": "Culture"}).json()["id"]
     client.post("/api/activity-types", json={"code": "walk", "name": "Walk"})
@@ -20,7 +20,7 @@ def create_activity(client, as_user, itinerary_owners):
         },
     ).json()["id"]
 
-    def create(name="Museum") -> int:
+    def create(name="Museum", approved=True) -> int:
         payload = {
             "name": name,
             "effort_level": 1,
@@ -32,7 +32,10 @@ def create_activity(client, as_user, itinerary_owners):
         }
         with as_user(itinerary_owners["guide_id"]):
             response = client.post("/api/activities", json=payload)
-        return response.json()["id"]
+        activity_id = response.json()["id"]
+        if approved:
+            approve_activity(activity_id)
+        return activity_id
 
     return create
 
@@ -101,6 +104,41 @@ def test_create_composition_returns_422_when_value_not_positive(
     )
 
     assert response.status_code == 422
+
+
+def test_create_composition_returns_409_when_activity_is_pending(
+    client, create_itinerary, create_activity
+):
+    itinerary_id = create_itinerary()
+    activity_id = create_activity(approved=False)
+
+    response = client.post(
+        f"/api/itineraries/{itinerary_id}/activities/{activity_id}", json=COMPOSITION
+    )
+
+    assert response.status_code == 409
+    assert client.get(f"/api/itineraries/{itinerary_id}/activities").json() == []
+
+
+def test_create_composition_returns_409_when_activity_is_rejected(
+    client, create_itinerary, create_activity
+):
+    itinerary_id = create_itinerary()
+    activity_id = create_activity(approved=False)
+    admin_id = client.post(
+        "/api/users",
+        json={"name": "Ana", "role": "admin", "email": "ana@example.com", "password": "x"},
+    ).json()["id"]
+    client.post(
+        f"/api/activities/{activity_id}/validations",
+        json={"admin_id": admin_id, "result": "rejected"},
+    )
+
+    response = client.post(
+        f"/api/itineraries/{itinerary_id}/activities/{activity_id}", json=COMPOSITION
+    )
+
+    assert response.status_code == 409
 
 
 def test_create_composition_returns_404_when_itinerary_missing(client, create_activity):

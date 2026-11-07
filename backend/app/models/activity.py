@@ -6,6 +6,7 @@ from sqlalchemy import CheckConstraint, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.activity_validation import ActivityValidation
 from app.models.itinerary_composition import ItineraryComposition
 from app.models.status import ReviewStatus, status_enum
 
@@ -45,6 +46,9 @@ class Activity(Base):
     )
 
     compositions: Mapped[list[ItineraryComposition]] = relationship(cascade="all, delete-orphan")
+    validations: Mapped[list[ActivityValidation]] = relationship(
+        cascade="all, delete-orphan"
+    )
     category = relationship("Category", back_populates="activities")
     activity_type = relationship("ActivityType", back_populates="activities")
     guide = relationship("Guide", back_populates="activities")

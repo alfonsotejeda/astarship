@@ -6,6 +6,7 @@ from app.api.deps.auth import get_current_user
 from app.api.routes import (
     activity,
     activity_type,
+    activity_validation,
     assignment,
     attraction,
     auth,
@@ -40,6 +41,7 @@ authenticated = [Depends(get_current_user)]
 api_router.include_router(package.router, dependencies=authenticated)
 api_router.include_router(category.router, dependencies=authenticated)
 api_router.include_router(activity.router, dependencies=authenticated)
+api_router.include_router(activity_validation.router, dependencies=authenticated)
 api_router.include_router(activity_type.router, dependencies=authenticated)
 api_router.include_router(travel_group.router, dependencies=authenticated)
 api_router.include_router(itinerary.router, dependencies=authenticated)

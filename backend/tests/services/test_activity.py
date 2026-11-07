@@ -193,9 +193,8 @@ def test_delete_activity_removes_it(db_session, refs):
 def test_list_activities_filters_by_status(db_session, refs):
     approved = _create(db_session, refs, name="A")
     _create(db_session, refs, name="B")
-    activity_service.update_activity(
-        db_session, approved, ActivityUpdate(status=ReviewStatus.APPROVED)
-    )
+    approved.status = ReviewStatus.APPROVED
+    db_session.commit()
 
     result = activity_service.list_activities(db_session, ReviewStatus.APPROVED)
 

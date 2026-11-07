@@ -11,6 +11,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.deps.auth import get_current_user
+from app.models.activity import Activity
+from app.models.activity_type import ActivityType
+from app.models.attraction import Attraction
+from app.models.category import Category
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db
@@ -117,6 +121,31 @@ def itinerary_owners(db_session: Session) -> dict[str, int]:
 
 
 @pytest.fixture
+def approve_activity(client: TestClient):
+    """Return a function that approves an activity through the validation endpoint."""
+    reviewer: dict[str, int] = {}
+
+    def approve(activity_id: int) -> None:
+        if "id" not in reviewer:
+            reviewer["id"] = client.post(
+                "/api/users",
+                json={
+                    "name": "Reviewer",
+                    "role": "admin",
+                    "email": "reviewer@example.com",
+                    "password": "x",
+                },
+            ).json()["id"]
+        response = client.post(
+            f"/api/activities/{activity_id}/validations",
+            json={"admin_id": reviewer["id"], "result": "approved"},
+        )
+        assert response.status_code == 201
+
+    return approve
+
+
+@pytest.fixture
 def create_itinerary(db_session: Session, itinerary_owners) -> Callable[..., int]:
     """Return a function that stores an itinerary of the authorized guide and returns its id."""
 
@@ -130,3 +159,35 @@ def create_itinerary(db_session: Session, itinerary_owners) -> Callable[..., int
         return itinerary.id
 
     return create
+
+
+@pytest.fixture
+def insert_activity(db_session: Session) -> Callable[..., Activity]:
+    """Return a function that stores an activity along with everything it references."""
+    category = Category(name="Hiking routes")
+    activity_type = ActivityType(code="hike", name="Hike")
+    attraction = Attraction(name="Sierra", address="Road 1", latitude=20.0, longitude=-76.0)
+    guide = user_service.create_user(
+        db_session,
+        GuideCreate(
+            name="Hugo", role="guide", email="hugo@example.com", password="x", specialty="Trails"
+        ),
+    )
+    db_session.add_all([category, activity_type, attraction])
+    db_session.flush()
+
+    def insert(name: str = "Hiking") -> Activity:
+        activity = Activity(
+            name=name,
+            effort_level=3,
+            duration=60,
+            activity_type_code=activity_type.code,
+            category_id=category.id,
+            guide_id=guide.id,
+            attraction_id=attraction.id,
+        )
+        db_session.add(activity)
+        db_session.commit()
+        return activity
+
+    return insert
