@@ -39,5 +39,7 @@ def update_activity_type(
 
 def delete_activity_type(db: Session, activity_type: ActivityType) -> None:
     """Delete an activity type."""
+    if len(activity_type.activities) > 0:
+        raise ValueError("Cannot delete an activity type with existing activities")
     db.delete(activity_type)
     db.commit()

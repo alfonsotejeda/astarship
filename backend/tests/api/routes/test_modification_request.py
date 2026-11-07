@@ -2,6 +2,8 @@
 
 import pytest
 
+from app.models.status import ItineraryStatus
+
 
 def _create_user(client, role, email, **fields) -> int:
     return client.post(
@@ -30,7 +32,7 @@ def create_assignment(client, create_itinerary):
     """Return a function that assigns a new itinerary to a new tourist."""
 
     def create(tourist_email="ada@example.com") -> tuple[int, int]:
-        itinerary_id = create_itinerary()
+        itinerary_id = create_itinerary(status=ItineraryStatus.APPROVED)
         tourist_id = _create_user(client, "tourist", tourist_email, age=30)
         admin_id = _create_user(client, "admin", f"admin.{tourist_email}")
         client.post(
