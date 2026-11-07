@@ -8,6 +8,7 @@ from app.api.deps.rules import forbid_acting_for_others
 from app.db.session import get_db
 from app.models.user.user import User
 from app.schemas.user import UserCreate, UserRead, UserUpdate
+from app.services import activity_validation as activity_validation_service
 from app.services import travel_group as travel_group_service
 from app.services import user as user_service
 
@@ -67,7 +68,7 @@ def update_user(
     "/{user_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)]
 )
 def delete_user(user_id: int, db: Session = Depends(get_db)) -> None:
-    """Delete a user unless it is a guide attending groups or an admin generating packages."""
+    """Delete a user unless it is a guide with groups or an admin with packages or validations."""
     user = _get_user_or_404(db, user_id)
     if user.guide is not None and travel_group_service.guide_attends_travel_groups(db, user.id):
         raise HTTPException(
@@ -76,5 +77,13 @@ def delete_user(user_id: int, db: Session = Depends(get_db)) -> None:
     if user.admin is not None and user.admin.packages:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Admin still generates packages"
+        )
+    if user.admin is not None and activity_validation_service.admin_has_validations(db, user.id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Admin still has activity validations"
+        )
+    if user.guide is not None and user.guide.activities:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Guide still has activities"
         )
     user_service.delete_user(db, user)

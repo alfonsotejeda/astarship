@@ -2,13 +2,17 @@
 
 import pytest
 
-from app.models.status import ReviewStatus
-from app.schemas.activity import ActivityCreate, ActivityUpdate
+from app.models.status import ItineraryStatus, ReviewStatus
+from app.schemas.activity import ActivityCreate
 from app.schemas.activity_type import ActivityTypeCreate
+from app.schemas.attraction import AttractionCreate
 from app.schemas.category import CategoryCreate
+from app.schemas.user import GuideCreate
 from app.services import activity as activity_service
 from app.services import activity_type as activity_type_service
+from app.services import attraction as attraction_service
 from app.services import category as category_service
+from app.services import user as user_service
 
 
 def _create_guide(client, email="gil@example.com") -> int:
@@ -41,7 +45,7 @@ def _authorize(client, package_id, guide_id, can_generate=True) -> None:
 
 
 def _create_activity(
-    db_session, name, type_code, category_id, effort_level, duration, approved=True
+    db_session, authors, name, type_code, category_id, effort_level, duration, approved=True
 ) -> int:
     activity = activity_service.create_activity(
         db_session,
@@ -51,12 +55,12 @@ def _create_activity(
             duration=duration,
             activity_type_code=type_code,
             category_id=category_id,
+            **authors,
         ),
     )
     if approved:
-        activity_service.update_activity(
-            db_session, activity, ActivityUpdate(status=ReviewStatus.APPROVED)
-        )
+        activity.status = ReviewStatus.APPROVED
+        db_session.commit()
     return activity.id
 
 
@@ -70,6 +74,24 @@ def admin_id(client):
 
 
 @pytest.fixture
+def authors(db_session):
+    """Guide and attraction that every candidate activity needs."""
+    guide = user_service.create_user(
+        db_session,
+        GuideCreate(
+            name="Author", role="guide", email="author@example.com", password="x", specialty="Art"
+        ),
+    )
+    attraction = attraction_service.create_attraction(
+        db_session,
+        AttractionCreate(
+            name="Malecón", address="Av. del Puerto", latitude=23.14, longitude=-82.36
+        ),
+    )
+    return {"guide_id": guide.id, "attraction_id": attraction.id}
+
+
+@pytest.fixture
 def categories(db_session):
     """Ids of the categories of the candidate activities, by name."""
     return {
@@ -79,7 +101,7 @@ def categories(db_session):
 
 
 @pytest.fixture
-def activities(db_session, categories):
+def activities(db_session, categories, authors):
     """Ids of approved candidate activities, by name."""
     for code in ("walk", "show"):
         activity_type_service.create_activity_type(
@@ -87,11 +109,11 @@ def activities(db_session, categories):
         )
     culture, food = categories["Culture"], categories["Food"]
     return {
-        "Museum": _create_activity(db_session, "Museum", "walk", culture, 2, 90),
-        "Hike": _create_activity(db_session, "Hike", "walk", culture, 5, 120),
-        "Tasting": _create_activity(db_session, "Tasting", "show", food, 1, 60),
-        "Concert": _create_activity(db_session, "Concert", "show", culture, 1, 120),
-        "Market": _create_activity(db_session, "Market", "walk", food, 3, 60),
+        "Museum": _create_activity(db_session, authors, "Museum", "walk", culture, 2, 90),
+        "Hike": _create_activity(db_session, authors, "Hike", "walk", culture, 5, 120),
+        "Tasting": _create_activity(db_session, authors, "Tasting", "show", food, 1, 60),
+        "Concert": _create_activity(db_session, authors, "Concert", "show", culture, 1, 120),
+        "Market": _create_activity(db_session, authors, "Market", "walk", food, 3, 60),
     }
 
 
@@ -235,8 +257,12 @@ def test_create_itinerary_returns_404_when_activity_missing(generate):
     assert generate(candidate_ids=[999]).status_code == 404
 
 
-def test_create_itinerary_returns_409_when_activity_not_approved(db_session, generate):
-    pending_id = _create_activity(db_session, "Cave", "walk", None, 4, 60, approved=False)
+def test_create_itinerary_returns_409_when_activity_not_approved(
+    db_session, authors, categories, generate
+):
+    pending_id = _create_activity(
+        db_session, authors, "Cave", "walk", categories["Culture"], 4, 60, approved=False
+    )
 
     assert generate(candidate_ids=[pending_id]).status_code == 409
 
@@ -257,8 +283,14 @@ def test_create_itinerary_returns_422_with_more_days_than_activities(generate):
     assert generate(days=5).status_code == 422
 
 
-def test_create_itinerary_returns_422_when_a_day_overflows(db_session, generate):
-    long_ids = [_create_activity(db_session, f"Trek {n}", "walk", None, 5, 600) for n in range(2)]
+def test_create_itinerary_returns_422_when_a_day_overflows(
+    db_session, authors, categories, generate
+):
+    culture = categories["Culture"]
+    long_ids = [
+        _create_activity(db_session, authors, f"Trek {n}", "walk", culture, 5, 600)
+        for n in range(2)
+    ]
 
     response = generate(days=1, activity_count=2, candidate_ids=long_ids)
 
@@ -280,13 +312,22 @@ def test_get_itinerary_returns_404_when_missing(client):
     assert response.status_code == 404
 
 
-def test_update_itinerary_changes_status(client, create_itinerary):
+def test_update_itinerary_changes_activity_count(client, create_itinerary):
     itinerary_id = create_itinerary()
 
-    response = client.patch(f"/api/itineraries/{itinerary_id}", json={"status": "validated"})
+    response = client.patch(f"/api/itineraries/{itinerary_id}", json={"activity_count": 3})
 
     assert response.status_code == 200
-    assert response.json()["status"] == "validated"
+    assert response.json()["activity_count"] == 3
+
+
+def test_update_itinerary_does_not_change_status(client, create_itinerary):
+    itinerary_id = create_itinerary()
+
+    response = client.patch(f"/api/itineraries/{itinerary_id}", json={"status": "approved"})
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "pending"
 
 
 def test_update_itinerary_returns_403_for_another_guide(client, as_user, create_itinerary):
@@ -294,7 +335,7 @@ def test_update_itinerary_returns_403_for_another_guide(client, as_user, create_
     other_guide_id = _create_guide(client, email="gus@example.com")
 
     with as_user(other_guide_id):
-        response = client.patch(f"/api/itineraries/{itinerary_id}", json={"status": "validated"})
+        response = client.patch(f"/api/itineraries/{itinerary_id}", json={"activity_count": 3})
 
     assert response.status_code == 403
 
@@ -320,11 +361,68 @@ def test_delete_itinerary_returns_403_for_guide(
 
 
 def test_list_itineraries_filters_by_status(client, create_itinerary):
-    validated_id = create_itinerary()
+    validated_id = create_itinerary(status=ItineraryStatus.VALIDATED)
     create_itinerary()
-    client.patch(f"/api/itineraries/{validated_id}", json={"status": "validated"})
 
     response = client.get("/api/itineraries", params={"status": "validated"})
 
     assert response.status_code == 200
     assert [i["id"] for i in response.json()] == [validated_id]
+
+
+def test_review_queue_of_a_validator_guide_lists_pending_itineraries(
+    client, as_user, itinerary_owners, create_itinerary
+):
+    pending_id = create_itinerary()
+    create_itinerary(status=ItineraryStatus.VALIDATED)
+    reviewer_id = _create_guide(client, email="gus@example.com")
+    client.put(
+        f"/api/authorizations/packages/{itinerary_owners['package_id']}/guides/{reviewer_id}",
+        json={"can_generate": False, "can_validate": True},
+    )
+
+    with as_user(reviewer_id):
+        response = client.get("/api/itineraries/review-queue")
+
+    assert response.status_code == 200
+    assert [i["id"] for i in response.json()] == [pending_id]
+
+
+def test_review_queue_of_a_guide_without_can_validate_is_empty(
+    client, as_user, itinerary_owners, create_itinerary
+):
+    create_itinerary()
+
+    with as_user(itinerary_owners["guide_id"]):
+        response = client.get("/api/itineraries/review-queue")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_review_queue_of_a_manager_lists_validated_itineraries(
+    client, as_user, create_itinerary
+):
+    create_itinerary()
+    validated_id = create_itinerary(status=ItineraryStatus.VALIDATED)
+    manager_id = client.post(
+        "/api/users",
+        json={
+            "name": "Olga",
+            "role": "operations_manager",
+            "email": "olga@example.com",
+            "password": "x",
+        },
+    ).json()["id"]
+
+    with as_user(manager_id):
+        response = client.get("/api/itineraries/review-queue")
+
+    assert response.status_code == 200
+    assert [i["id"] for i in response.json()] == [validated_id]
+
+
+def test_review_queue_returns_403_for_admin(client):
+    response = client.get("/api/itineraries/review-queue")
+
+    assert response.status_code == 403

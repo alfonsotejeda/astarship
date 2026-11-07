@@ -4,6 +4,7 @@ from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.activity import Activity
 from app.models.authorization import Authorization
 from app.models.modification_request import ModificationRequest
 
@@ -21,3 +22,4 @@ class Guide(Base):
     modification_requests: Mapped[list[ModificationRequest]] = relationship(
         cascade="all, delete-orphan"
     )
+    activities: Mapped[list["Activity"]] = relationship(back_populates="guide")
