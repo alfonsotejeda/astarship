@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.status import ReviewStatus
 from app.schemas.base import ORMSchema
@@ -13,9 +13,11 @@ class ActivityCreate(BaseModel):
 
     name: str
     effort_level: int
-    activity_type_code: str | None = None
-    category_id: int | None = None
-    user_id: int | None = None
+    duration: int = Field(ge=1)
+    activity_type_code: str
+    category_id: int
+    guide_id: int
+    attraction_id: int
 
 
 class ActivityUpdate(BaseModel):
@@ -23,9 +25,27 @@ class ActivityUpdate(BaseModel):
 
     name: str | None = None
     effort_level: int | None = None
+    duration: int | None = Field(default=None, ge=1)
     activity_type_code: str | None = None
     category_id: int | None = None
-    user_id: int | None = None
+    guide_id: int | None = None
+    attraction_id: int | None = None
+
+    @field_validator(
+        "name",
+        "effort_level",
+        "duration",
+        "activity_type_code",
+        "category_id",
+        "guide_id",
+        "attraction_id",
+    )
+    @classmethod
+    def reject_null(cls, value):
+        """Optional fields may be omitted, but not sent as null."""
+        if value is None:
+            raise ValueError("This field cannot be null")
+        return value
 
 
 class ActivityRead(ORMSchema):
@@ -34,8 +54,10 @@ class ActivityRead(ORMSchema):
     id: int
     name: str
     effort_level: int
+    duration: int
     status: ReviewStatus
     creation_date: date
-    activity_type_code: str | None
-    category_id: int | None
-    user_id: int | None
+    activity_type_code: str
+    category_id: int
+    guide_id: int
+    attraction_id: int

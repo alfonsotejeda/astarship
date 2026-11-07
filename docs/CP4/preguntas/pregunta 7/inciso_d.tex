@@ -1,1 +1,259 @@
-\section{Inciso d)}
+\phantomsection
+\addcontentsline{toc}{subsection}{Inciso d)}
+\subsection*{Inciso d)}
+
+% Seccion con nombres de clase largos, que no se parten con guion.
+\sloppy
+
+\textit{Integra con Singleton para el Facade y con Observer para notificar cuando un
+componente cambia de estado.}
+
+\vspace{0.4cm}
+
+\subsubsection*{Observer: el componente avisa sin saber a quién}
+
+El problema que resuelve se ve mejor planteando la alternativa. Si se quiere que alguien lleve
+un registro de lo que pasa en la sala, o que salte un aviso cuando hay demasiados aparatos
+encendidos, sin Observer esa lógica tiene que vivir en uno de dos sitios, y los dos son malos:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{En el componente:} \texttt{Amplificador} acabaría sabiendo de registros y
+          de consumo eléctrico, que no son asunto suyo.
+    \item \textbf{En la fachada:} tendría que intercalar el aviso entre paso y paso de cada
+          actividad, repetido, y dejaría de ser una coreografía para convertirse en un
+          supervisor. Es justamente la deriva hacia Mediator que el inciso (a) dejó marcada.
+\end{itemize}
+
+Observer saca esa responsabilidad de los dos. El componente publica \emph{que} algo pasó; qué
+se hace con esa noticia es problema de otros:
+
+{\small
+\begin{verbatim}
+public interface IObservadorComponente
+{
+    void AlCambiarEstado(EventoComponente evento);
+}
+
+public record EventoComponente(
+    string Componente,
+    string Accion,
+    string EstadoAnterior,
+    string EstadoNuevo,
+    bool Encendido);
+\end{verbatim}
+}
+
+Y en \texttt{ComponenteBase}, que es el \emph{único} archivo existente que hubo que modificar:
+
+{\small
+\begin{verbatim}
+private readonly List<IObservadorComponente> _observadores = new();
+
+public void Suscribir(IObservadorComponente o) => _observadores.Add(o);
+public void Desuscribir(IObservadorComponente o) => _observadores.Remove(o);
+
+private void Notificar(EventoComponente evento)
+{
+    // Se recorre una copia: un observador puede desuscribirse al
+    // recibir el aviso, y modificar la lista mientras se recorre
+    // seria un error dificil de ver.
+    foreach (IObservadorComponente o in _observadores.ToArray())
+    {
+        o.AlCambiarEstado(evento);
+    }
+}
+\end{verbatim}
+}
+
+Cuatro decisiones de esa implementación que conviene justificar:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{La lista es de cada componente, no estática.} Un registro global de
+          observadores sería más cómodo de usar y convertiría cualquier prueba en dependiente
+          del orden de ejecución.
+    \item \textbf{El evento es inmutable.} Si un observador pudiera modificarlo, afectaría a
+          los siguientes y el orden de notificación dejaría de ser un detalle para volverse
+          parte del contrato.
+    \item \textbf{Se notifica sobre una copia de la lista.} Desuscribirse dentro del aviso es
+          un caso legítimo y, sin la copia, lanzaría al estar modificándose la colección
+          mientras se recorre.
+    \item \textbf{El evento lleva \texttt{Encendido} como dato, no como deducción.} La
+          primera versión decidía si un aparato consumía comparando el nombre del estado con
+          ``apagado'', y así una pantalla subida contaba como aparato encendido. Deducir
+          semántica de una cadena funciona hasta que deja de funcionar: ahora cada componente
+          lo declara, y \texttt{Pantalla} responde que no consume una vez colocada.
+\end{itemize}
+
+Los dos observadores implementados muestran los dos usos típicos:
+\texttt{RegistroDeEventos} acumula la traza y \texttt{VigilanteDeConsumo} mantiene la cuenta
+de aparatos encendidos y avisa al pasar del umbral. Ninguno de los dos es conocido por los
+componentes ni por la fachada.
+
+\subsubsection*{Lo que costó integrar Observer}
+
+\begin{table}[h!]
+    \centering
+    \small
+    \begin{tabular}{p{7.0cm}p{3.2cm}p{3.6cm}}
+        \toprule
+        \textbf{Cambio} & \textbf{Archivos nuevos} & \textbf{Modificados} \\
+        \midrule
+        Observer (interfaz, evento y dos observadores) & 4 & 1
+          (\texttt{ComponenteBase}) \\
+        \addlinespace
+        El dato \texttt{Encendido} bien puesto & 0 & 2 (\texttt{ComponenteBase},
+          \texttt{Pantalla}) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Ni los seis componentes concretos ni la fachada tuvieron que enterarse, porque la notificación
+vive en la clase base por la que ya pasaban todos los cambios de estado. Que exista ese punto
+único no fue suerte: es la razón por la que \texttt{ComponenteBase} centraliza el registro
+desde el inciso (b).
+
+\subsubsection*{Una nota de lenguaje}
+
+En C\# lo idiomático no sería escribir la interfaz a mano, sino un \texttt{event} con
+\texttt{EventHandler<EventoComponente>}, que el lenguaje ya trae con su sintaxis de
+suscripción (\texttt{+=} y \texttt{-=}), o \texttt{IObservable<T>} con \texttt{IObserver<T>}
+para componer flujos. Se escribe a mano por lo mismo que el ejercicio 12 escribe su iterador a
+mano: para que el patrón se vea. Conviene saber que el idioma del lenguaje existe y que, en
+código de producción, sería la elección correcta.
+
+\subsubsection*{Singleton: una sola sala, y lo que eso cuesta}
+
+El enunciado pide Singleton \emph{para el Facade}. La implementación cumple la garantía del
+patrón —una sola instancia y un punto de acceso global— pero toma una decisión que conviene
+declarar en voz alta: \textbf{el Singleton no es la fachada, es un titular}.
+
+{\small
+\begin{verbatim}
+public static class SalaPrincipal
+{
+    private static readonly Lazy<HomeTheaterFacade> Titular =
+        new(Construir, LazyThreadSafetyMode.ExecutionAndPublication);
+
+    public static HomeTheaterFacade Instancia => Titular.Value;
+}
+\end{verbatim}
+}
+
+La razón es que la alternativa estricta —constructor privado y propiedad estática en
+\texttt{HomeTheaterFacade}— daría la misma garantía a un precio alto:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item La fachada dejaría de poderse construir en una prueba.
+    \item No habría forma de montar dos salas, que es un caso que el inciso (a) usa
+          expresamente para descartar el método estático.
+    \item Se contradiría el propio argumento del inciso (a): allí se rechazó el método
+          estático \emph{por no ser instanciable ni sustituible}, y volver a cerrarlo ahora
+          sería recorrer el camino de vuelta.
+\end{itemize}
+
+Con el titular, la aplicación tiene una sola sala y la clase sigue siendo un objeto normal.
+
+\textbf{Sobre la implementación.} \texttt{Lazy<T>} con
+\texttt{LazyThreadSafetyMode.\allowbreak ExecutionAndPublication} garantiza que la fábrica
+corre una sola vez aunque varios hilos pidan la instancia a la vez. La versión ingenua,
+\texttt{if (instancia == null) instancia = new ...}, \emph{no} da esa garantía: dos hilos
+pueden ver el nulo a la vez y construir dos. La prueba 5 de la ejecución lo comprueba con ocho
+hilos y un contador de construcciones.
+
+\textbf{Y el precio, que el enunciado no pide pero existe.} Un Singleton es una variable
+global con buena presentación:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Esconde la dependencia.} Una clase que usa \texttt{SalaPrincipal.Instancia}
+          no lo declara en su constructor, así que leer su firma ya no dice de qué depende.
+    \item \textbf{Ata las pruebas entre sí.} El estado de la sala sobrevive de una prueba a
+          la siguiente, y el orden pasa a importar.
+    \item \textbf{Fija la composición.} La sala principal trae sus propios seis componentes,
+          a los que nadie puede suscribir un observador desde fuera. La parte 6 de la
+          demostración lo enseña, y no es un defecto de esta implementación sino del patrón.
+    \item \textbf{La alternativa habitual} en una aplicación real es registrar la fachada como
+          instancia única en el contenedor de inyección de dependencias
+          (\texttt{services.AddSingleton<HomeTheaterFacade>()}): una sola instancia, sin
+          acceso global y sin perder la inyección.
+\end{itemize}
+
+\subsubsection*{Evidencia de ejecución}
+
+Salida literal de \texttt{DemoIntegracion}:
+
+{\footnotesize
+\begin{verbatim}
+1. Observer: dos interesados, y los componentes no los conocen
+--------------------------------------------------------------
+  cine.VerPelicula("Metropolis");
+    luces         atenuadas al 10%
+    pantalla      bajada
+    proyector     encendido
+    proyector     entrada -> dvd
+    proyector     formato 16:9
+    amplificador  encendido
+    amplificador  entrada -> dvd
+    amplificador  modo envolvente
+    amplificador  volumen 7
+    dvd           encendido
+    [vigilante]  4 componentes activos, por encima del umbral de 3
+    dvd           reproduciendo "Metropolis"
+    [vigilante]  4 componentes activos, por encima del umbral de 3
+
+  eventos recibidos por el registro: 11
+  de los cuales cambiaron el estado: 8
+  componentes activos segun el vigilante: 4
+
+2. Al terminar, el vigilante ve bajar el consumo
+------------------------------------------------
+    dvd           detenido
+    [vigilante]  4 componentes activos, por encima del umbral de 3
+    dvd           apagado
+    amplificador  apagado
+    proyector     apagado
+    pantalla      subida
+    luces         al 100%
+
+  componentes activos: 1
+
+3. Desuscribirse: el componente deja de contarle a quien se fue
+---------------------------------------------------------------
+    luces         atenuadas al 25%
+  eventos antes: 18, despues: 18
+
+4. Singleton: la misma sala desde cualquier punto del programa
+--------------------------------------------------------------
+  SalaPrincipal.Instancia dos veces -> misma referencia: true
+
+5. Y una sola, aunque la pidan ocho hilos a la vez
+--------------------------------------------------
+  las ocho obtuvieron la misma: true
+  veces que corrio la fabrica: 1
+
+6. Lo que el Singleton se lleva por delante
+-------------------------------------------
+  La sala principal trae sus propios seis componentes, a los
+  que nadie suscribio nada. Una prueba que quiera observarlos
+  no tiene por donde entrar, y ese es el precio del acceso
+  global: la dependencia deja de verse en los constructores.
+\end{verbatim}
+}
+
+Dos lecturas. En la parte 1, los once pasos de la película generan once eventos, de los que
+ocho cambian el estado: los otros tres son acciones que no lo alteran, como fijar el volumen.
+En la parte 3, tras desuscribirse, el registro deja de crecer aunque las luces sigan
+cambiando: 18 eventos antes y 18 después.
+
+\subsubsection*{Cómo ejecutarlo}
+
+{\small
+\begin{verbatim}
+cd docs/CP4/codigo/ejercicio7
+dotnet run -- integracion
+\end{verbatim}
+}
+
+Las salidas de \texttt{demo} y \texttt{extension} no cambiaron ni un carácter al integrar los
+dos patrones: la notificación es aditiva y el Singleton no toca a quien no lo usa.
+
+\fussy

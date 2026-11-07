@@ -22,6 +22,11 @@ def get_user(db: Session, user_id: int) -> User | None:
     return db.get(User, user_id)
 
 
+def get_user_by_email(db: Session, email: str) -> User | None:
+    """Return a user by email, or None if it isn't registered."""
+    return db.scalar(select(User).where(User.email == email))
+
+
 def get_guide(db: Session, guide_id: int) -> Guide | None:
     """Return a guide by id, or None if the user doesn't exist or isn't a guide."""
     return db.get(Guide, guide_id)
@@ -30,6 +35,11 @@ def get_guide(db: Session, guide_id: int) -> Guide | None:
 def get_admin(db: Session, admin_id: int) -> Admin | None:
     """Return an admin by id, or None if the user doesn't exist or isn't an admin."""
     return db.get(Admin, admin_id)
+
+
+def get_operations_manager(db: Session, manager_id: int) -> OperationsManager | None:
+    """Return an operations manager by id, or None if the user doesn't exist or isn't one."""
+    return db.get(OperationsManager, manager_id)
 
 
 def get_tourist(db: Session, tourist_id: int) -> Tourist | None:
@@ -73,21 +83,21 @@ def update_user(db: Session, user: User, data: UserUpdate) -> User:
     """Apply partial updates to an existing user and its subtype row."""
     updates = data.model_dump(exclude_unset=True, exclude={"guide", "tourist"})
     password = updates.pop("password", None)
-    
+
     for field, value in updates.items():
         setattr(user, field, value)
-        
+
     subtype_data = getattr(data, user.role.value, None)
-    
+
     if subtype_data is not None:
         subtype = getattr(user, user.role.value)
-        
+
         for field, value in subtype_data.model_dump(exclude_unset=True, exclude_none=True).items():
             setattr(subtype, field, value)
-    
+
     if password is not None:
         user.password_hash = hash_password(password)
-    
+
     db.commit()
     db.refresh(user)
     return user

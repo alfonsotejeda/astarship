@@ -1,1 +1,250 @@
-\section{Inciso b)}
+\phantomsection
+\addcontentsline{toc}{subsection}{Inciso b)}
+\subsection*{Inciso b)}
+
+% Seccion con nombres de clase largos, que no se parten con guion.
+\sloppy
+
+\textit{Implementa con 6 componentes y 3 actividades: VerPelícula, EscucharMúsica,
+JugarVideojuego.}
+
+\vspace{0.4cm}
+
+\subsubsection*{Qué se implementó}
+
+La implementación completa, compilable y ejecutable, está en
+\texttt{docs/CP4/codigo/ejercicio7/} (C\# 12 sobre .NET 8, sin dependencias externas).
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{El subsistema, seis componentes:} \texttt{Amplificador},
+          \texttt{ReproductorDvd}, \texttt{ConsolaJuegos}, \texttt{Proyector},
+          \texttt{Pantalla} y \texttt{Luces}, sobre \texttt{ComponenteBase}, que guarda el
+          nombre, el estado y la traza de lo que hace cada uno.
+    \item \textbf{La fachada:} \texttt{HomeTheaterFacade}, que recibe los seis al
+          construirse y publica \texttt{VerPelicula}, \texttt{TerminarPelicula},
+          \texttt{EscucharMusica} y \texttt{JugarVideojuego}.
+    \item \textbf{El cliente:} \texttt{Demo}, con las cinco comprobaciones cuya salida se
+          reproduce más abajo.
+\end{itemize}
+
+El enunciado nombra cinco componentes y pide seis. El añadido es \texttt{ConsolaJuegos}, y no
+es de relleno: sin él, \texttt{JugarVideojuego} sería una película con otro nombre.
+
+\subsubsection*{Las tres actividades sobre los seis componentes}
+
+Lo que hace interesante al ejercicio es que las tres actividades no son la misma secuencia con
+otros parámetros: usan \emph{subconjuntos distintos} del subsistema, en órdenes distintos.
+
+\begin{table}[h!]
+    \centering
+    \small
+    \begin{tabular}{p{2.3cm}p{3.9cm}p{3.5cm}p{3.9cm}}
+        \toprule
+        \textbf{Componente} & \textbf{VerPelícula} & \textbf{EscucharMúsica}
+        & \textbf{JugarVideojuego} \\
+        \midrule
+        Luces        & atenúa al 10\% & atenúa al 40\% & atenúa al 60\% \\
+        \addlinespace
+        Pantalla     & baja & --- & baja \\
+        \addlinespace
+        Proyector    & enciende, entrada dvd, formato 16:9 & ---
+                     & enciende, entrada consola, formato 16:9 \\
+        \addlinespace
+        Amplificador & enciende, entrada dvd, envolvente, volumen 7
+                     & enciende, entrada dvd, estéreo, volumen 5
+                     & enciende, entrada consola, volumen 9 \\
+        \addlinespace
+        DVD          & enciende, reproduce & enciende, reproduce & --- \\
+        \addlinespace
+        Consola      & --- & --- & enciende, carga el juego \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Las dos celdas vacías de \texttt{EscucharMúsica} son las que más dicen: encender el proyector
+para oír música sería un error que nadie comete dos veces, y es precisamente el tipo de
+conocimiento que la fachada guarda.
+
+\subsubsection*{La fachada en el código}
+
+{\small
+\begin{verbatim}
+public sealed class HomeTheaterFacade
+{
+    private readonly Amplificador _amplificador;
+    private readonly ReproductorDvd _dvd;
+    // ... los otros cuatro componentes
+
+    public void VerPelicula(string titulo)
+    {
+        _luces.Atenuar(10);
+        _pantalla.Bajar();
+        _proyector.Encender();
+        _proyector.Entrada("dvd");
+        _proyector.Formato("16:9");
+        _amplificador.Encender();
+        _amplificador.Entrada("dvd");
+        _amplificador.ModoEnvolvente(true);
+        _amplificador.PonerVolumen(7);
+        _dvd.Encender();
+        _dvd.Reproducir(titulo);
+    }
+
+    public void TerminarPelicula()   // el orden inverso tambien
+    {                                // es conocimiento del subsistema
+        _dvd.Detener();
+        _dvd.Apagar();
+        _amplificador.Apagar();
+        _proyector.Apagar();
+        _pantalla.Subir();
+        _luces.Encender();
+    }
+}
+\end{verbatim}
+}
+
+Obsérvese que el cuerpo no contiene ni una decisión: ni un \texttt{if}, ni un cálculo. La
+fachada no añade comportamiento, añade \emph{orden}. Si alguna vez apareciera lógica de
+negocio aquí dentro, sería señal de que la clase ha dejado de ser una fachada.
+
+\subsubsection*{Qué cambia para el cliente}
+
+\begin{table}[h!]
+    \centering
+    \small
+    \begin{tabular}{p{4.6cm}p{4.6cm}p{4.6cm}}
+        \toprule
+        & \textbf{Sin fachada} & \textbf{Con fachada} \\
+        \midrule
+        Llamadas para ver una película & 11 & 1 \\
+        \addlinespace
+        Clases que el cliente conoce & 6 & 1 \\
+        \addlinespace
+        Quién sabe el orden & cada cliente, por su cuenta & un solo archivo \\
+        \addlinespace
+        Coste de cambiar el amplificador & todos los clientes & un archivo \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsubsection*{Evidencia de ejecución}
+
+Salida literal de \texttt{Demo}. Las partes 1 y 2 producen deliberadamente la misma traza: lo
+que cambia no es lo que ocurre, sino quién tuvo que saberlo.
+
+{\footnotesize
+\begin{verbatim}
+1. El cliente SIN fachada: once llamadas y el orden es cosa suya
+----------------------------------------------------------------
+  codigo del cliente: once lineas, seis componentes, un orden
+  que nadie ha escrito en ningun sitio.
+    luces         atenuadas al 10%
+    pantalla      bajada
+    proyector     encendido
+    proyector     entrada -> dvd
+    proyector     formato 16:9
+    amplificador  encendido
+    amplificador  entrada -> dvd
+    amplificador  modo envolvente
+    amplificador  volumen 7
+    dvd           encendido
+    dvd           reproduciendo "Blade Runner"
+    dvd           detenido
+    dvd           apagado
+    amplificador  apagado
+    proyector     apagado
+    pantalla      subida
+    luces         al 100%
+
+2. El mismo resultado CON fachada: una llamada
+----------------------------------------------
+  codigo del cliente: cine.VerPelicula("Blade Runner");
+    luces         atenuadas al 10%
+    pantalla      bajada
+    proyector     encendido
+    proyector     entrada -> dvd
+    proyector     formato 16:9
+    amplificador  encendido
+    amplificador  entrada -> dvd
+    amplificador  modo envolvente
+    amplificador  volumen 7
+    dvd           encendido
+    dvd           reproduciendo "Blade Runner"
+
+3. Terminar: el orden inverso tambien es conocimiento del subsistema
+--------------------------------------------------------------------
+  codigo del cliente: cine.TerminarPelicula();
+    dvd           detenido
+    dvd           apagado
+    amplificador  apagado
+    proyector     apagado
+    pantalla      subida
+    luces         al 100%
+
+4. Las otras dos actividades sobre el mismo subsistema
+------------------------------------------------------
+  cine.EscucharMusica("Kind of Blue");
+    luces         atenuadas al 40%
+    amplificador  encendido
+    amplificador  entrada -> dvd
+    amplificador  modo estereo
+    amplificador  volumen 5
+    dvd           encendido
+    dvd           reproduciendo "Kind of Blue"
+
+  cine.JugarVideojuego("Hollow Knight");
+    luces         atenuadas al 60%
+    pantalla      bajada
+    proyector     encendido
+    proyector     entrada -> consola
+    proyector     formato 16:9
+    amplificador  encendido
+    amplificador  entrada -> consola
+    amplificador  volumen 9
+    consola       encendida
+    consola       cargando "Hollow Knight"
+
+5. La fachada no cierra el subsistema
+-------------------------------------
+  Un cliente con una necesidad que la fachada no cubre sigue
+  pudiendo hablar con el componente directamente:
+    amplificador  volumen 3
+
+  Estado final de los seis componentes:
+    amplificador  entrada:consola
+    dvd           reproduciendo
+    consola       jugando
+    proyector     entrada:consola
+    pantalla      bajada
+    luces         atenuadas
+\end{verbatim}
+}
+
+\subsubsection*{Tres observaciones que salieron del experimento}
+
+\textbf{El apagado es tan subsistema como el encendido.} \texttt{TerminarPelicula} no es la
+inversa automática de \texttt{VerPelicula}: apaga en orden contrario, no devuelve el volumen
+y sube la pantalla al final. Una fachada que solo supiera empezar actividades estaría a medias.
+
+\textbf{La fachada no cierra el subsistema.} En la parte 5, el cliente baja un nivel y le pone
+volumen 3 al amplificador directamente. Compila y funciona, y debe hacerlo: el catálogo lo
+dice expresamente. Quien quiera impedirlo necesita otro patrón, y probablemente otro problema.
+
+\textbf{El estado queda repartido.} Al terminar, cada componente conserva el suyo
+(\texttt{entrada:consola}, \texttt{jugando}, \texttt{bajada}\ldots) y la fachada no lo
+centraliza. Es coherente con el patrón, pero conviene saberlo: la fachada no es la dueña del
+estado del subsistema, y preguntarle a ella en qué estado está la sala no funcionaría.
+
+\subsubsection*{Cómo compilar y ejecutar}
+
+{\small
+\begin{verbatim}
+cd docs/CP4/codigo/ejercicio7
+dotnet run -- demo
+\end{verbatim}
+}
+
+Compila sin un solo aviso con \texttt{TreatWarningsAsErrors} y nivel de aviso 9999 sobre
+.NET 8.
+
+\fussy
