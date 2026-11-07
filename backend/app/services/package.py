@@ -46,7 +46,7 @@ def create_package(db: Session, data: PackageCreate) -> Package:
 
     Args:
         db: Database session.
-        data: Creation payload with name and destination.
+        data: Creation payload with name, destination and the generating admin.
 
     Returns:
         The persisted package.
@@ -56,7 +56,7 @@ def create_package(db: Session, data: PackageCreate) -> Package:
     """
     if find_package_by_name_destination(db, data.name, data.destination) is not None:
         raise ValueError("Package with this name and destination already exists")
-    package = Package(name=data.name, destination=data.destination)
+    package = Package(name=data.name, destination=data.destination, admin_id=data.admin_id)
     db.add(package)
     db.commit()
     db.refresh(package)

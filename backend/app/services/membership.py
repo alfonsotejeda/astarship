@@ -3,12 +3,6 @@
 from sqlalchemy.orm import Session
 
 from app.models.membership import Membership
-from app.models.user.tourist import Tourist
-
-
-def get_tourist(db: Session, tourist_id: int) -> Tourist | None:
-    """Return a tourist by id, or None if it doesn't exist."""
-    return db.get(Tourist, tourist_id)
 
 
 def get_membership(db: Session, travel_group_id: int, tourist_id: int) -> Membership | None:

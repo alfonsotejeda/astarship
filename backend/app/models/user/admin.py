@@ -14,3 +14,4 @@ class Admin(Base):
     id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
 
     user = relationship("User", back_populates="admin")
+    packages = relationship("Package", back_populates="admin")

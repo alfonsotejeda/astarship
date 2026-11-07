@@ -1,5 +1,11 @@
 """Tests for the booking routes."""
 
+from datetime import date
+from uuid import uuid4
+
+from app.schemas.itinerary import ItineraryCreate
+from app.services import itinerary as itinerary_service
+
 
 def _create_tourist(client, email="ada@example.com"):
     return client.post(
@@ -15,7 +21,19 @@ def _create_tourist(client, email="ada@example.com"):
 
 
 def _create_package(client, name="Europa Capitales", destination="París"):
-    return client.post("/api/packages", json={"name": name, "destination": destination}).json()
+    admin = client.post(
+        "/api/users",
+        json={
+            "name": "Owner",
+            "role": "admin",
+            "email": f"{uuid4().hex}@example.com",
+            "password": "s3cret",
+        },
+    ).json()
+    return client.post(
+        "/api/packages",
+        json={"name": name, "destination": destination, "admin_id": admin["id"]},
+    ).json()
 
 
 def _create_booking(client, tourist_id, package_id, booking_date="2026-10-01", **extra):
@@ -47,20 +65,24 @@ def test_create_booking_returns_201_and_pair(client):
     }
 
 
-def test_create_booking_with_optional_fields(client):
+def test_create_booking_with_optional_fields(client, db_session, itinerary_owners):
     tourist = _create_tourist(client)
     package = _create_package(client)
-    itinerary = client.post(
-        "/api/itineraries",
-        json={"creation_date": "2026-10-01", "activity_count": 3},
-    ).json()
+    itinerary = itinerary_service.create_itinerary(
+        db_session,
+        ItineraryCreate(
+            creation_date=date(2026, 10, 1),
+            activity_count=3,
+            **itinerary_owners,
+        ),
+    )
 
     response = _create_booking(
         client,
         tourist["id"],
         package["id"],
         proposed_date="2026-11-01",
-        itinerary_id=itinerary["id"],
+        itinerary_id=itinerary.id,
         status="rejected",
         rejection_reason="Sin cupos",
     )
@@ -68,30 +90,34 @@ def test_create_booking_with_optional_fields(client):
     assert response.status_code == 201
     body = response.json()
     assert body["proposed_date"] == "2026-11-01"
-    assert body["itinerary_id"] == itinerary["id"]
+    assert body["itinerary_id"] == itinerary.id
     assert body["rejection_reason"] == "Sin cupos"
     assert body["status"] == "rejected"
 
 
-def test_update_booking_returns_200_and_modified_fields(client):
+def test_update_booking_returns_200_and_modified_fields(client, db_session, itinerary_owners):
     tourist = _create_tourist(client)
     package = _create_package(client)
-    itinerary = client.post(
-        "/api/itineraries",
-        json={"creation_date": "2026-10-01", "activity_count": 2},
-    ).json()
+    itinerary = itinerary_service.create_itinerary(
+        db_session,
+        ItineraryCreate(
+            creation_date=date(2026, 10, 1),
+            activity_count=2,
+            **itinerary_owners,
+        ),
+    )
     _create_booking(client, tourist["id"], package["id"])
 
     response = client.patch(
         f"/api/bookings/{tourist['id']}/{package['id']}",
-        json={"status": "assigned", "proposed_date": "2026-11-05", "itinerary_id": itinerary["id"]},
+        json={"status": "assigned", "proposed_date": "2026-11-05", "itinerary_id": itinerary.id},
     )
 
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "assigned"
     assert body["proposed_date"] == "2026-11-05"
-    assert body["itinerary_id"] == itinerary["id"]
+    assert body["itinerary_id"] == itinerary.id
     assert body["booking_date"] == "2026-10-01"
 
 

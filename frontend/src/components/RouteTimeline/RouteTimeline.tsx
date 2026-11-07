@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { Badge } from "@/components/Badge/Badge";
 import type { ActivityType } from "@/components/Badge/Badge";
 import { Button } from "@/components/Button/Button";
@@ -14,6 +15,8 @@ export type RouteStop = {
   time?: string;
   name: string;
   place?: string;
+  // The attraction's page, when the place links to it
+  placeTo?: string;
   type?: ActivityType;
   effort?: EffortLevel;
   duration?: string;
@@ -114,7 +117,13 @@ export function RouteTimeline({
                 {stop.place && (
                   <div className="route-timeline__place">
                     <Icon name="pin" size={13} />
-                    {stop.place}
+                    {stop.placeTo ? (
+                      <Link to={stop.placeTo} className="route-timeline__place-link">
+                        {stop.place}
+                      </Link>
+                    ) : (
+                      stop.place
+                    )}
                   </div>
                 )}
 

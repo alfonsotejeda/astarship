@@ -10,13 +10,21 @@ from app.db.base import Base
 from app.models import (  # noqa: F401
     activity,
     activity_type,
+    assignment,
+    attraction,
     authorization,
     booking,
     category,
+    coverage,
     itinerary,
+    itinerary_approval,
+    itinerary_validation,
+    itinerary_composition,
     membership,
+    modification_request,
     package,
-    permission,
+    proportion_category,
+    proportion_type,
     travel_group,
 )
 from app.models.user import (  # noqa: F401

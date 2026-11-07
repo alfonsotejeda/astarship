@@ -12,10 +12,12 @@ class PackageCreate(BaseModel):
     """Fields required to create a package.
 
     A package is always born pending: `status` only changes through an update.
+    The admin that generates it is fixed at creation.
     """
 
     name: str
     destination: str
+    admin_id: int
 
 
 class PackageUpdate(BaseModel):
@@ -34,3 +36,4 @@ class PackageRead(ORMSchema):
     destination: str
     status: ReviewStatus
     creation_date: date
+    admin_id: int

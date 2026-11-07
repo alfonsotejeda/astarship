@@ -1,6 +1,7 @@
 """Tests for the Booking service."""
 
 from datetime import date
+from uuid import uuid4
 
 import pytest
 
@@ -8,7 +9,7 @@ from app.models.status import BookingStatus
 from app.schemas.booking import BookingCreate, BookingUpdate
 from app.schemas.itinerary import ItineraryCreate
 from app.schemas.package import PackageCreate
-from app.schemas.user import AdminCreate, TouristCreate
+from app.schemas.user import AdminCreate, GuideCreate, TouristCreate
 from app.services import booking as booking_service
 from app.services import itinerary as itinerary_service
 from app.services import package as package_service
@@ -22,9 +23,30 @@ def _create_tourist(db_session, email="ada@example.com"):
     )
 
 
+def _create_admin(db_session):
+    return user_service.create_user(
+        db_session,
+        AdminCreate(name="Owner", role="admin", email=f"{uuid4().hex}@example.com", password="x"),
+    )
+
+
+def _create_guide(db_session):
+    return user_service.create_user(
+        db_session,
+        GuideCreate(
+            name="Gil",
+            role="guide",
+            email=f"{uuid4().hex}@example.com",
+            password="x",
+            specialty="History",
+        ),
+    )
+
+
 def _create_package(db_session, name="Europa Capitales", destination="París"):
+    admin = _create_admin(db_session)
     return package_service.create_package(
-        db_session, PackageCreate(name=name, destination=destination)
+        db_session, PackageCreate(name=name, destination=destination, admin_id=admin.id)
     )
 
 
@@ -290,7 +312,12 @@ def test_get_packages_for_tourist_empty_when_no_bookings(db_session):
 def _create_itinerary(db_session):
     return itinerary_service.create_itinerary(
         db_session,
-        ItineraryCreate(creation_date=date(2026, 10, 1), activity_count=3),
+        ItineraryCreate(
+            creation_date=date(2026, 10, 1),
+            activity_count=3,
+            package_id=_create_package(db_session, name=uuid4().hex).id,
+            guide_id=_create_guide(db_session).id,
+        ),
     )
 
 
