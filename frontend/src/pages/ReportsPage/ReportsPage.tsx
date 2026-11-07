@@ -2,12 +2,14 @@ import type { ComponentType } from "react";
 import { Navigate, useParams } from "react-router";
 import { findReport } from "./reports";
 import type { ReportKey } from "./reports";
+import { Rc1 } from "./reports/Rc1";
 import { PendingReport } from "./ReportTemplate";
+import { Rc2 } from "./reports/Rc2";
 import { Rc3 } from "./reports/Rc3";
 import "./ReportsPage.css";
 
 // Each query (#106–#111) adds its report here, from reports/RcN.tsx built on ReportTemplate
-const REPORT_VIEWS: Partial<Record<ReportKey, ComponentType>> = { rc3: Rc3 };
+const REPORT_VIEWS: Partial<Record<ReportKey, ComponentType>> = { rc1: Rc1, rc2: Rc2, rc3: Rc3 };
 
 export function ReportsPage() {
   const { rc } = useParams();
