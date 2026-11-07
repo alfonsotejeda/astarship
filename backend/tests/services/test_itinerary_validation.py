@@ -365,8 +365,6 @@ def test_create_validation_rejected(db_session, sample_data):
     """A rejected validation marks the itinerary as rejected."""
     d = sample_data
     authorize(db_session, d["g2"], d["pkg1"])
-    d["it2"].status = ItineraryStatus.VALIDATED
-    db_session.commit()
     data = ItineraryValidationCreate(guide_id=d["g2"].id, result=False)
 
     validation = service.create_validation(d["it2"].id, data, db_session)
@@ -374,6 +372,22 @@ def test_create_validation_rejected(db_session, sample_data):
     assert validation.result is False
     db_session.refresh(d["it2"])
     assert d["it2"].status == ItineraryStatus.REJECTED
+
+
+@pytest.mark.parametrize(
+    "status",
+    [ItineraryStatus.VALIDATED, ItineraryStatus.APPROVED, ItineraryStatus.REJECTED],
+)
+def test_create_validation_of_a_reviewed_itinerary(db_session, sample_data, status):
+    """Only a pending itinerary can be validated."""
+    d = sample_data
+    authorize(db_session, d["g2"], d["pkg1"])
+    d["it2"].status = status
+    db_session.commit()
+    data = ItineraryValidationCreate(guide_id=d["g2"].id, result=True)
+
+    with pytest.raises(ValueError, match="pending"):
+        service.create_validation(d["it2"].id, data, db_session)
 
 
 def test_create_validation_without_authorization(db_session, sample_data):

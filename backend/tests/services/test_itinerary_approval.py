@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime
 
 from app.models.itinerary_approval import ItineraryApproval
 from app.models.status import ApprovalResult, ItineraryStatus
-from app.schemas.itinerary import ItineraryCreate, ItineraryUpdate
+from app.schemas.itinerary import ItineraryCreate
 from app.schemas.itinerary_approval import ItineraryApprovalCreate
 from app.schemas.user import OperationsManagerCreate
 from app.services import itinerary as itinerary_service
@@ -16,9 +16,9 @@ def _create_itinerary(db_session, owners):
     itinerary = itinerary_service.create_itinerary(
         db_session, ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=2, **owners)
     )
-    return itinerary_service.update_itinerary(
-        db_session, itinerary, ItineraryUpdate(status=ItineraryStatus.VALIDATED)
-    )
+    itinerary.status = ItineraryStatus.VALIDATED
+    db_session.commit()
+    return itinerary
 
 
 def _create_manager(db_session, email="olga@example.com"):
