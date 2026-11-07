@@ -13,6 +13,7 @@ from app.models import (  # noqa: F401
     assignment,
     attraction,
     authorization,
+    booking,
     category,
     coverage,
     itinerary,

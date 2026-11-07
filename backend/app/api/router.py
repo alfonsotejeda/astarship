@@ -10,6 +10,7 @@ from app.api.routes import (
     attraction,
     auth,
     authorization,
+    booking,
     category,
     coverage,
     health,
@@ -22,6 +23,7 @@ from app.api.routes import (
     proportion_category,
     proportion_type,
     report,
+    tourist,
     travel_group,
     itinerary_validation,
     user,
@@ -41,6 +43,8 @@ api_router.include_router(activity.router, dependencies=authenticated)
 api_router.include_router(activity_type.router, dependencies=authenticated)
 api_router.include_router(travel_group.router, dependencies=authenticated)
 api_router.include_router(itinerary.router, dependencies=authenticated)
+api_router.include_router(booking.router, dependencies=authenticated)
+api_router.include_router(tourist.router, dependencies=authenticated)
 api_router.include_router(coverage.router, dependencies=authenticated)
 api_router.include_router(assignment.router, dependencies=authenticated)
 api_router.include_router(modification_request.router, dependencies=authenticated)
