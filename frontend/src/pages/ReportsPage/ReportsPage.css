@@ -30,6 +30,11 @@
   gap: var(--space-5);
 }
 
+.reports__code {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
 .reports__mono {
   font: var(--type-data);
 }
