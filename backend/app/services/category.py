@@ -1,8 +1,9 @@
 """Category service."""
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.models.activity import Activity
 from app.models.category import Category
 from app.schemas.category import CategoryCreate, CategoryUpdate
 
@@ -55,5 +56,28 @@ def update_category(db: Session, up_category: Category, data: CategoryUpdate) ->
 
 def delete_category(db: Session, category: Category) -> None:
     """delete_category deletes an existing category."""
+    if category.activities:
+        raise ValueError("Cannot delete a category with existing activities")
     db.delete(category)
     db.commit()
+
+def activities_by_category(db: Session, category_id: int) -> list[Activity]:
+    """activities_by_category returns a list of activities for a given category."""
+    category = db.get(Category, category_id)
+    if category is None:
+        raise LookupError("Category does not exist")
+
+    stmt = select(Activity).where(Activity.category_id == category_id).order_by(Activity.name)
+    return list(db.scalars(stmt))
+
+
+
+def activities_count_by_categories(db: Session) -> list[tuple[Category, int]]:
+    """Return each category with its activity count."""
+    stmt = (
+        select(Category, func.count(Activity.id))
+        .outerjoin(Activity, Activity.category_id == Category.id)
+        .group_by(Category.id)
+        .order_by(Category.id)
+    )
+    return [(category, total) for category, total in db.execute(stmt)]

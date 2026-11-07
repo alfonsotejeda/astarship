@@ -22,8 +22,17 @@
   min-width: 0;
 }
 
+.reports__code {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
 .reports__mono {
   font: var(--type-data);
+}
+
+.reports__muted {
+  color: var(--ink-muted);
 }
 
 @media (max-width: 480px) {
