@@ -7,6 +7,7 @@ from app.api.deps.auth import get_current_user, require_admin
 from app.api.deps.rules import forbid_acting_for_others
 from app.db.session import get_db
 from app.models.assignment import Assignment
+from app.models.status import ItineraryStatus
 from app.models.user.user import User
 from app.schemas.assignment import AssignmentCreate, AssignmentRead, AssignmentUpdate
 from app.services import assignment as assignment_service
@@ -61,14 +62,20 @@ def list_tourist_assignments(
 def create_assignment(
     itinerary_id: int, tourist_id: int, data: AssignmentCreate, db: Session = Depends(get_db)
 ) -> AssignmentRead:
-    """Assign an itinerary to a tourist."""
-    _ensure_itinerary_exists(db, itinerary_id)
+    """Assign an approved itinerary to a tourist."""
+    itinerary = itinerary_service.get_itinerary(db, itinerary_id)
+    if itinerary is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Itinerary not found")
     _ensure_tourist_exists(db, tourist_id)
     if user_service.get_admin(db, data.admin_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
     if assignment_service.get_assignment(db, itinerary_id, tourist_id) is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Itinerary already assigned to tourist"
+        )
+    if itinerary.status is not ItineraryStatus.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Only approved itineraries can be assigned"
         )
     return assignment_service.create_assignment(db, itinerary_id, tourist_id, data)
 

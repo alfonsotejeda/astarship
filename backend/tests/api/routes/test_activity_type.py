@@ -44,3 +44,45 @@ def test_delete_activity_type_removes_it(client):
 
     assert response.status_code == 204
     assert client.get("/api/activity-types/TEMP").status_code == 404
+
+
+def test_delete_activity_type_with_activities_returns_409(client, as_user):
+    client.post("/api/activity-types", json={"code": "HIKE", "name": "Hiking"})
+    category = client.post("/api/categories/create", json={"name": "Adventure"}).json()
+    attraction = client.post(
+        "/api/attractions",
+        json={
+            "name": "Malecón",
+            "address": "Av. del Puerto",
+            "latitude": 23.14,
+            "longitude": -82.36,
+        },
+    ).json()
+    guide = client.post(
+        "/api/users",
+        json={
+            "name": "Gil",
+            "role": "guide",
+            "email": "gil@example.com",
+            "password": "x",
+            "specialty": "History",
+        },
+    ).json()
+    with as_user(guide["id"]):
+        client.post(
+            "/api/activities",
+            json={
+                "name": "Hiking",
+                "effort_level": 3,
+                "duration": 90,
+                "activity_type_code": "HIKE",
+                "category_id": category["id"],
+                "guide_id": guide["id"],
+                "attraction_id": attraction["id"],
+            },
+        )
+
+    response = client.delete("/api/activity-types/HIKE")
+
+    assert response.status_code == 409
+    assert client.get("/api/activity-types/HIKE").status_code == 200
