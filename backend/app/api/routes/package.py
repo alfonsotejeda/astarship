@@ -8,6 +8,8 @@ from app.api.deps.auth import require_admin
 from app.db.session import get_db
 from app.models.status import ReviewStatus
 from app.schemas.package import PackageCreate, PackageRead, PackageUpdate
+from app.schemas.user import TouristRead
+from app.services import booking as booking_service
 from app.services import package as package_service
 from app.services import user as user_service
 
@@ -40,6 +42,13 @@ def list_packages(
 ) -> list[PackageRead]:
     """List all packages, optionally filtered by status."""
     return package_service.list_packages(db, status)
+
+
+@router.get("/{package_id}/tourists", response_model=list[TouristRead])
+def get_package_tourists(package_id: int, db: Session = Depends(get_db)) -> list[TouristRead]:
+    """List all tourists booked into a package."""
+    package = _get_package_or_404(db, package_id)
+    return booking_service.get_tourists_for_package(db, package.id)
 
 
 @router.get("/{package_id}", response_model=PackageRead)
