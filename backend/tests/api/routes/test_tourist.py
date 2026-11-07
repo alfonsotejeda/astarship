@@ -1,0 +1,65 @@
+"""Tests for the tourist routes."""
+
+from uuid import uuid4
+
+
+def _create_tourist(client, email="ada@example.com"):
+    return client.post(
+        "/api/users",
+        json={
+            "name": "Ada",
+            "role": "tourist",
+            "email": email,
+            "password": "s3cret",
+            "age": 30,
+        },
+    ).json()
+
+
+def _create_package(client, name="Europa Capitales", destination="París"):
+    admin = client.post(
+        "/api/users",
+        json={
+            "name": "Owner",
+            "role": "admin",
+            "email": f"{uuid4().hex}@example.com",
+            "password": "s3cret",
+        },
+    ).json()
+    return client.post(
+        "/api/packages",
+        json={"name": name, "destination": destination, "admin_id": admin["id"]},
+    ).json()
+
+
+def _create_booking(client, tourist_id, package_id, booking_date="2026-10-01"):
+    return client.post(
+        "/api/bookings",
+        json={"tourist_id": tourist_id, "package_id": package_id, "booking_date": booking_date},
+    )
+
+
+def test_get_tourist_packages_returns_booked_packages(client):
+    tourist = _create_tourist(client, email="viajera@example.com")
+    package = _create_package(client)
+    _create_booking(client, tourist["id"], package["id"])
+
+    response = client.get(f"/api/tourists/{tourist['id']}/packages")
+
+    assert response.status_code == 200
+    assert [p["id"] for p in response.json()] == [package["id"]]
+
+
+def test_get_tourist_packages_returns_404_when_tourist_missing(client):
+    response = client.get("/api/tourists/999999/packages")
+
+    assert response.status_code == 404
+
+
+def test_get_tourist_packages_empty_when_no_bookings(client):
+    tourist = _create_tourist(client, email="sola@example.com")
+
+    response = client.get(f"/api/tourists/{tourist['id']}/packages")
+
+    assert response.status_code == 200
+    assert response.json() == []

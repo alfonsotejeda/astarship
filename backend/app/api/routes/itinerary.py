@@ -9,7 +9,7 @@ from app.api.deps.rules import get_approved_package, require_itinerary_author
 from app.db.session import get_db
 from app.models.activity import Activity
 from app.models.status import ItineraryStatus, ReviewStatus
-from app.models.user.user import User
+from app.models.user.user import User, UserRole
 from app.schemas.itinerary import (
     ItineraryGenerate,
     ItineraryGeneratedRead,
@@ -78,6 +78,20 @@ def list_itineraries(
 ) -> list[ItineraryRead]:
     """List all itineraries, optionally filtered by status."""
     return itinerary_service.list_itineraries(db, status)
+
+
+@router.get("/review-queue", response_model=list[ItineraryRead])
+def list_review_queue(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> list[ItineraryRead]:
+    """List the itineraries waiting for the caller: pending for a guide, validated for a manager."""
+    if user.role is UserRole.GUIDE:
+        return itinerary_service.list_pending_for_guide(db, user.id)
+    if user.role is UserRole.OPERATIONS_MANAGER:
+        return itinerary_service.list_validated(db)
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="Role not allowed for this action"
+    )
 
 
 @router.get("/{itinerary_id}", response_model=ItineraryRead)

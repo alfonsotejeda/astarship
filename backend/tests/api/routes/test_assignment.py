@@ -2,6 +2,20 @@
 
 from datetime import date
 
+import pytest
+
+from app.models.status import ItineraryStatus
+
+
+@pytest.fixture
+def create_itinerary(create_itinerary):
+    """Return a function that stores an approved itinerary, the only kind that can be assigned."""
+
+    def create(status=ItineraryStatus.APPROVED) -> int:
+        return create_itinerary(status=status)
+
+    return create
+
 
 def _create_user(client, role, email, **fields) -> int:
     return client.post(
@@ -47,6 +61,25 @@ def test_create_assignment_twice_returns_409(client, create_itinerary):
     response = client.post(url, json={"admin_id": admin_id})
 
     assert response.status_code == 409
+
+
+@pytest.mark.parametrize(
+    "status",
+    [ItineraryStatus.PENDING, ItineraryStatus.VALIDATED, ItineraryStatus.REJECTED],
+)
+def test_create_assignment_returns_409_when_itinerary_not_approved(
+    client, create_itinerary, status
+):
+    itinerary_id = create_itinerary(status)
+    tourist_id = _create_tourist(client)
+    admin_id = _create_admin(client)
+
+    response = client.post(
+        f"/api/itineraries/{itinerary_id}/assignments/{tourist_id}", json={"admin_id": admin_id}
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Only approved itineraries can be assigned"
 
 
 def test_create_assignment_returns_404_when_itinerary_missing(client):
