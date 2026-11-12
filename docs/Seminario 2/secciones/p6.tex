@@ -1,0 +1,47 @@
+\section[Pregunta 6: El legado de SOA]{Pregunta 6: El legado de SOA y su influencia en arquitecturas modernas}
+
+% Responsable: Reynaldo Guillermo Capdevila Reyes
+
+SOA se construyó sobre una premisa razonable: si una capacidad de negocio ya está implementada, ninguna otra parte de la empresa debería volver a implementarla. De ahí su taxonomía de servicios ---de negocio, empresariales, de aplicación y de infraestructura--- y el motor de orquestación encargado de componerlos \parencite{richardsford2020}. La reutilización no era un efecto secundario del estilo: era su objetivo de primer orden.
+
+El resultado histórico es conocido y conviene enunciar con precisión por qué ocurrió, porque es lo que explica la reacción de los microservicios.
+
+\subsection{La reutilización como fuente de acoplamiento}
+
+Un servicio empresarial de «validación de clientes» utilizado por treinta aplicaciones distintas acumula los requisitos de las treinta. Cada consumidor necesita un matiz propio, y el servicio crece hasta volverse difícil de entender; al mismo tiempo, deja de poder cambiar, porque cualquier modificación afecta a todos sus consumidores y exige pruebas y coordinación a escala de empresa \parencite{richardsford2020}. La reutilización máxima produce, así, acoplamiento máximo: el servicio compartido se convierte simultáneamente en un cuello de botella técnico y organizativo.
+
+El motor de orquestación agravó el efecto. Al concentrar en un punto central la composición de los servicios, terminó albergando lógica de negocio que no pertenecía a ningún servicio concreto, y se convirtió en un punto único de fallo y en un cuello de botella de rendimiento y de entrega: cualquier cambio en un flujo pasaba por el mismo componente y por el mismo equipo \parencite{richardsford2020}.
+
+Debe señalarse, sin embargo, que la orquestación es solo una de las variantes de SOA, no su definición. SOA admite igualmente la coreografía, en la que los servicios se comunican sin motor central; la crítica aquí formulada se dirige a la variante orquestada que se impuso en la industria, no al estilo en su conjunto.
+
+\subsection{La inversión del principio en microservicios}
+
+Microservices Architecture no mejora la reutilización de SOA: \textbf{invierte el criterio}. Si la reutilización genera acoplamiento y el objetivo prioritario del estilo es el desacoplamiento y el despliegue independiente, entonces la reutilización deja de ser un fin. \textcite{richardsford2020} lo formulan de manera explícita: en microservicios se prefiere la duplicación al acoplamiento.
+
+Lo decisivo es que esa inversión no se aplica por igual a todo. El estilo distingue dos clases de reutilización y las trata de forma opuesta.
+
+\paragraph{Reutilización de lógica de negocio: se evita.} La validación de clientes se implementa dentro de cada \emph{bounded context} que la necesita, y cada una valida lo que su contexto entiende por «cliente válido» \parencite{evans2003}. Si dos contextos necesitan los mismos datos, se replican mediante eventos en lugar de consultarse mutuamente, de modo que cada servicio conserva su autonomía. Se acepta deliberadamente escribir dos veces un código parecido a cambio de que cada servicio pueda desplegarse, escalar y evolucionar sin consultar a nadie.
+
+Esto no debe leerse como un rechazo dogmático a compartir código. \textcite{fordhardparts2021} tratan la reutilización como un análisis de trade-offs: cuando la lógica es muy volátil y compartirla obligaría a desplegar todos los consumidores a la vez, la duplicación gana; cuando es estable y su duplicación sería costosa o peligrosa ---un cálculo fiscal o un algoritmo normativo---, una biblioteca versionada, o incluso un servicio compartido, puede ser la opción correcta. La regla es que compartir debe justificarse, no presuponerse.
+
+\paragraph{Reutilización operativa: se centraliza.} El registro de trazas, la monitorización, la autenticación, el descubrimiento de servicios o los cortacircuitos no son lógica de dominio: son preocupaciones transversales idénticas en todos los servicios, y duplicarlas no aporta autonomía alguna, solo inconsistencia. Para ellas, microservicios emplea el patrón \textbf{sidecar}: un componente que se despliega junto a cada servicio y asume esas funciones, de modo que el conjunto de sidecars forma una malla de servicios (\emph{service mesh}) gobernada de manera unificada \parencite{richardsford2020}.
+
+Aquí reside la asimetría que responde a la pregunta: \textbf{microservicios acepta el acoplamiento donde no afecta al dominio y lo rechaza donde sí}. El sidecar crea un acoplamiento operativo real ---todos los servicios dependen de él---, pero ese acoplamiento no impide que un equipo cambie sus reglas de negocio y despliegue sin coordinarse con los demás. El servicio empresarial compartido de SOA sí lo impedía.
+
+\subsection{Cuándo sigue siendo apropiada la orquestación}
+
+La orquestación no quedó invalidada; lo que quedó invalidado fue aplicarla como mecanismo universal de composición a escala de empresa. Un mediador local ---un servicio que posee un flujo concreto y coordina a los demás--- es la opción correcta cuando concurren varias de estas condiciones \parencite{fordhardparts2021}:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item el flujo es \textbf{largo} y atraviesa muchos pasos con \textbf{ramificación condicional};
+  \item mantiene \textbf{estado durante días o semanas}, incluso con intervención humana;
+  \item el negocio necesita \textbf{saber en qué punto está} cada instancia del proceso;
+  \item los errores exigen \textbf{compensación estricta y ordenada}, no simple reintento;
+  \item existe una \textbf{obligación de auditoría} sobre qué se hizo, cuándo y por qué.
+\end{itemize}
+
+\paragraph{Ejemplo: solicitud de hipoteca.} El proceso abarca la solicitud, la verificación de ingresos, la consulta de historial crediticio, la tasación del inmueble ---que depende de un tercero y puede tardar días---, la decisión de riesgo, la formalización ante notario y el desembolso. Es un flujo que dura semanas, se ramifica según el resultado de cada paso, intercala tareas humanas, debe poder suspenderse y reanudarse, y exige dejar constancia auditable de cada decisión. Además, si la operación se cancela después de la tasación, hay que ejecutar compensaciones en un orden determinado: liberar la reserva de fondos, cancelar la póliza de seguro asociada y notificar a las partes.
+
+Resolver esto por coreografía sería un error de diseño. El estado del proceso no residiría en ningún sitio, responder a la pregunta «¿por qué se denegó esta hipoteca?» obligaría a reconstruir el historial a partir de los registros de siete servicios, y la compensación ordenada sería prácticamente inviable. Un servicio orquestador de solicitudes, que posee la máquina de estados del proceso, convierte todo eso en explícito y consultable.
+
+El trade-off se acepta con los ojos abiertos: el orquestador introduce acoplamiento dinámico con los servicios que coordina, concentra conocimiento del dominio y es un punto de fallo. La diferencia esencial con el motor de orquestación de SOA es el \textbf{alcance}: aquel era único, central y responsable de todos los flujos de la empresa; este posee un solo flujo de negocio, pertenece a un solo equipo y se despliega como un servicio más. Esa es, en definitiva, la lección que los microservicios extrajeron de SOA: el problema nunca fue la orquestación, sino su centralización a escala empresarial y la reutilización convertida en obligación.

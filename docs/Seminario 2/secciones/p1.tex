@@ -1,0 +1,78 @@
+\section[Pregunta 1: Comunicación y acoplamiento]{Pregunta 1: Análisis comparativo de comunicación y acoplamiento\\(subastas en línea)}
+
+% Responsable: Eric Reyes Milián
+
+El cierre de una subasta dispara tres acciones: notificar al ganador, procesar el pago y actualizar el inventario. La pregunta no es cuál de los tres diseños es «mejor», sino qué forma de acoplamiento introduce cada uno y qué ocurre cuando una de las tres acciones falla. Para responderlo con precisión conviene separar dos nociones que suelen confundirse: el acoplamiento estático, que describe cómo están conectados los componentes en tiempo de construcción y despliegue, y el acoplamiento dinámico, que describe cómo se comunican entre sí en tiempo de ejecución \parencite{fordhardparts2021}.
+
+\subsection{Marco conceptual: connascencia estática y dinámica}
+
+La connascencia, introducida por \textcite{pagejones1996} y retomada por \textcite{richardsford2020} como herramienta de análisis arquitectónico, establece que dos componentes son connascentes si un cambio en uno obliga a cambiar el otro para que el sistema siga siendo correcto. Su valor está en que distingue \emph{tipos} de dependencia y permite ordenarlos por fuerza.
+
+La connascencia \textbf{estática} (de nombre, de tipo, de significado, de posición, de algoritmo) es detectable mediante el análisis del código fuente: el compilador, el linter o la revisión de código la hacen visible. La connascencia \textbf{dinámica} (de ejecución, de temporización, de valor, de identidad) solo se manifiesta en tiempo de ejecución y es, por tanto, notablemente más difícil de detectar y de corregir \parencite{richardsford2020}. Page-Jones añade tres criterios de evaluación que usaremos a lo largo del análisis: la \emph{fuerza} (es preferible la connascencia estática a la dinámica), la \emph{localidad} (una connascencia fuerte es tolerable si los elementos están próximos, por ejemplo dentro del mismo módulo, y es peligrosa si están separados) y el \emph{grado} (cuántos elementos quedan afectados).
+
+El punto central del análisis que sigue es que \textbf{los tres diseños no eliminan la dependencia entre las tres acciones: la trasladan de una forma de connascencia a otra}.
+
+\subsection{Orquestación en microservicios}
+
+Un servicio mediador ---\texttt{AuctionCompletionOrchestrator}--- conoce el flujo completo e invoca a \texttt{Notification}, \texttt{Payment} e \texttt{Inventory}. El conocimiento del proceso de negocio queda centralizado y explícito, lo que facilita razonar sobre él, instrumentarlo y modificarlo en un solo lugar \parencite{richardsford2020}.
+
+El coste es un acoplamiento dinámico elevado y concentrado en el mediador:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Connascencia de ejecución:} el orden importa. Si el mediador invoca la notificación antes que el pago, la corrección del sistema depende de esa secuencia, que no está expresada en ninguna interfaz sino en el cuerpo del mediador.
+  \item \textbf{Connascencia de temporización:} si las llamadas son síncronas, los cuatro servicios deben estar disponibles simultáneamente durante la operación. La latencia total es la suma de las latencias y la disponibilidad efectiva es el producto de las disponibilidades individuales, un efecto que \textcite{fordhardparts2021} describen como el coste del acoplamiento dinámico síncrono.
+  \item \textbf{Grado alto, localidad baja:} la dependencia afecta a cuatro servicios desplegados por separado, es decir, en la peor posición según el criterio de localidad.
+\end{itemize}
+
+\subsection{Coreografía en microservicios}
+
+En la coreografía no hay mediador: \texttt{Auction} publica el evento \texttt{AuctionClosed} y cada servicio interesado reacciona. El acoplamiento dinámico disminuye de forma apreciable. Desaparece la connascencia de temporización ---el productor no espera al consumidor, que puede estar caído y procesar el mensaje más tarde--- y el emisor deja de conocer a sus destinatarios, por lo que añadir un cuarto consumidor no obliga a modificar el emisor \parencite{richardsford2020}.
+
+Sin embargo, la dependencia no desaparece, sino que cambia de naturaleza y de lugar:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Aparece \textbf{connascencia de significado} en torno al contrato del evento: todos los consumidores deben interpretar de la misma manera los campos del mensaje. Es connascencia estática, y por tanto más débil, pero su localidad es pésima, ya que está repartida entre servicios con ciclos de vida independientes.
+  \item El \textbf{estado del flujo deja de existir como entidad}. Ningún componente sabe si la operación completa terminó. \textcite{richardsford2020} señalan precisamente esto como la desventaja principal de la coreografía: la gestión de errores y la recuperación se vuelven difíciles porque no hay un dueño del proceso.
+  \item Si los consumidores, para completar su trabajo, empiezan a llamarse entre sí, reaparece el acoplamiento dinámico bajo una forma menos visible, lo que \textcite{fordhardparts2021} describen como la trampa de la «coreografía con comunicación lateral».
+\end{itemize}
+
+\subsection{Servicio de grano grueso en Service-Based Architecture}
+
+En SBA las tres acciones viven dentro de un mismo servicio de dominio, sobre una base de datos compartida \parencite{richardsford2020}. La consecuencia desde el punto de vista de la connascencia es la más relevante de toda la pregunta: la dependencia entre las tres acciones pasa a ser \textbf{estática} ---llamadas a métodos dentro del mismo código base, verificables por el compilador--- y su \textbf{localidad es máxima}. Según los criterios de Page-Jones, esta es la situación más favorable: una connascencia fuerte dentro de un módulo es aceptable, mientras que una connascencia débil repartida entre servicios remotos no lo es.
+
+No obstante, conviene no sobrevender el estilo. SBA no elimina el acoplamiento, lo relocaliza. La base de datos compartida introduce acoplamiento estático entre servicios a través del esquema, de modo que un cambio en una tabla puede forzar el despliegue coordinado de varios servicios \parencite{richardsford2020}. Es un acoplamiento distinto ---estático, detectable en construcción--- pero real.
+
+\subsection{Fallo del pago después de notificar al ganador}
+
+El escenario propuesto por el enunciado es deliberadamente incómodo, porque la notificación es una acción \emph{no transaccional}: una vez enviado el correo, ningún mecanismo técnico lo retira.
+
+\paragraph{En SBA (modelo ACID).} Las tres operaciones comparten una única base de datos y, por tanto, un único límite transaccional. Si el pago falla, el \emph{rollback} deshace la actualización del inventario y el sistema queda en un estado consistente: la atomicidad está garantizada por el gestor de base de datos y no por código de compensación escrito a mano \parencite{richardsford2020}. Esta es la ventaja decisiva del estilo en este escenario.
+
+Ahora bien, la garantía ACID cubre únicamente los efectos sobre la base de datos. Si el correo se envió dentro de la transacción y esta se revierte, el ganador ya recibió la notificación de una operación que no ocurrió. La solución correcta, también en SBA, es no ejecutar efectos externos dentro del límite transaccional: se registra la intención de notificar en la misma transacción y un proceso posterior envía el correo solo si la transacción confirmó ---el patrón conocido como \emph{transactional outbox} \parencite{fordhardparts2021}. El diseño ACID simplifica el problema, pero no exime de ordenar correctamente los efectos secundarios.
+
+\paragraph{En microservicios (modelo BASE).} Con una base de datos por servicio no existe un límite transaccional común, y la alternativa clásica ---\emph{commit} en dos fases--- se descarta por su impacto en disponibilidad y rendimiento \parencite{fordhardparts2021}. La consistencia pasa a ser eventual: el sistema acepta un estado intermedio inconsistente y lo corrige mediante una \emph{saga}, es decir, una secuencia de transacciones locales con sus correspondientes transacciones compensatorias \parencite{richardsford2020}.
+
+La compensación funciona bien para el inventario: basta volver a marcar el artículo como disponible. Falla para la notificación, y esa es la cuestión de fondo. Una transacción compensatoria no revierte el efecto, sino que ejecuta una acción que lo neutraliza; cuando el efecto es un correo leído por una persona, lo único disponible es un segundo correo de disculpa. El sistema puede alcanzar consistencia eventual en sus datos y, aun así, quedar en incoherencia semántica frente al usuario. De ahí la regla práctica que se deduce del escenario: \textbf{las acciones irreversibles deben ejecutarse lo más tarde posible dentro del flujo}, cuando el resto de pasos ya ha confirmado.
+
+La diferencia entre ambos enfoques es, en el fondo, dónde se paga la complejidad. En SBA la paga el gestor de base de datos; en microservicios la paga el equipo de desarrollo, que debe diseñar compensaciones, garantizar idempotencia en los consumidores y mantener la observabilidad del flujo distribuido \parencite{fordhardparts2021}.
+
+\subsection{Síntesis}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{L{2.6cm}XXX}
+\toprule
+ & \textbf{Orquestación (MSA)} & \textbf{Coreografía (MSA)} & \textbf{Grano grueso (SBA)} \\
+\midrule
+Acoplamiento dinámico & Alto y centralizado en el mediador & Bajo entre emisor y consumidores & Inexistente entre las tres acciones \\
+Connascencia dominante & Ejecución y temporización (dinámica) & Significado sobre el contrato del evento (estática, localidad baja) & Nombre y tipo dentro del servicio (estática, localidad alta) \\
+Estado del flujo & Explícito en el mediador & Inexistente & Implícito en la transacción \\
+Consistencia & BASE, saga & BASE, saga & ACID \\
+Precio a pagar & Cuello de botella y punto único de fallo & Ausencia de visibilidad y de gestión de errores & Base de datos compartida como punto de acoplamiento \\
+\bottomrule
+\end{tabularx}
+\caption{Comparación de los tres enfoques para el cierre de la subasta.}
+\end{table}
+
+Para el caso concreto de la subasta, el equilibrio favorece al diseño de grano grueso de SBA: las tres acciones forman una unidad de negocio con un requisito de atomicidad real, y separarlas en servicios independientes introduce una complejidad ---compensaciones, idempotencia, observabilidad distribuida--- que el dominio no pide. Si el contexto obligara a microservicios por otras razones, la orquestación sería preferible a la coreografía en este flujo, porque el estado explícito del mediador es justamente lo que hace manejable la compensación cuando el pago falla \parencite{fordhardparts2021}.
