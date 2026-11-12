@@ -1,0 +1,61 @@
+\section[Pregunta 5: Atributos de calidad y trade-offs]{Pregunta 5: Comparación de atributos de calidad y trade-offs\\(sistema de transacciones financieras)}
+
+% Responsable: Miguel Andrés Cazorla Zamora
+
+El CTO plantea tres requisitos que no apuntan en la misma dirección: consistencia absoluta, agilidad de despliegue y viabilidad con un equipo de experiencia mixta. La decisión arquitectónica consiste precisamente en identificar cuál de ellos es innegociable y cuáles admiten una solución parcial. En un sistema de transacciones financieras, el primero lo es: un asiento contable que quede a medias no es una inconsistencia temporal, es dinero mal contabilizado.
+
+\subsection{Requisito 1: consistencia de datos absoluta (ACID)}
+
+\paragraph{Service-Based Architecture.} Los servicios de dominio comparten una base de datos, de modo que existe un único límite transaccional y la atomicidad la garantiza el gestor de base de datos \parencite{richardsford2020}. Un adeudo y su correspondiente abono se escriben dentro de la misma transacción: o constan ambos o no consta ninguno, sin código adicional. Las cuatro propiedades ACID se obtienen del motor, no del diseño de la aplicación.
+
+\paragraph{Microservices Architecture.} El estilo exige que cada servicio posea su propia base de datos; esa es la condición que hace posible el despliegue verdaderamente independiente \parencite{richardsford2020}. En consecuencia, una operación que afecte a dos servicios no puede ser atómica. La alternativa pasa por una \emph{saga}: transacciones locales encadenadas con compensaciones, bajo un modelo BASE de consistencia eventual \parencite{fordhardparts2021}. Esto significa que existe un intervalo ---por breve que sea--- en el que el adeudo está registrado y el abono no.
+
+\paragraph{Veredicto.} \textbf{Service-Based Architecture cumple el requisito; Microservices Architecture no.} La consistencia eventual no es una versión más lenta de la consistencia fuerte: es una garantía distinta, que admite estados intermedios visibles. Se puede construir un sistema financiero correcto sobre sagas, pero entonces el requisito deja de ser «consistencia absoluta» y pasa a ser «consistencia eventual con compensaciones auditadas», que es otra cosa. La objeción habitual ---hacer un microservicio lo bastante grande como para contener la transacción--- es en realidad un argumento a favor de SBA: un servicio de grano grueso con base de datos compartida es, por definición, el estilo que estamos comparando.
+
+\subsection{Requisito 2: despliegue independiente}
+
+Aquí conviene deshacer un malentendido frecuente: SBA no es un monolito. Sus servicios de dominio se despliegan de forma independiente, y esa es exactamente la propiedad que lo distingue de una arquitectura monolítica en capas \parencite{richardsford2020}. Un cambio en el servicio de informes no obliga a desplegar el de liquidación.
+
+El matiz está en la base de datos compartida, que introduce un punto de acoplamiento estático: un cambio de esquema puede afectar a varios servicios y forzar un despliegue coordinado. La independencia es, por tanto, real pero condicionada ---independiente «con asterisco»---, y el asterisco se activa solo en los cambios de esquema, no en los cambios de lógica, que son la mayoría.
+
+En microservicios la independencia es completa, porque cada servicio posee sus datos y nada obliga a coordinar. El coste está en otra parte: ese grado de autonomía requiere canalizaciones de integración continua maduras, automatización de pruebas de contrato, versionado de interfaces, observabilidad distribuida y una cultura operativa que lo sostenga \parencite{richardsford2020}. La independencia de despliegue no es gratuita; se paga en infraestructura y en disciplina de equipo.
+
+El acoplamiento del esquema, además, es mitigable con técnicas conocidas: asignar la propiedad de cada conjunto de tablas a un único servicio ---los demás acceden a través de él---, usar esquemas lógicos separados dentro de la misma base de datos (el caso de base de datos «parcialmente compartida» que contempla el propio estilo) y aplicar migraciones en dos fases de tipo \emph{expand/contract}, que permiten desplegar los servicios en cualquier orden.
+
+\subsection{Requisito 3: equipo de experiencia mixta}
+
+Este requisito, que a primera vista parece el más blando, es el que en la práctica decide, y refuerza la misma conclusión.
+
+Microservices Architecture es el estilo con menor puntuación en simplicidad y mayor coste de todos los analizados por \textcite{richardsford2020}. Exige dominar contenedores, orquestación, trazas distribuidas, patrones de resiliencia y, sobre todo, sagas. Y una saga mal implementada en un sistema financiero no produce un fallo visible: produce una compensación que no se ejecuta, un mensaje duplicado que contabiliza dos veces o un estado intermedio que alguien consulta. Son errores silenciosos, difíciles de reproducir y con consecuencias contables. Pedir a un equipo de experiencia mixta que escriba correctamente compensaciones distribuidas en el dominio financiero es, sencillamente, un riesgo mal calibrado.
+
+SBA, en cambio, es de los estilos distribuidos el más próximo a lo que un equipo con experiencia desigual ya sabe hacer: pocos servicios de grano grueso, transacciones de base de datos convencionales, despliegue por servicio. Mantiene la modularidad y la testabilidad sin exigir la madurez operativa de los microservicios.
+
+\subsection{Síntesis y trade-offs que el CTO acepta}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{L{3.4cm}XX}
+\toprule
+\textbf{Requisito} & \textbf{Service-Based} & \textbf{Microservices} \\
+\midrule
+1. Consistencia ACID & Garantizada por la base de datos compartida & No alcanzable; sagas y consistencia eventual \\
+2. Despliegue independiente & Sí, condicionado por el esquema compartido & Sí, completo, con alto coste de infraestructura \\
+3. Equipo de experiencia mixta & Complejidad operativa moderada & Complejidad y riesgo elevados \\
+\midrule
+\textbf{Resultado} & \textbf{Cumple los tres} & Cumple el segundo, incumple el primero \\
+\bottomrule
+\end{tabularx}
+\caption{Evaluación de ambos estilos frente a los tres requisitos del CTO.}
+\end{table}
+
+La recomendación es \textbf{Service-Based Architecture}, y los trade-offs que el CTO asume al priorizar consistencia sobre agilidad son los siguientes:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Coordinación en los cambios de esquema.} Las migraciones que afecten a tablas compartidas requerirán planificación conjunta. Es un coste recurrente y acotado, mitigable con \emph{expand/contract}.
+  \item \textbf{Escalado de grano grueso.} No se podrá escalar una funcionalidad concreta de forma aislada, sino el servicio completo que la contiene; y la base de datos compartida fija un techo de escalabilidad que los microservicios no tienen.
+  \item \textbf{Radio de impacto mayor.} Un defecto en un servicio de grano grueso afecta a más funcionalidad que uno en un microservicio, y la base de datos compartida constituye un punto único de fallo. El sistema forma un solo \emph{quantum} arquitectónico, de modo que todos los servicios comparten las mismas características operativas y no es posible dar a uno de ellos una disponibilidad o una elasticidad distintas \parencite{richardsford2020}.
+  \item \textbf{Menor agilidad en la evolución.} Entre dos cambios equivalentes, el ciclo será algo más lento que en una arquitectura de microservicios bien operada.
+\end{itemize}
+
+Conviene cerrar señalando que la decisión no es irreversible. No todo el sistema tiene el mismo requisito de consistencia: la notificación al cliente, la generación de informes o la detección de fraude toleran consistencia eventual y pueden extraerse más adelante como servicios con sus propios datos, dejando el núcleo transaccional en SBA. Esta evolución selectiva es lo que \textcite{fordevolutionary2017} describen como arquitectura evolutiva, y recomiendan sostenerla con \emph{fitness functions} automatizadas ---por ejemplo, una verificación en la canalización de integración que impida que un servicio acceda a tablas de las que no es propietario--- para que el acoplamiento por la base de datos compartida no se degrade con el tiempo hasta convertir el sistema en el monolito que se quería evitar.

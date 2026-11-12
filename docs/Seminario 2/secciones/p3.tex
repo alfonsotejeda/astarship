@@ -1,0 +1,69 @@
+\section[Pregunta 3: Fallos y resiliencia en EDA]{Pregunta 3: Análisis de fallos y resiliencia en arquitecturas dirigidas por eventos\\(topología de broker)}
+
+% Responsable: Alfonso Tejeda Rodríguez
+
+La topología de broker encadena procesadores de eventos sin control central: un evento inicial entra en el sistema y cada procesador que lo consume publica, a su vez, los eventos derivados de su trabajo, a los que reaccionan otros procesadores \parencite{richardsford2020}. El flujo de negocio no está escrito en ninguna parte; emerge de la suma de reacciones locales. Esa propiedad es la fuente de su rendimiento y de su escalabilidad, y también la raíz del problema que plantea el enunciado.
+
+\subsection{Impacto del mensaje defectuoso}
+
+Un procesador que falla de forma repetida con un mensaje concreto ---el caso habitual es un dato mal formado o un campo obligatorio ausente--- produce un fallo cualitativamente distinto al de un procesador caído. El procesador funciona; es ese mensaje el que no puede completarse nunca.
+
+\paragraph{Bloqueo de la cola.} Si el procesador no confirma el mensaje, el broker lo vuelve a entregar, el procesamiento falla otra vez y el ciclo se repite indefinidamente. En un canal con garantía de orden, el mensaje defectuoso queda en la cabecera y ningún mensaje posterior se entrega: es el \emph{head-of-line blocking}. Un único registro corrupto detiene el procesamiento de todos los mensajes correctos que vienen detrás, y el consumo de recursos del reintento continuo degrada además el rendimiento del procesador.
+
+\paragraph{Interrupción silenciosa de la cadena.} Como el procesador nunca termina su trabajo, nunca publica el evento derivado que debía publicar. Todos los procesadores situados aguas abajo quedan esperando un evento que no llegará. En la topología de broker nadie tiene constancia de ello: no existe un componente que conozca el flujo completo ni que mantenga su estado, de modo que la ausencia de un evento es indistinguible de la ausencia de actividad \parencite{richardsford2020}. El sistema no se cae; simplemente deja de hacer una parte de su trabajo.
+
+\paragraph{Experiencia del usuario final.} Es el aspecto más grave. La acción inicial del usuario fue aceptada y confirmada ---el evento inicial se publicó correctamente---, por lo que la interfaz le devolvió éxito. Las consecuencias de esa acción, sin embargo, se completan solo parcialmente: en un sistema de pedidos, el pedido existe pero nunca se reserva inventario ni se emite la factura. El usuario observa un estado incoherente \textbf{sin que el sistema haya mostrado ningún error}, y el fallo suele descubrirse días después, por una reclamación y no por la monitorización.
+
+\paragraph{Consecuencias operativas.} Sin manejo central de errores, el diagnóstico exige correlacionar los registros de varios procesadores independientes para reconstruir a posteriori un flujo que nunca estuvo representado en ningún sitio. Si, para desbloquear la cola, alguien descarta el mensaje, el fallo se convierte en pérdida de datos definitiva y silenciosa.
+
+\subsection{Solución: Workflow Event Pattern}
+
+\textcite{richardsford2020} proponen para este caso el \emph{Workflow Event Pattern}, cuyo principio es separar el procesamiento normal de la reparación de errores, de forma que un mensaje defectuoso nunca bloquee el canal principal. El procesador de eventos no intenta resolver el error: detecta que no puede procesar el mensaje, lo delega y sigue trabajando con el siguiente.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    node distance=1.1cm and 1.5cm,
+    box/.style={draw, rounded corners, align=center, minimum height=0.95cm, minimum width=2.6cm, font=\small},
+    queue/.style={draw, align=center, minimum height=0.8cm, minimum width=2.2cm, font=\scriptsize, fill=black!5},
+    flecha/.style={-{Stealth[length=2mm]}, thick},
+  ]
+  \node[queue] (q1) {Cola principal};
+  \node[box, right=of q1] (ep) {Event\\processor};
+  \node[queue, right=of ep] (qout) {Evento\\derivado};
+  \node[queue, below=of ep] (qw) {Cola de\\workflow};
+  \node[box, below=of qw] (wp) {Workflow\\processor};
+  \node[queue, right=1.6cm of wp] (qd) {Cola del\\dashboard};
+  \node[box, right=1.3cm of qd] (dash) {Dashboard\\(operaciones)};
+
+  \draw[flecha] (q1) -- (ep);
+  \draw[flecha] (ep) -- node[above, font=\scriptsize] {éxito} (qout);
+  \draw[flecha] (ep) -- node[right, font=\scriptsize] {error} (qw);
+  \draw[flecha] (qw) -- (wp);
+  \draw[flecha] (qd) -- (dash);
+  \draw[flecha] (wp) -- node[above, font=\scriptsize] {no reparable} (qd);
+  \draw[flecha] (wp.west) -- ++(-1.6,0) |- node[left, font=\scriptsize, pos=0.25] {reparado} (q1.west);
+\end{tikzpicture}
+\caption{Workflow Event Pattern: el mensaje defectuoso sale del canal principal, se intenta reparar y, si no es posible, acaba en el \emph{dashboard} para intervención manual.}
+\end{figure}
+
+\paragraph{Componentes adicionales.}
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Cola de workflow:} canal dedicado al que el procesador deriva los mensajes que no puede tratar, junto con el contexto del error. Su sola existencia resuelve el bloqueo, porque el mensaje abandona inmediatamente el canal principal.
+  \item \textbf{Workflow processor:} componente que recibe el mensaje defectuoso, lo analiza y aplica las reglas de reparación que conoce ---completar un campo ausente con un valor por defecto, normalizar un formato de fecha, recuperar un dato de referencia que falta. Si lo consigue, devuelve el mensaje a la cola original como un \textbf{mensaje nuevo}.
+  \item \textbf{Cola y aplicación de \emph{dashboard}:} destino de los mensajes que el \emph{workflow processor} no sabe reparar. El equipo de operaciones los revisa, los corrige manualmente y los reinyecta. Es el punto donde el fallo deja de ser silencioso y se vuelve visible.
+\end{itemize}
+
+\paragraph{Cómo mitiga el problema.} El patrón actúa sobre los tres efectos descritos. Elimina el bloqueo, porque el canal principal nunca retiene un mensaje irreprocesable. Elimina la pérdida silenciosa, porque todo mensaje acaba en uno de dos estados observables: reparado y reprocesado, o en el \emph{dashboard} a la espera de intervención. Y recupera una forma de visibilidad sin introducir un mediador central: el \emph{dashboard} concentra los errores, pero no participa en el flujo normal, de modo que la topología de broker conserva su rendimiento y su desacoplamiento.
+
+\subsection{Trade-offs que introduce}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Procesamiento fuera de orden.} Es el coste explícito del patrón, señalado por el propio enunciado. El mensaje reparado vuelve al final de la cola, después de mensajes que llegaron más tarde. En dominios donde el orden es semánticamente relevante ---actualizaciones sucesivas sobre la misma entidad--- esto puede producir un estado final incorrecto, y el sistema debe entonces incorporar números de versión o marcas de tiempo para rechazar actualizaciones obsoletas.
+  \item \textbf{Duplicación de conocimiento del dominio.} El \emph{workflow processor} necesita saber qué es un mensaje válido, es decir, replica reglas que ya viven en el procesador original. Aparece connascencia de significado entre dos componentes desplegados por separado \parencite{pagejones1996}: un cambio en el contrato obliga a modificar ambos, y si se olvida uno, la reparación empieza a producir mensajes incorrectos en silencio.
+  \item \textbf{Complejidad añadida.} Dos canales más, un procesador más y una aplicación de monitorización, con su propio despliegue, sus pruebas y su mantenimiento.
+  \item \textbf{Latencia variable.} Un mensaje reparado se completa mucho después que el resto, lo que debe ser aceptable para el negocio.
+  \item \textbf{Alcance limitado.} El patrón resuelve errores en los \emph{datos}. No resuelve defectos del procesador: si el fallo es un error de programación, la reparación no aplica y el mensaje terminará igualmente en el \emph{dashboard}, que actúa entonces como red de seguridad y no como solución.
+\end{itemize}
+
+Conviene añadir que el patrón es compatible con las prácticas habituales de mensajería y las complementa: límite de reintentos con espera creciente antes de derivar a la cola de workflow, contador de entregas para detectar mensajes venenosos, consumidores idempotentes para tolerar la reentrega, y conservación del mensaje original junto al reparado para auditoría. La alternativa de fondo ---adoptar una topología de mediador, que centraliza el control de errores y el estado del flujo--- resuelve el problema de raíz, pero a costa del rendimiento, de la escalabilidad y del desacoplamiento que motivaron la elección del broker \parencite{richardsford2020}; el Workflow Event Pattern es precisamente la forma de conservar esas ventajas pagando solo por la resiliencia que falta.

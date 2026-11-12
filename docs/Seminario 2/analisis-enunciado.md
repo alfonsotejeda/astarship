@@ -7,8 +7,9 @@ Es el segundo seminario de la asignatura; el primero está en [`docs/Seminario 1
 (enunciado en [`docs/SemArqCapas-1.pdf`](../SemArqCapas-1.pdf)).
 
 Este documento no es la entrega: es la lectura del enunciado, las tesis que conviene defender en
-cada pregunta y las trampas que el profesor va a calificar duro. La entrega se redacta en LaTeX
-siguiendo la misma estructura del seminario anterior (`main.tex` + `secciones/pN.tex`).
+cada pregunta y las trampas que el profesor va a calificar duro. La entrega está en esta misma
+carpeta, en [`main.tex`](main.tex) y [`secciones/`](secciones), con la misma estructura del
+seminario anterior.
 
 ## 1. Qué se entrega
 
@@ -38,17 +39,18 @@ siguiendo la misma estructura del seminario anterior (`main.tex` + `secciones/pN
 
 ### Equipo y reparto
 
-Reparto **pendiente** de acordar para este seminario. Los datos de los integrantes se toman del
-seminario anterior:
+El reparto **provisional** mantiene el mismo del seminario anterior (cada quien repite número de
+pregunta). Está escrito así en la portada de `main.tex` y en el comentario de cabecera de cada
+`secciones/pN.tex`; si el equipo acuerda otro, hay que cambiar ambos sitios.
 
 | Nombre                             | Grupo | GitHub                                                 | Pregunta   |
 | ---------------------------------- | ----- | ------------------------------------------------------ | ---------- |
-| Eric Reyes Milián                  | C312  | [@EricReyesMilian](https://github.com/EricReyesMilian) | por asignar |
-| Adrián Estévez Álvarez             | C312  | [@Chikiak](https://github.com/Chikiak)                 | por asignar |
-| Alfonso Tejeda Rodríguez           | C312  | [@alfonsotejeda](https://github.com/alfonsotejeda)     | por asignar |
-| Kamila Reinoso Asín                | C311  | [@KamAlien](https://github.com/KamAlien)               | por asignar |
-| Miguel Andrés Cazorla Zamora       | C312  | [@andr-migue](https://github.com/andr-migue)           | por asignar |
-| Reynaldo Guillermo Capdevila Reyes | C312  | [@kaizenrg](https://github.com/kaizenrg)               | por asignar |
+| Eric Reyes Milián                  | C312  | [@EricReyesMilian](https://github.com/EricReyesMilian) | Pregunta 1 |
+| Adrián Estévez Álvarez             | C312  | [@Chikiak](https://github.com/Chikiak)                 | Pregunta 2 |
+| Alfonso Tejeda Rodríguez           | C312  | [@alfonsotejeda](https://github.com/alfonsotejeda)     | Pregunta 3 |
+| Kamila Reinoso Asín                | C311  | [@KamAlien](https://github.com/KamAlien)               | Pregunta 4 |
+| Miguel Andrés Cazorla Zamora       | C312  | [@andr-migue](https://github.com/andr-migue)           | Pregunta 5 |
+| Reynaldo Guillermo Capdevila Reyes | C312  | [@kaizenrg](https://github.com/kaizenrg)               | Pregunta 6 |
 
 ### Citas
 
@@ -207,11 +209,32 @@ arquitectónico: capítulos 2, 3 y 5.
 Richards & Ford (2020) ya está en el `references.bib` del seminario anterior como `richards2020`;
 ese fichero sirve de punto de partida para el de este.
 
-## 6. Pendiente
+## 6. Estado y pendientes
 
-- Acordar el reparto de preguntas y completar la columna de la tabla de arriba (va también en la
-  portada).
-- Montar el esqueleto LaTeX de la entrega en esta carpeta, con la misma estructura que
-  `docs/Seminario 1`: `main.tex`, `secciones/p1.tex` … `p6.tex`, `figures/`, `references.bib`.
-- Mantener el flujo de trabajo del seminario anterior: una rama por pregunta (`pregunta-N`), cada
-  integrante toca solo su `secciones/pN.tex`, PR hacia `main` con revisión de otro integrante.
+El documento está completo y compilado: [`SemArq1_HavingFe.pdf`](SemArq1_HavingFe.pdf), 23
+páginas, con las seis respuestas redactadas, dos diagramas TikZ, tres tablas de trade-offs,
+bibliografía en estilo autor-año y la declaración de uso de IA.
+
+Queda por hacer antes de entregar:
+
+- **Confirmar el reparto de preguntas.** Está puesto el mismo del seminario anterior; si cambia,
+  hay que tocar la portada de `main.tex` y el comentario de cabecera de cada `secciones/pN.tex`.
+- **Revisar cada quien su pregunta.** Es lo que exige la declaración de IA que firma el equipo:
+  contrastar las afirmaciones con los capítulos citados y reescribir lo que haga falta.
+- **Ajustar la declaración de uso de IA** si alguien usó otra herramienta.
+
+### Compilar
+
+El documento usa `natbib` con `apalike` (no `biber`), así que compila con cualquier motor:
+
+```bash
+tectonic -X compile main.tex
+```
+
+Con una distribución TeX Live completa, `latexmk -pdf main.tex` también funciona. El PDF de
+entrega se obtiene renombrando `main.pdf` a `SemArq1_HavingFe.pdf`.
+
+### Flujo de trabajo
+
+El del seminario anterior: una rama por pregunta (`pregunta-N`), cada integrante toca solo su
+`secciones/pN.tex`, PR hacia `main` con revisión de otro integrante.
