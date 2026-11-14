@@ -3,8 +3,10 @@
 import pytest
 
 from app.models.status import ReviewStatus
-from app.schemas.package import PackageCreate, PackageUpdate
+from app.schemas.category import CategoryCreate
+from app.schemas.package import PackageCategoriesUpdate, PackageCreate, PackageUpdate
 from app.schemas.user import AdminCreate
+from app.services import category as category_service
 from app.services import package as package_service
 from app.services import user as user_service
 
@@ -110,3 +112,103 @@ def test_list_packages_filters_by_status(db_session, admin_id):
     result = package_service.list_packages(db_session, ReviewStatus.APPROVED)
 
     assert [p.id for p in result] == [approved.id]
+
+
+@pytest.fixture
+def category_ids(db_session):
+    """Ids of three stored categories, in creation order."""
+    return [
+        category_service.create_category(db_session, CategoryCreate(name=name)).id
+        for name in ("Cultura", "Gastronomia", "Aventura")
+    ]
+
+
+def _set_categories(db_session, package, ids):
+    return package_service.set_package_categories(
+        db_session, package, PackageCategoriesUpdate(category_ids=ids)
+    )
+
+
+def _category_ids(package):
+    return {category.id for category in package.categories}
+
+
+def _approve(db_session, package):
+    package_service.update_package(db_session, package, PackageUpdate(status=ReviewStatus.APPROVED))
+
+
+def test_set_package_categories_stores_them(db_session, admin_id, category_ids):
+    package = _create_package(db_session, admin_id)
+
+    updated = _set_categories(db_session, package, category_ids[:2])
+
+    assert _category_ids(updated) == set(category_ids[:2])
+
+
+def test_set_package_categories_replaces_the_previous_ones(db_session, admin_id, category_ids):
+    package = _create_package(db_session, admin_id)
+    _set_categories(db_session, package, category_ids[:2])
+
+    updated = _set_categories(db_session, package, category_ids[1:])
+
+    assert _category_ids(updated) == set(category_ids[1:])
+
+
+def test_set_package_categories_with_empty_list_removes_them(db_session, admin_id, category_ids):
+    package = _create_package(db_session, admin_id)
+    _set_categories(db_session, package, category_ids)
+
+    updated = _set_categories(db_session, package, [])
+
+    assert updated.categories == []
+
+
+def test_set_package_categories_ignores_order_and_repeats(db_session, admin_id, category_ids):
+    first, second, _ = category_ids
+    package = _create_package(db_session, admin_id)
+    _set_categories(db_session, package, [first, second])
+    _approve(db_session, package)
+
+    updated = _set_categories(db_session, package, [second, first, first])
+
+    assert _category_ids(updated) == {first, second}
+    assert updated.status is ReviewStatus.APPROVED
+
+
+def test_set_package_categories_sends_approved_package_back_to_pending(
+    db_session, admin_id, category_ids
+):
+    package = _create_package(db_session, admin_id)
+    _set_categories(db_session, package, category_ids[:1])
+    _approve(db_session, package)
+
+    updated = _set_categories(db_session, package, category_ids[:2])
+
+    assert updated.status is ReviewStatus.PENDING
+
+
+@pytest.mark.parametrize("status", [ReviewStatus.PENDING, ReviewStatus.REJECTED])
+def test_set_package_categories_keeps_status_when_not_approved(
+    db_session, admin_id, category_ids, status
+):
+    package = _create_package(db_session, admin_id)
+    package_service.update_package(db_session, package, PackageUpdate(status=status))
+
+    updated = _set_categories(db_session, package, category_ids)
+
+    assert updated.status is status
+
+
+def test_set_package_categories_with_unknown_category_raises_and_changes_nothing(
+    db_session, admin_id, category_ids
+):
+    package = _create_package(db_session, admin_id)
+    _set_categories(db_session, package, category_ids[:1])
+    _approve(db_session, package)
+
+    with pytest.raises(LookupError, match=r"Categories not found: \[998, 999\]"):
+        _set_categories(db_session, package, [category_ids[0], 999, 998])
+
+    db_session.refresh(package)
+    assert _category_ids(package) == set(category_ids[:1])
+    assert package.status is ReviewStatus.APPROVED

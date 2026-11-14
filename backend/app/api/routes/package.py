@@ -7,7 +7,12 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import require_admin
 from app.db.session import get_db
 from app.models.status import ReviewStatus
-from app.schemas.package import PackageCreate, PackageRead, PackageUpdate
+from app.schemas.package import (
+    PackageCategoriesUpdate,
+    PackageCreate,
+    PackageRead,
+    PackageUpdate,
+)
 from app.schemas.user import TouristRead
 from app.services import booking as booking_service
 from app.services import package as package_service
@@ -73,9 +78,7 @@ def create_package(data: PackageCreate, db: Session = Depends(get_db)) -> Packag
         _raise_conflict(db, exc)
 
 
-@router.patch(
-    "/{package_id}", response_model=PackageRead, dependencies=[Depends(require_admin)]
-)
+@router.patch("/{package_id}", response_model=PackageRead, dependencies=[Depends(require_admin)])
 def update_package(
     package_id: int, data: PackageUpdate, db: Session = Depends(get_db)
 ) -> PackageRead:
@@ -85,6 +88,22 @@ def update_package(
         return package_service.update_package(db, package, data)
     except (ValueError, IntegrityError) as exc:
         _raise_conflict(db, exc)
+
+
+@router.put(
+    "/{package_id}/categories",
+    response_model=PackageRead,
+    dependencies=[Depends(require_admin)],
+)
+def set_package_categories(
+    package_id: int, data: PackageCategoriesUpdate, db: Session = Depends(get_db)
+) -> PackageRead:
+    """Replace the categories of a package; a validated package goes back to pending (RN-11)."""
+    package = _get_package_or_404(db, package_id)
+    try:
+        return package_service.set_package_categories(db, package, data)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @router.delete(
