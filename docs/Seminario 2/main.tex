@@ -1,0 +1,167 @@
+\documentclass[12pt,a4paper]{article}
+
+% ------------------------------------------------------------
+% PAQUETES
+% ------------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-noquoting]{babel}
+\usepackage{csquotes}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\geometry{margin=2.5cm}
+
+% Bibliografía: estilo autor-año (APA)
+\usepackage{natbib}
+\bibliographystyle{apalike}
+\setcitestyle{authoryear,round,aysep={,},yysep={;}}
+% Alias con la sintaxis de biblatex, por si se migra a biber
+\newcommand{\parencite}[1]{\citep{#1}}
+\newcommand{\textcite}[1]{\citet{#1}}
+
+\graphicspath{{figures/}}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=Blue,
+}
+
+% Columna de ancho fijo centrada para las tablas comparativas
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% ------------------------------------------------------------
+\begin{document}
+
+% ------------------------------------------------------------
+% PORTADA
+% ------------------------------------------------------------
+\begin{titlepage}
+  \centering
+  {\Large \textbf{Seminario de Arquitecturas de Software:\\
+  Un Análisis Comparativo de Estilos Basados en Capas y Dominio}\par}
+  \vspace{0.6cm}
+  {\large \emph{Segunda entrega: Arquitecturas de Software Distribuidas}\par}
+  \vspace{1.5cm}
+  {\large Ingeniería de Software\par}
+  \vspace{1cm}
+  {\large \textbf{Equipo:} HAVING FE\par}
+  \vspace{1.5cm}
+
+  \begin{tabular}{p{7cm}p{6cm}}
+    \hline
+    \textbf{Integrante} & \textbf{Pregunta(s)} \\
+    \hline
+    Eric Reyes Milián & Pregunta 1 \\
+    Adrián Estévez Álvarez & Pregunta 2 \\
+    Alfonso Tejeda Rodríguez & Pregunta 3 \\
+    Kamila Reinoso Asín & Pregunta 4 \\
+    Miguel Andrés Cazorla Zamora & Pregunta 5 \\
+    Reynaldo Guillermo Capdevila Reyes & Pregunta 6 \\
+    \hline
+  \end{tabular}
+
+  \vspace{1.5cm}
+  \textbf{Repositorio:} \url{https://github.com/alfonsotejeda/astarship}
+  \vfill
+  {\large \today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ------------------------------------------------------------
+% ENUNCIADOS DE LAS PREGUNTAS
+% ------------------------------------------------------------
+\section*{Enunciados de las preguntas}
+\addcontentsline{toc}{section}{Enunciados de las preguntas}
+
+\begin{enumerate}[label=\textbf{\arabic*.}, leftmargin=*, itemsep=1.2em]
+
+  \item \textbf{Análisis Comparativo de Comunicación y Acoplamiento:}
+  Un sistema de subastas en línea requiere que, al finalizar una subasta, se realicen múltiples acciones: notificar al ganador, procesar el pago y actualizar el inventario. En un diseño con \textbf{Microservicios}, un arquitecto podría optar por una coreografía de eventos (comunicación asíncrona) o una orquestación mediante un servicio mediador. En un diseño con \textbf{Service-Based Architecture}, estas acciones probablemente se ejecutarían dentro de un mismo servicio de dominio de grano grueso. Basado en los conceptos de \emph{connascence} (connascencia) y los trade-offs de la comunicación síncrona vs. asíncrona, analice:
+  \begin{itemize}[leftmargin=1.5em]
+    \item ¿Cómo afecta cada enfoque (orquestación vs. coreografía en microservicios, y servicios de grano grueso en SBA) al acoplamiento dinámico entre los componentes del sistema?
+    \item ¿Qué implicaciones tiene cada diseño para la tolerancia a fallos y la consistencia de los datos (ACID vs. BASE) si el servicio de pago falla justo después de que se notifica al ganador?
+  \end{itemize}
+
+  \item \textbf{Diseño para Elasticidad Extrema y Consistencia de Datos:}
+  Considere el sistema de venta de entradas para conciertos descrito en el libro (Capítulo 15). Durante el lanzamiento de entradas para un artista popular, el sistema experimenta un aumento repentino de usuarios de cientos a decenas de miles en segundos. Se le pide como arquitecto diseñar la solución.
+  \begin{itemize}[leftmargin=1.5em]
+    \item Justifique por qué una \textbf{Space-Based Architecture} sería una elección más adecuada que una \textbf{Microservices Architecture} para este escenario específico, enfocándose en las características de elasticidad y escalabilidad.
+    \item Sin embargo, la Space-Based Architecture introduce el problema de las colisiones de datos en cachés replicadas. Describa cómo un arquitecto podría mitigar el riesgo de colisiones de datos en el contexto de la venta de asientos numerados, donde la consistencia es crucial. ¿Qué mecanismos o trade-offs consideraría?
+  \end{itemize}
+
+  \item \textbf{Análisis de Fallos y Resiliencia en Arquitecturas Dirigidas por Eventos:}
+  En una \textbf{Event-Driven Architecture} con topología de Broker, un procesador de eventos (\emph{Event Processor}) falla repetidamente al procesar un tipo específico de mensaje debido a un error en los datos.
+  \begin{itemize}[leftmargin=1.5em]
+    \item Describa el impacto de este fallo en el flujo general del sistema y en la experiencia del usuario final, considerando que no hay un mediador central.
+    \item Proponga una solución arquitectónica utilizando el \emph{Workflow Event Pattern} (Patrón de Eventos de Flujo de Trabajo) descrito en el Capítulo 14. Explique detalladamente cómo este patrón mitiga el problema y qué componentes adicionales (como el \emph{workflow processor} y el \emph{dashboard}) serían necesarios, así como los trade-offs que introduce (ej. procesamiento fuera de orden).
+  \end{itemize}
+
+  \item \textbf{El Dilema de la Granularidad y el Acoplamiento en Microservicios:}
+  Un equipo de desarrollo está migrando un sistema monolítico de gestión de recursos humanos a Microservicios. Inicialmente, crean servicios muy pequeños para cada entidad (Empleado, Departamento, Nómina, Beneficios). Pronto descubren que completar una operación simple, como contratar a un nuevo empleado, requiere una compleja coreografía de llamadas síncronas entre casi todos los servicios, lo que resulta en un alto acoplamiento y una fragilidad similar a la del monolito original.
+  \begin{itemize}[leftmargin=1.5em]
+    \item Basado en los principios de \emph{bounded context} y las guías de granularidad del Capítulo 17, ¿cuál fue el error fundamental en el diseño de los servicios?
+    \item Proponga una nueva estrategia de descomposición. ¿Cómo aplicaría los conceptos de propósito, transacciones y coreografía para redefinir los límites de los servicios y reducir el acoplamiento? Proporcione un ejemplo de cómo agruparía los servicios para la operación de «contratación».
+  \end{itemize}
+
+  \item \textbf{Comparación de Atributos de Calidad y Trade-offs:}
+  Un director de tecnología (CTO) le pide que elija un estilo arquitectónico para un nuevo sistema de procesamiento de transacciones financieras. Los requisitos clave son: 1) Consistencia de datos absoluta (ACID), 2) Capacidad de desplegar nuevas características de negocio de forma independiente y rápida, y 3) Un equipo de desarrollo con experiencia mixta.
+  \begin{itemize}[leftmargin=1.5em]
+    \item Compare \textbf{Service-Based Architecture} y \textbf{Microservices Architecture} en función de estos tres requisitos. ¿Cuál de las dos arquitecturas es más adecuada para cumplir con el requisito de consistencia de datos y por qué?
+    \item ¿Cómo se ve afectada la capacidad de despliegue independiente (requisito 2) en cada estilo? ¿Qué trade-offs debe aceptar el CTO si prioriza la consistencia sobre la agilidad de despliegue?
+  \end{itemize}
+
+  \item \textbf{El Legado de SOA y su Influencia en Arquitecturas Modernas:}
+  La \textbf{Service-Oriented Architecture} (SOA) con orquestación a menudo es criticada por su complejidad y por crear un cuello de botella central (el motor de orquestación). Sin embargo, algunos de sus principios, como la reutilización de servicios, siguen siendo relevantes. SOA también admite coreografía, no solo orquestación.
+  \begin{itemize}[leftmargin=1.5em]
+    \item Analice cómo la \textbf{Microservices Architecture} aborda el problema de la reutilización de una manera fundamentalmente diferente. ¿Cómo maneja la reutilización de lógica de negocio (ej. validación de clientes) vs. la reutilización operativa (ej. logging, monitoreo)?
+    \item ¿En qué escenarios un arquitecto podría todavía considerar un enfoque de orquestación (como un mediador local en microservicios o un \emph{orchestration engine} en SOA) a pesar de sus desventajas? Proporcione un ejemplo de un flujo de trabajo complejo que se beneficiaría de la orquestación explícita.
+  \end{itemize}
+
+\end{enumerate}
+
+\newpage
+
+% ------------------------------------------------------------
+% PREGUNTAS (una por archivo)
+% ------------------------------------------------------------
+\input{secciones/p1}
+\input{secciones/p2}
+\input{secciones/p3}
+\input{secciones/p4}
+\input{secciones/p5}
+\input{secciones/p6}
+
+% ------------------------------------------------------------
+% BIBLIOGRAFÍA
+% ------------------------------------------------------------
+\newpage
+\addcontentsline{toc}{section}{Referencias}
+\bibliography{references}
+
+% ------------------------------------------------------------
+% DECLARACIÓN DE USO DE IA (al final, después de la bibliografía)
+% ------------------------------------------------------------
+\newpage
+\section*{Declaración de Uso de la Inteligencia Artificial}
+\addcontentsline{toc}{section}{Declaración de Uso de la Inteligencia Artificial}
+
+Para la elaboración de este seminario, el equipo utilizó la herramienta Claude (versión Claude Opus 5, a través de Claude Code). Se empleó con tres propósitos: la lectura y el resumen comparado de los capítulos de la bibliografía recomendada, la elaboración de borradores de las respuestas a partir de los esquemas de análisis discutidos por el equipo, y la generación del formato LaTeX del documento, incluidas las tablas comparativas y los diagramas en \textsc{TikZ}.
+
+El resultado se integró de la siguiente forma: los borradores generados se usaron como base de cada sección y fueron posteriormente revisados, contrastados con las fuentes citadas y reescritos por el integrante responsable de cada pregunta, quien verificó que cada afirmación atribuida a la bibliografía se corresponda con el contenido real de los capítulos indicados. Las tablas de trade-offs y los diagramas fueron comprobados y ajustados manualmente.
+
+Todos los integrantes del equipo hicieron uso de la herramienta en la pregunta de la que fueron responsables. Todo el contenido generado fue revisado, verificado y adaptado por el equipo, quien asume la responsabilidad final del documento.
+
+\end{document}
