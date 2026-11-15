@@ -17,8 +17,10 @@ def test_expected_columns():
         "package_id",
         "booking_date",
         "status",
-        "proposed_date",
+        "requested_start_date",
+        "preferred_itinerary_id",
         "itinerary_id",
+        "resolved_date",
         "rejection_reason",
     }
 
@@ -48,8 +50,10 @@ def test_itinerary_relationship_points_at_the_itinerary_model():
 def test_booking_defaults_to_pending_status():
     booking = Booking(tourist_id=1, package_id=2)
 
-    assert booking.proposed_date is None
+    assert booking.requested_start_date is None
+    assert booking.preferred_itinerary_id is None
     assert booking.itinerary_id is None
+    assert booking.resolved_date is None
     assert booking.rejection_reason is None
 
 

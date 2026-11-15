@@ -1,5 +1,7 @@
 """Booking service."""
 
+from datetime import date
+
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -55,11 +57,13 @@ def create_booking(db: Session, data: BookingCreate) -> Booking:
         tourist=tourist,
         package=package,
         booking_date=data.booking_date,
-        proposed_date=data.proposed_date,
+        requested_start_date=data.requested_start_date,
+        preferred_itinerary_id=data.preferred_itinerary_id,
         itinerary_id=data.itinerary_id,
         rejection_reason=data.rejection_reason,
         status=data.status,
     )
+    _apply_resolved_date(booking, data.status)
     db.add(booking)
     try:
         db.commit()
@@ -105,10 +109,24 @@ def update_booking(db: Session, booking: Booking, data: BookingUpdate) -> Bookin
     for field, value in update_data.items():
         setattr(booking, field, value)
 
+    _apply_resolved_date(booking, new_status)
+
     db.add(booking)
     db.commit()
     db.refresh(booking)
     return booking
+
+
+def _apply_resolved_date(booking: Booking, status: BookingStatus) -> None:
+    """Fill or clear ``resolved_date`` depending on the resulting status.
+
+    A booking that moves to ``rejected`` or ``cancelled`` is resolved today;
+    one that goes back to ``pending`` is unresolved again.
+    """
+    if status in (BookingStatus.REJECTED, BookingStatus.CANCELLED):
+        booking.resolved_date = date.today()
+    elif status is BookingStatus.PENDING:
+        booking.resolved_date = None
 
 
 def delete_booking(db: Session, booking: Booking) -> None:
