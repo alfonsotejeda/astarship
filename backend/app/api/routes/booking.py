@@ -64,6 +64,14 @@ def list_bookings(
 
 
 @router.get("/{tourist_id}/{package_id}", response_model=BookingRead)
-def get_booking(tourist_id: int, package_id: int, db: Session = Depends(get_db)) -> BookingRead:
-    """Get a single booking by its tourist and package ids."""
-    return _to_read(_get_booking_or_404(db, tourist_id, package_id))
+def get_booking(
+    tourist_id: int,
+    package_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> BookingRead:
+    """Get a single booking by its tourist and package ids (owner or admin only)."""
+    booking = _get_booking_or_404(db, tourist_id, package_id)
+    if current_user.role is not UserRole.ADMIN and booking.tourist_id != current_user.id:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Booking not found")
+    return _to_read(booking)

@@ -89,7 +89,22 @@ def create_booking(
                 detail="Elige una fecha de inicio a partir de hoy.",
             )
         if data.preferred_itinerary_id is not None:
-            _validate_preferred_itinerary(db, package_id, data.preferred_itinerary_id)
+            itinerary = db.get(Itinerary, data.preferred_itinerary_id)
+            if itinerary is None:
+                raise HTTPException(
+                    status_code=http_status.HTTP_404_NOT_FOUND,
+                    detail="Itinerary not found",
+                )
+            if itinerary.package_id != package_id:
+                raise HTTPException(
+                    status_code=http_status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail="El itinerario preferido no es de este paquete.",
+                )
+            if itinerary.status is not ItineraryStatus.APPROVED:
+                raise HTTPException(
+                    status_code=http_status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail="El itinerario preferido no está aprobado.",
+                )
         tourist_id = current_user.id
         requested_start_date = data.requested_start_date
         preferred_itinerary_id = data.preferred_itinerary_id

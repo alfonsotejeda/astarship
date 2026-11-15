@@ -3,8 +3,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import get_current_user
+from app.api.deps.rules import forbid_acting_for_others
 from app.db.session import get_db
 from app.models.user.tourist import Tourist
+from app.models.user.user import User
 from app.schemas.package import PackageRead
 from app.services import booking as booking_service
 from app.services import user as user_service
@@ -21,7 +24,12 @@ def _get_tourist_or_404(db: Session, tourist_id: int) -> Tourist:
 
 
 @router.get("/{tourist_id}/packages", response_model=list[PackageRead])
-def get_tourist_packages(tourist_id: int, db: Session = Depends(get_db)) -> list[PackageRead]:
-    """List all packages a tourist is booked into."""
+def get_tourist_packages(
+    tourist_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[PackageRead]:
+    """List all packages a tourist is booked into (owner or admin only)."""
+    forbid_acting_for_others(current_user, tourist_id)
     tourist = _get_tourist_or_404(db, tourist_id)
     return booking_service.get_packages_for_tourist(db, tourist.id)

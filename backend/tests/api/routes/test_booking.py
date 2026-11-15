@@ -625,3 +625,97 @@ def test_booking_disappears_when_package_deleted(client, db_session, as_user):
     assert response.status_code == 200
     body = response.json()
     assert not any(b["package_id"] == package["id"] for b in body)
+# ---------------------------------------------------------------------------
+# Group 7 — Permisos GET /bookings y 404 itinerario inexistente
+# ---------------------------------------------------------------------------
+
+
+def test_list_bookings_anonymous_returns_401(anonymous_client):
+    response = anonymous_client.get("/api/bookings")
+    assert response.status_code == 401
+
+
+def test_list_bookings_tourist_returns_403(client, db_session, as_user):
+    tourist = _create_tourist(client, email="turista-list@example.com")
+    with as_user(tourist["id"]):
+        response = client.get("/api/bookings")
+    assert response.status_code == 403
+
+
+def test_get_booking_owner_returns_200(client, db_session, as_user):
+    tourist = _create_tourist(client, email="owner-get@example.com")
+    package = _create_package(client, db_session, approve=True)
+    with as_user(tourist["id"]):
+        client.post(
+            f"/api/packages/{package['id']}/bookings",
+            json={"requested_start_date": _future_date()},
+        )
+    with as_user(tourist["id"]):
+        response = client.get(f"/api/bookings/{tourist['id']}/{package['id']}")
+    assert response.status_code == 200
+
+
+def test_get_booking_other_tourist_returns_404(client, db_session, as_user):
+    owner = _create_tourist(client, email="owner-other@example.com")
+    other = _create_tourist(client, email="other-get@example.com")
+    package = _create_package(client, db_session, approve=True)
+    with as_user(owner["id"]):
+        client.post(
+            f"/api/packages/{package['id']}/bookings",
+            json={"requested_start_date": _future_date()},
+        )
+    with as_user(other["id"]):
+        response = client.get(f"/api/bookings/{owner['id']}/{package['id']}")
+    assert response.status_code == 404
+
+
+def test_get_booking_admin_returns_200(client, db_session, as_user):
+    tourist = _create_tourist(client, email="admin-get@example.com")
+    package = _create_package(client, db_session, approve=True)
+    with as_user(tourist["id"]):
+        client.post(
+            f"/api/packages/{package['id']}/bookings",
+            json={"requested_start_date": _future_date()},
+        )
+    response = client.get(f"/api/bookings/{tourist['id']}/{package['id']}")
+    assert response.status_code == 200
+
+
+def test_get_booking_missing_returns_404(client, db_session):
+    response = client.get("/api/bookings/1/999999")
+    assert response.status_code == 404
+
+
+def test_preferred_itinerary_missing_returns_404(client, db_session, as_user):
+    tourist = _create_tourist(client, email="itinerary-missing@example.com")
+    package = _create_package(client, db_session, approve=True)
+    with as_user(tourist["id"]):
+        response = client.post(
+            f"/api/packages/{package['id']}/bookings",
+            json={"requested_start_date": _future_date(), "preferred_itinerary_id": 999999},
+        )
+    assert response.status_code == 404
+
+
+def test_get_booking_anonymous_returns_401(anonymous_client):
+    response = anonymous_client.get("/api/bookings/1/1")
+    assert response.status_code == 401
+
+
+def test_create_booking_anonymous_returns_401(anonymous_client):
+    response = anonymous_client.post(
+        "/api/packages/1/bookings", json={"requested_start_date": _future_date()}
+    )
+    assert response.status_code == 401
+
+
+def test_patch_booking_anonymous_returns_401(anonymous_client):
+    response = anonymous_client.patch(
+        "/api/packages/1/bookings/1", json={"status": "cancelled"}
+    )
+    assert response.status_code == 401
+
+
+def test_delete_booking_anonymous_returns_401(anonymous_client):
+    response = anonymous_client.delete("/api/packages/1/bookings/1")
+    assert response.status_code == 401
