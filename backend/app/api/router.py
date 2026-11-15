@@ -18,15 +18,16 @@ from app.api.routes import (
     itinerary,
     itinerary_approval,
     itinerary_composition,
+    itinerary_validation,
     membership,
     modification_request,
     package,
+    package_validation,
     proportion_category,
     proportion_type,
     report,
     tourist,
     travel_group,
-    itinerary_validation,
     user,
 )
 
@@ -50,6 +51,7 @@ api_router.include_router(tourist.router, dependencies=authenticated)
 api_router.include_router(coverage.router, dependencies=authenticated)
 api_router.include_router(assignment.router, dependencies=authenticated)
 api_router.include_router(modification_request.router, dependencies=authenticated)
+api_router.include_router(package_validation.router, dependencies=authenticated)
 api_router.include_router(proportion_category.router, dependencies=authenticated)
 api_router.include_router(proportion_type.router, dependencies=authenticated)
 api_router.include_router(itinerary_composition.router, dependencies=authenticated)
