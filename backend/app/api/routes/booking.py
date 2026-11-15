@@ -1,34 +1,17 @@
 """Booking routes."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.exc import IntegrityError
+from fastapi import APIRouter, Depends, HTTPException, status as http_status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import get_current_user
 from app.db.session import get_db
 from app.models.booking import Booking
-from app.models.package import Package
-from app.models.user.tourist import Tourist
-from app.schemas.booking import BookingCreate, BookingRead, BookingUpdate
+from app.models.status import BookingStatus
+from app.models.user.user import User, UserRole
+from app.schemas.booking import BookingRead
 from app.services import booking as booking_service
-from app.services import package as package_service
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
-
-
-def _get_tourist_or_404(db: Session, tourist_id: int) -> Tourist:
-    """Return the tourist or raise a 404."""
-    tourist = db.get(Tourist, tourist_id)
-    if tourist is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tourist not found")
-    return tourist
-
-
-def _get_package_or_404(db: Session, package_id: int) -> Package:
-    """Return the package or raise a 404."""
-    package = package_service.get_package(db, package_id)
-    if package is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
-    return package
 
 
 def _get_booking_or_404(db: Session, tourist_id: int, package_id: int) -> Booking:
@@ -37,18 +20,6 @@ def _get_booking_or_404(db: Session, tourist_id: int, package_id: int) -> Bookin
     if booking is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
     return booking
-
-
-def _raise_conflict(db: Session, exc: Exception) -> None:
-    """Raise a 409 for a duplicate (tourist, package) pair.
-
-    Rolls back only when the flush failed (IntegrityError); a ValueError
-    from the pre-check leaves no pending state in the session.
-    """
-    if isinstance(exc, IntegrityError):
-        db.rollback()
-    conflict_detail = "Booking for this tourist and package already exists"
-    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=conflict_detail) from exc
 
 
 def _to_read(booking: Booking) -> BookingRead:
@@ -71,47 +42,28 @@ def _to_read(booking: Booking) -> BookingRead:
 
 @router.get("", response_model=list[BookingRead])
 def list_bookings(
-    tourist_id: int | None = None, db: Session = Depends(get_db)
+    status: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> list[BookingRead]:
-    """List all bookings, optionally filtered by tourist id."""
-    return [_to_read(b) for b in booking_service.list_bookings(db, tourist_id=tourist_id)]
+    """List all bookings (admin only), optionally filtered by status, oldest first."""
+    if current_user.role is not UserRole.ADMIN:
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Solo el administrador ve todas las reservas.",
+        )
+    booking_status = None
+    if status is not None:
+        try:
+            booking_status = BookingStatus(status)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=http_status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Invalid status"
+            ) from exc
+    return [_to_read(b) for b in booking_service.list_bookings(db, status=booking_status)]
 
 
 @router.get("/{tourist_id}/{package_id}", response_model=BookingRead)
 def get_booking(tourist_id: int, package_id: int, db: Session = Depends(get_db)) -> BookingRead:
     """Get a single booking by its tourist and package ids."""
     return _to_read(_get_booking_or_404(db, tourist_id, package_id))
-
-
-@router.post("", response_model=BookingRead, status_code=status.HTTP_201_CREATED)
-def create_booking(data: BookingCreate, db: Session = Depends(get_db)) -> BookingRead:
-    """Create a booking between an existing tourist and an existing package."""
-    _get_tourist_or_404(db, data.tourist_id)
-    _get_package_or_404(db, data.package_id)
-    try:
-        return _to_read(booking_service.create_booking(db, data))
-    except (ValueError, IntegrityError) as exc:
-        _raise_conflict(db, exc)
-
-
-@router.delete("/{tourist_id}/{package_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_booking(tourist_id: int, package_id: int, db: Session = Depends(get_db)) -> None:
-    """Delete a booking by its tourist and package ids."""
-    booking = _get_booking_or_404(db, tourist_id, package_id)
-    booking_service.delete_booking(db, booking)
-
-
-@router.patch("/{tourist_id}/{package_id}", response_model=BookingRead)
-def update_booking(
-    tourist_id: int, package_id: int, data: BookingUpdate, db: Session = Depends(get_db)
-) -> BookingRead:
-    """Modify an existing booking.
-
-    Only the fields sent in the request body are changed. A booking moved to
-    ``rejected`` must include a non-empty ``rejection_reason``.
-    """
-    booking = _get_booking_or_404(db, tourist_id, package_id)
-    try:
-        return _to_read(booking_service.update_booking(db, booking, data))
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

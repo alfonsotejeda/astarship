@@ -17,10 +17,12 @@ from app.api.routes import (
     health,
     itinerary,
     itinerary_approval,
+    me,
     itinerary_composition,
     membership,
     modification_request,
     package,
+    package_bookings,
     proportion_category,
     proportion_type,
     report,
@@ -46,6 +48,7 @@ api_router.include_router(activity_type.router, dependencies=authenticated)
 api_router.include_router(travel_group.router, dependencies=authenticated)
 api_router.include_router(itinerary.router, dependencies=authenticated)
 api_router.include_router(booking.router, dependencies=authenticated)
+api_router.include_router(package_bookings.router, dependencies=authenticated)
 api_router.include_router(tourist.router, dependencies=authenticated)
 api_router.include_router(coverage.router, dependencies=authenticated)
 api_router.include_router(assignment.router, dependencies=authenticated)
@@ -59,3 +62,4 @@ api_router.include_router(attraction.router, dependencies=authenticated)
 api_router.include_router(itinerary_validation.router, dependencies=authenticated)
 api_router.include_router(itinerary_approval.router, dependencies=authenticated)
 api_router.include_router(report.router, dependencies=authenticated)
+api_router.include_router(me.router, dependencies=authenticated)
