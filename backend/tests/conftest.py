@@ -30,6 +30,7 @@ from app.services import authorization as authorization_service
 from app.services import itinerary as itinerary_service
 from app.services import package as package_service
 from app.services import user as user_service
+from app.services.attraction_network import store as network_store
 
 
 def pytest_configure() -> None:
@@ -42,6 +43,12 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
+
+
+@pytest.fixture(autouse=True)
+def _no_cached_network() -> None:
+    """The attraction network outlives requests in memory; every test starts without one."""
+    network_store.invalidate()
 
 
 @pytest.fixture
