@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.activity import Activity
 from app.models.attraction import Attraction
 from app.schemas.attraction import AttractionCreate, AttractionUpdate
+from app.services.attraction_network import store as network_store
 
 
 def list_attractions(db: Session) -> list[Attraction]:
@@ -23,6 +24,7 @@ def create_attraction(db: Session, data: AttractionCreate) -> Attraction:
     attraction = Attraction(**data.model_dump())
     db.add(attraction)
     db.commit()
+    network_store.invalidate()
     db.refresh(attraction)
     return attraction
 
@@ -32,6 +34,7 @@ def update_attraction(db: Session, attraction: Attraction, data: AttractionUpdat
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(attraction, field, value)
     db.commit()
+    network_store.invalidate()
     db.refresh(attraction)
     return attraction
 
@@ -42,6 +45,7 @@ def delete_attraction(db: Session, attraction: Attraction) -> None:
         raise ValueError("Attraction still has activities")
     db.delete(attraction)
     db.commit()
+    network_store.invalidate()
 
 
 def activities_by_attraction(db: Session, attraction_id: int) -> list[Activity]:
