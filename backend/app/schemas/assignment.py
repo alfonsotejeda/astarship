@@ -12,13 +12,12 @@ class AssignmentCreate(BaseModel):
     """Fields required to assign an itinerary to a tourist; it is always born assigned."""
 
     admin_id: int
-    assignment_date: date | None = None
+    assignment_date: date
 
 
 class AssignmentUpdate(BaseModel):
     """Fields allowed when updating an assignment."""
 
-    assignment_date: date | None = None
     status: AssignmentStatus | None = None
 
 
