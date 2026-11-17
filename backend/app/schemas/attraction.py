@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.schemas.activity import ActivityRead
 from app.schemas.base import ORMSchema
 from app.services.attraction_network.tariff import TravelMode
 
@@ -53,7 +54,14 @@ class AttractionConnection(BaseModel):
     mode: TravelMode
 
 
-class AttractionDetail(AttractionRead):
-    """An attraction with its connections in the network, quickest first."""
+class AttractionSummary(AttractionRead):
+    """An attraction as the list shows it, with how many activities take place there."""
 
+    activity_count: int
+
+
+class AttractionDetail(AttractionSummary):
+    """An attraction with its activities and its connections in the network, quickest first."""
+
+    activities: list[ActivityRead]
     connections: list[AttractionConnection]
