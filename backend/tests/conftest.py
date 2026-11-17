@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Generator
 from contextlib import AbstractContextManager, contextmanager
-from datetime import date
+from datetime import date, time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,21 +11,26 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.deps.auth import get_current_user
-from app.models.activity import Activity
-from app.models.activity_type import ActivityType
-from app.models.attraction import Attraction
-from app.models.category import Category
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.models.status import ItineraryStatus
+from app.models.activity import Activity
+from app.models.activity_type import ActivityType
+from app.models.assignment import Assignment
+from app.models.attraction import Attraction
+from app.models.category import Category
+from app.models.itinerary_composition import ItineraryComposition
+from app.models.membership import Membership
+from app.models.status import ItineraryStatus, VisitStatus
+from app.models.travel_group import TravelGroup
 from app.models.user.admin import Admin
 from app.models.user.user import User
+from app.models.visit import Visit
 from app.schemas.authorization import AuthorizationUpsert
 from app.schemas.itinerary import ItineraryCreate
 from app.schemas.package import PackageCreate
-from app.schemas.user import AdminCreate, GuideCreate
+from app.schemas.user import AdminCreate, GuideCreate, TouristCreate
 from app.services import authorization as authorization_service
 from app.services import itinerary as itinerary_service
 from app.services import package as package_service
@@ -191,3 +196,120 @@ def insert_activity(db_session: Session) -> Callable[..., Activity]:
         return activity
 
     return insert
+
+
+@pytest.fixture
+def rc4_data(db_session, itinerary_owners):
+    """Two itineraries, two travel groups and visits covering every RC-4 outcome.
+
+    Ada and Ben belong to Alpha and are assigned to the first itinerary; Cleo belongs
+    to Beta and is assigned to the second one. The three shared activities are one per
+    effort band, so the report can be checked row by row, by effort and by filter.
+    """
+    package_id, guide_id = itinerary_owners["package_id"], itinerary_owners["guide_id"]
+    admin_id = package_service.get_package(db_session, package_id).admin_id
+
+    itineraries = [
+        itinerary_service.create_itinerary(
+            db_session,
+            ItineraryCreate(
+                creation_date=date(2026, 1, index + 1),
+                activity_count=3,
+                package_id=package_id,
+                guide_id=guide_id,
+            ),
+        ).id
+        for index in range(2)
+    ]
+
+    category = Category(name="RC4 routes")
+    activity_type = ActivityType(code="rc4", name="RC4")
+    attraction = Attraction(name="RC4 place", address="Road 1", latitude=20.0, longitude=-76.0)
+    db_session.add_all([category, activity_type, attraction])
+    db_session.flush()
+    activities = {}
+    for name, effort in (("Canyon", 1), ("Museum", 2), ("Peak", 3)):
+        activity = Activity(
+            name=name,
+            effort_level=effort,
+            duration=60,
+            activity_type_code=activity_type.code,
+            category_id=category.id,
+            guide_id=guide_id,
+            attraction_id=attraction.id,
+        )
+        db_session.add(activity)
+        db_session.flush()
+        activities[name] = activity
+
+    for itinerary_id in itineraries:
+        for order, activity in enumerate(activities.values(), start=1):
+            db_session.add(
+                ItineraryComposition(
+                    itinerary_id=itinerary_id,
+                    activity_id=activity.id,
+                    order=order,
+                    day=1,
+                    start_time=time(hour=8 + order),
+                )
+            )
+
+    alpha = TravelGroup(name="Alpha", guide_id=guide_id)
+    beta = TravelGroup(name="Beta", guide_id=guide_id)
+    db_session.add_all([alpha, beta])
+    db_session.flush()
+
+    tourists = {}
+    for name, group, age in (("Ada", alpha, 30), ("Ben", alpha, 31), ("Cleo", beta, 32)):
+        tourist = user_service.create_user(
+            db_session,
+            TouristCreate(
+                name=name,
+                role="tourist",
+                email=f"{name.lower()}@example.com",
+                password="x",
+                age=age,
+            ),
+        )
+        db_session.add(Membership(tourist_id=tourist.id, travel_group_id=group.id))
+        tourists[name] = tourist
+
+    for itinerary_id, tourist in (
+        (itineraries[0], tourists["Ada"]),
+        (itineraries[0], tourists["Ben"]),
+        (itineraries[1], tourists["Cleo"]),
+    ):
+        db_session.add(
+            Assignment(itinerary_id=itinerary_id, tourist_id=tourist.id, admin_id=admin_id)
+        )
+    db_session.commit()
+
+    def add_visit(itinerary_index, tourist_name, activity_name, status, rating=None):
+        visit = Visit(
+            itinerary_id=itineraries[itinerary_index],
+            tourist_id=tourists[tourist_name].id,
+            activity_id=activities[activity_name].id,
+            status=status,
+            rating=rating,
+        )
+        db_session.add(visit)
+        db_session.commit()
+        return visit
+
+    # Canyon (low) is always rated highly; Museum and Peak have skips and low ratings.
+    add_visit(0, "Ada", "Canyon", VisitStatus.DONE, 5)
+    add_visit(0, "Ben", "Canyon", VisitStatus.DONE, 4)
+    add_visit(0, "Ada", "Museum", VisitStatus.DONE, 3)
+    add_visit(0, "Ben", "Museum", VisitStatus.SKIPPED)
+    add_visit(0, "Ada", "Peak", VisitStatus.DONE, 2)
+    add_visit(0, "Ben", "Peak", VisitStatus.SKIPPED)
+    add_visit(1, "Cleo", "Canyon", VisitStatus.DONE, 5)
+    add_visit(1, "Cleo", "Museum", VisitStatus.SKIPPED)
+
+    return {
+        "itineraries": itineraries,
+        "groups": {"alpha": alpha.id, "beta": beta.id},
+        "activities": {name: activity.id for name, activity in activities.items()},
+        "tourists": {name: tourist.id for name, tourist in tourists.items()},
+        "add_visit": add_visit,
+    }

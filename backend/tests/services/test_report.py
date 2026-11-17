@@ -11,7 +11,7 @@ from app.schemas.itinerary import ItineraryCreate
 from app.schemas.package import PackageCreate
 from app.schemas.proportion_category import ProportionCategoryCreate
 from app.schemas.proportion_type import ProportionTypeCreate
-from app.schemas.report import Rc1SortColumn, SortOrder
+from app.schemas.report import EffortLevel, Rc1SortColumn, Rc4SortColumn, SortOrder
 from app.schemas.user import GuideCreate
 from app.services import activity_type as activity_type_service
 from app.services import category as category_service
@@ -154,3 +154,138 @@ def test_rc1_is_empty_without_itineraries(db_session):
 
     assert report.rows == []
     assert report.chart == []
+
+
+def test_rc4_groups_visits_by_activity_with_experience_rates(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(db_session)
+
+    assert [(row.id, row.effort, row.visits) for row in report.rows] == [
+        (rc4_data["activities"]["Canyon"], EffortLevel.BAJO, 3),
+        (rc4_data["activities"]["Museum"], EffortLevel.MEDIO, 3),
+        (rc4_data["activities"]["Peak"], EffortLevel.ALTO, 2),
+    ]
+    canyon, museum, peak = report.rows
+    assert (canyon.completed, canyon.rating, canyon.satisfaction, canyon.abandonment) == (
+        3,
+        pytest.approx(14 / 3),
+        pytest.approx(100),
+        0,
+    )
+    assert (museum.completed, museum.rating, museum.satisfaction, museum.abandonment) == (
+        1,
+        3,
+        0,
+        pytest.approx(200 / 3),
+    )
+    assert (peak.completed, peak.rating, peak.satisfaction, peak.abandonment) == (
+        1,
+        2,
+        0,
+        50,
+    )
+
+
+def test_rc4_chart_has_one_point_per_effort_band(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(db_session)
+
+    assert [(point.effort, point.label) for point in report.chart] == [
+        (EffortLevel.BAJO, "Bajo"),
+        (EffortLevel.MEDIO, "Medio"),
+        (EffortLevel.ALTO, "Alto"),
+    ]
+    assert (report.chart[0].satisfaction, report.chart[0].abandonment) == (
+        pytest.approx(100),
+        0,
+    )
+    assert (report.chart[1].satisfaction, report.chart[1].abandonment) == (
+        0,
+        pytest.approx(200 / 3),
+    )
+    assert (report.chart[2].satisfaction, report.chart[2].abandonment) == (0, 50)
+
+
+def test_rc4_summary_totals_the_whole_report(db_session, rc4_data):
+    summary = report_service.rc4_tourist_experience(db_session).summary
+
+    assert (summary.visits, summary.completed, summary.skipped, summary.rated) == (8, 5, 3, 5)
+    assert summary.tourists == 3
+    assert summary.rating == pytest.approx(19 / 5)
+    assert summary.satisfaction == pytest.approx(3 / 8 * 100)
+    assert summary.abandonment == pytest.approx(3 / 8 * 100)
+
+
+def test_rc4_returns_filter_options(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(db_session)
+
+    assert [(item.id, item.package_name) for item in report.itineraries] == [
+        (rc4_data["itineraries"][1], "Andes"),
+        (rc4_data["itineraries"][0], "Andes"),
+    ]
+    assert [(item.id, item.name) for item in report.groups] == [
+        (rc4_data["groups"]["alpha"], "Alpha"),
+        (rc4_data["groups"]["beta"], "Beta"),
+    ]
+
+
+def test_rc4_filters_by_itinerary(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(
+        db_session, itinerary_id=rc4_data["itineraries"][0]
+    )
+
+    assert [row.visits for row in report.rows] == [2, 2, 2]
+    assert report.summary.visits == 6
+    assert report.summary.tourists == 2
+
+
+def test_rc4_filters_by_group(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(db_session, group_id=rc4_data["groups"]["beta"])
+
+    assert [(row.id, row.visits) for row in report.rows] == [
+        (rc4_data["activities"]["Canyon"], 1),
+        (rc4_data["activities"]["Museum"], 1),
+    ]
+    assert report.summary.tourists == 1
+
+
+def test_rc4_combines_both_filters(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(
+        db_session,
+        itinerary_id=rc4_data["itineraries"][0],
+        group_id=rc4_data["groups"]["beta"],
+    )
+
+    assert report.rows == []
+    assert report.summary.visits == 0
+    assert report.summary.tourists == 0
+
+
+@pytest.mark.parametrize(
+    ("sort", "order", "expected"),
+    [
+        (Rc4SortColumn.ACTIVITY_ID, SortOrder.DESC, ["Peak", "Museum", "Canyon"]),
+        (Rc4SortColumn.ACTIVITY_NAME, SortOrder.DESC, ["Peak", "Museum", "Canyon"]),
+        (Rc4SortColumn.EFFORT, SortOrder.DESC, ["Peak", "Museum", "Canyon"]),
+        (Rc4SortColumn.VISITS, SortOrder.ASC, ["Peak", "Canyon", "Museum"]),
+        (Rc4SortColumn.COMPLETED, SortOrder.DESC, ["Canyon", "Museum", "Peak"]),
+        (Rc4SortColumn.RATING, SortOrder.ASC, ["Peak", "Museum", "Canyon"]),
+        (Rc4SortColumn.SATISFACTION, SortOrder.DESC, ["Canyon", "Museum", "Peak"]),
+        (Rc4SortColumn.ABANDONMENT, SortOrder.DESC, ["Museum", "Peak", "Canyon"]),
+    ],
+)
+def test_rc4_sorts_by_any_column(db_session, rc4_data, sort, order, expected):
+    by_name = {name: activity_id for name, activity_id in rc4_data["activities"].items()}
+
+    report = report_service.rc4_tourist_experience(db_session, sort=sort, order=order)
+
+    assert [row.id for row in report.rows] == [by_name[name] for name in expected]
+
+
+def test_rc4_is_empty_without_visits(db_session, itinerary_owners):
+    report = report_service.rc4_tourist_experience(db_session)
+
+    assert report.rows == []
+    assert [point.label for point in report.chart] == ["Bajo", "Medio", "Alto"]
+    assert all(point.satisfaction == point.abandonment == 0 for point in report.chart)
+    assert (report.summary.visits, report.summary.tourists, report.summary.rating) == (0, 0, None)
+    assert report.itineraries == []
+    assert report.groups == []
