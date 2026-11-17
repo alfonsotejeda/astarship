@@ -1,7 +1,5 @@
 """Assignment routes."""
 
-from datetime import date
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -31,12 +29,9 @@ def _ensure_tourist_exists(db: Session, tourist_id: int) -> None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tourist not found")
 
 
-def _get_assignment_or_404( db: Session,
-                            itinerary_id: int,
-                            tourist_id: int,
-                            assignment_date: date) -> Assignment:
+def _get_assignment_or_404(db: Session, itinerary_id: int, tourist_id: int) -> Assignment:
     """Return the assignment or raise a 404."""
-    assignment = assignment_service.get_assignment(db, itinerary_id, tourist_id, assignment_date)
+    assignment = assignment_service.get_assignment(db, itinerary_id, tourist_id)
     if assignment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assignment not found")
     return assignment
@@ -74,8 +69,7 @@ def create_assignment(
     _ensure_tourist_exists(db, tourist_id)
     if user_service.get_admin(db, data.admin_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
-    if assignment_service.get_assignment(db, itinerary_id,
-                                        tourist_id, data.assignment_date) is not None:
+    if assignment_service.get_assignment(db, itinerary_id, tourist_id) is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Itinerary already assigned to tourist"
         )
@@ -87,33 +81,27 @@ def create_assignment(
 
 
 @router.patch(
-    "/itineraries/{itinerary_id}/assignments/{tourist_id}/{assignment_date}",
-    response_model=AssignmentRead
+    "/itineraries/{itinerary_id}/assignments/{tourist_id}", response_model=AssignmentRead
 )
 def update_assignment(
     itinerary_id: int,
     tourist_id: int,
-    assignment_date: date,
     data: AssignmentUpdate,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> AssignmentRead:
     """Update an assignment, typically for its tourist to advance its status."""
     forbid_acting_for_others(user, tourist_id)
-    assignment = _get_assignment_or_404(db, itinerary_id, tourist_id, assignment_date)
-    return assignment_service.update_assignment(db, assignment, data)
+    assignment = _get_assignment_or_404(db, itinerary_id, tourist_id)
     return assignment_service.update_assignment(db, assignment, data)
 
 
 @router.delete(
-    "/itineraries/{itinerary_id}/assignments/{tourist_id}/{assignment_date}",
+    "/itineraries/{itinerary_id}/assignments/{tourist_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(require_admin)],
 )
-def delete_assignment(  itinerary_id: int,
-                        tourist_id: int,
-                        assignment_date: date,
-                        db: Session = Depends(get_db)) -> None:
+def delete_assignment(itinerary_id: int, tourist_id: int, db: Session = Depends(get_db)) -> None:
     """Remove an itinerary from a tourist."""
-    assignment = _get_assignment_or_404(db, itinerary_id, tourist_id, assignment_date)
+    assignment = _get_assignment_or_404(db, itinerary_id, tourist_id)
     assignment_service.delete_assignment(db, assignment)
