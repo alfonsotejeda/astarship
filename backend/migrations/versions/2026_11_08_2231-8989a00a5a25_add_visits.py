@@ -1,8 +1,8 @@
 """add visits
 
-Revision ID: ab15c0aacacb
+Revision ID: 8989a00a5a25
 Revises: b3e9d2a7c164
-Create Date: 2026-11-06 13:40:09.991084
+Create Date: 2026-11-08 22:31:22.387789
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ab15c0aacacb'
+revision: str = '8989a00a5a25'
 down_revision: Union[str, Sequence[str], None] = 'b3e9d2a7c164'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -29,7 +29,7 @@ def upgrade() -> None:
     sa.Column('rating', sa.Integer(), nullable=True),
     sa.Column('status', sa.String(length=10), nullable=False),
     sa.CheckConstraint("status <> 'done' OR rating IS NOT NULL", name=op.f('ck_visits_check_visit_rating_required_if_done')),
-    sa.CheckConstraint("status IN ('pending', 'done', 'cancelled')", name=op.f('ck_visits_check_visit_status')),
+    sa.CheckConstraint("status IN ('done', 'skipped')", name=op.f('ck_visits_check_visit_status')),
     sa.CheckConstraint('rating  BETWEEN 1 AND 5', name=op.f('ck_visits_check_visit_rating')),
     sa.ForeignKeyConstraint(['itinerary_id', 'activity_id'], ['itinerary_compositions.itinerary_id', 'itinerary_compositions.activity_id'], name=op.f('fk_visits_itinerary_id_itinerary_compositions'), onupdate='CASCADE', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['itinerary_id', 'tourist_id'], ['assignments.itinerary_id', 'assignments.tourist_id'], name=op.f('fk_visits_itinerary_id_assignments'), onupdate='CASCADE', ondelete='CASCADE'),

@@ -1,14 +1,15 @@
 """Visit model."""
 
-from datetime import date
 from typing import TYPE_CHECKING
-from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, String
+
+from sqlalchemy import CheckConstraint, ForeignKeyConstraint, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.assignment import Assignment
     from app.models.itinerary_composition import ItineraryComposition
-from app.db.base import Base
 
 
 class Visit(Base):
@@ -36,7 +37,7 @@ class Visit(Base):
             ondelete="CASCADE",
             onupdate="CASCADE",
         ),
-        CheckConstraint("status IN ('pending', 'done', 'cancelled')", name="check_visit_status"),
+        CheckConstraint("status IN ('done', 'skipped')", name="check_visit_status"),
         CheckConstraint("rating  BETWEEN 1 AND 5", name="check_visit_rating"),
         CheckConstraint(
             "status <> 'done' OR rating IS NOT NULL", name="check_visit_rating_required_if_done"
