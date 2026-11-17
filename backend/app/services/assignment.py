@@ -1,8 +1,9 @@
 """Assignment service."""
 
+from datetime import date
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from datetime import date
 
 from app.models.assignment import Assignment
 from app.schemas.assignment import AssignmentCreate, AssignmentUpdate
@@ -20,7 +21,8 @@ def list_tourist_assignments(db: Session, tourist_id: int) -> list[Assignment]:
     return list(db.scalars(statement))
 
 
-def get_assignment(db: Session, itinerary_id: int, tourist_id: int, assignment_date: date) -> Assignment | None:
+def get_assignment( db: Session, itinerary_id: int,
+                    tourist_id: int, assignment_date: date) -> Assignment | None:
     """Return the assignment of an itinerary to a tourist, or None if it doesn't exist."""
     return db.get(Assignment, (itinerary_id, tourist_id, assignment_date))
 
