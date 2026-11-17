@@ -15,6 +15,14 @@ class SortOrder(StrEnum):
     DESC = "desc"
 
 
+class EffortLevel(StrEnum):
+    """Effort band shown in the reports, derived from the activity's numeric level."""
+
+    BAJO = "bajo"
+    MEDIO = "medio"
+    ALTO = "alto"
+
+
 class Rc1SortColumn(StrEnum):
     """Columns the RC-1 table can be sorted by."""
 
@@ -71,3 +79,75 @@ class Rc1Report(BaseModel):
 
     rows: list[Rc1Row]
     chart: list[Rc1ChartPoint]
+
+
+class Rc4SortColumn(StrEnum):
+    """Columns the RC-4 table can be sorted by."""
+
+    ACTIVITY_ID = "id"
+    ACTIVITY_NAME = "activity_name"
+    EFFORT = "effort"
+    VISITS = "visits"
+    COMPLETED = "completed"
+    RATING = "rating"
+    SATISFACTION = "satisfaction"
+    ABANDONMENT = "abandonment"
+
+
+class Rc4Row(BaseModel):
+    """Activity of an itinerary with its tourists' experience."""
+
+    id: int
+    activity_name: str
+    effort: EffortLevel
+    visits: int
+    completed: int
+    rating: float | None
+    satisfaction: float
+    abandonment: float
+
+
+class Rc4ChartPoint(BaseModel):
+    """Satisfaction and abandonment rates of one effort level."""
+
+    effort: EffortLevel
+    label: str
+    satisfaction: float
+    abandonment: float
+
+
+class Rc4Summary(BaseModel):
+    """Totals shown in the RC-4 tiles."""
+
+    visits: int
+    completed: int
+    skipped: int
+    rated: int
+    tourists: int
+    rating: float | None
+    satisfaction: float
+    abandonment: float
+
+
+class Rc4Itinerary(BaseModel):
+    """Itinerary offered as a filter option."""
+
+    id: int
+    package_name: str
+
+
+class Rc4Group(BaseModel):
+    """Travel group offered as a filter option."""
+
+    id: int
+    name: str
+
+
+class Rc4Report(BaseModel):
+    """RC-4 table rows, effort chart data, summary and filter options."""
+
+    rows: list[Rc4Row]
+    chart: list[Rc4ChartPoint]
+    summary: Rc4Summary
+    itineraries: list[Rc4Itinerary]
+    groups: list[Rc4Group]
