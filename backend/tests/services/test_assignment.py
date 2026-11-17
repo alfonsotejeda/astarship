@@ -150,8 +150,10 @@ def test_deleting_the_tourist_removes_its_assignments(db_session, itinerary_owne
     assert assignment_service.list_assignments(db_session, itinerary.id) == []
 
 
-def test_the_same_itinerary_can_be_assigned_to_a_tourist_on_two_dates(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_the_same_itinerary_can_be_assigned_to_a_tourist_on_two_dates(
+    db_session, itinerary_owners
+):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     tourist = _create_tourist(db_session)
     admin = _create_admin(db_session)
 

@@ -207,8 +207,8 @@ def test_update_assignment_returns_404_when_missing(client, create_itinerary):
     assert response.status_code == 404
 
 
-def test_update_assignment_returns_404_for_another_date(client):
-    itinerary_id = _create_itinerary(client)
+def test_update_assignment_returns_404_for_another_date(client, create_itinerary):
+    itinerary_id = create_itinerary()
     tourist_id = _create_tourist(client)
     admin_id = _create_admin(client)
     client.post(
