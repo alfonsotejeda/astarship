@@ -19,14 +19,15 @@ from app.models import (  # noqa: F401
     coverage,
     itinerary,
     itinerary_approval,
-    itinerary_validation,
     itinerary_composition,
+    itinerary_validation,
     membership,
     modification_request,
     package,
     proportion_category,
     proportion_type,
     travel_group,
+    visit,
 )
 from app.models.user import (  # noqa: F401
     admin,
