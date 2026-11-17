@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Generator
 from contextlib import AbstractContextManager, contextmanager
-from datetime import date
+from datetime import date, time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,21 +11,26 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.deps.auth import get_current_user
-from app.models.activity import Activity
-from app.models.activity_type import ActivityType
-from app.models.attraction import Attraction
-from app.models.category import Category
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from app.models.activity import Activity
+from app.models.activity_type import ActivityType
+from app.models.assignment import Assignment
+from app.models.attraction import Attraction
+from app.models.category import Category
+from app.models.coverage import Coverage
+from app.models.itinerary_composition import ItineraryComposition
+from app.models.proportion_category import ProportionCategory
+from app.models.proportion_type import ProportionType
 from app.models.status import ItineraryStatus
 from app.models.user.admin import Admin
 from app.models.user.user import User
 from app.schemas.authorization import AuthorizationUpsert
 from app.schemas.itinerary import ItineraryCreate
 from app.schemas.package import PackageCreate
-from app.schemas.user import AdminCreate, GuideCreate
+from app.schemas.user import AdminCreate, GuideCreate, TouristCreate
 from app.services import authorization as authorization_service
 from app.services import itinerary as itinerary_service
 from app.services import package as package_service
@@ -191,3 +196,116 @@ def insert_activity(db_session: Session) -> Callable[..., Activity]:
         return activity
 
     return insert
+
+
+@pytest.fixture
+def rc5_data(db_session, itinerary_owners):
+    """Two packages with three itineraries whose parametrization and coverage differ."""
+    andes_id, guide_id = itinerary_owners["package_id"], itinerary_owners["guide_id"]
+    admin_id = package_service.get_package(db_session, andes_id).admin_id
+    alps_id = package_service.create_package(
+        db_session, PackageCreate(name="Alps", destination="Swiss", admin_id=admin_id)
+    ).id
+
+    types = {
+        code: ActivityType(code=code, name=name)
+        for code, name in (("visita", "Visita"), ("excursion", "Excursión"), ("taller", "Taller"))
+    }
+    categories = {name: Category(name=name) for name in ("History", "Nature", "Art")}
+    attraction = Attraction(name="RC5 place", address="Road 1", latitude=20.0, longitude=-76.0)
+    db_session.add_all([*types.values(), *categories.values(), attraction])
+    db_session.flush()
+    for package_id, names in ((andes_id, ("History", "Nature")), (alps_id, ("Art",))):
+        for name in names:
+            db_session.add(Coverage(category_id=categories[name].id, package_id=package_id))
+
+    activities = {}
+    for name, code, category, effort in (
+        ("Museum", "visita", "History", 1),
+        ("Hike", "excursion", "Nature", 3),
+        ("Workshop", "taller", "History", 2),
+        ("Gallery", "visita", "Art", 1),
+    ):
+        activity = Activity(
+            name=name,
+            effort_level=effort,
+            duration=60,
+            activity_type_code=code,
+            category_id=categories[category].id,
+            guide_id=guide_id,
+            attraction_id=attraction.id,
+        )
+        db_session.add(activity)
+        db_session.flush()
+        activities[name] = activity
+
+    def create_itinerary(package_id, status, creation_date, activity_count):
+        itinerary = itinerary_service.create_itinerary(
+            db_session,
+            ItineraryCreate(
+                creation_date=creation_date,
+                activity_count=activity_count,
+                package_id=package_id,
+                guide_id=guide_id,
+            ),
+        )
+        itinerary.status = status
+        db_session.commit()
+        return itinerary.id
+
+    def plan(itinerary_id, stops, type_values, category_values):
+        for order, (name, start) in enumerate(stops, start=1):
+            db_session.add(
+                ItineraryComposition(
+                    itinerary_id=itinerary_id,
+                    activity_id=activities[name].id,
+                    order=order,
+                    day=1,
+                    start_time=start,
+                )
+            )
+        for code, value in type_values.items():
+            db_session.add(
+                ProportionType(itinerary_id=itinerary_id, activity_type_code=code, value=value)
+            )
+        for name, value in category_values.items():
+            db_session.add(
+                ProportionCategory(
+                    itinerary_id=itinerary_id, category_id=categories[name].id, value=value
+                )
+            )
+
+    first = create_itinerary(andes_id, ItineraryStatus.APPROVED, date(2026, 1, 10), 3)
+    plan(
+        first,
+        [("Museum", time(9)), ("Hike", time(10)), ("Workshop", time(11))],
+        {"visita": 33, "excursion": 33, "taller": 34},
+        {"History": 67, "Nature": 33},
+    )
+    second = create_itinerary(alps_id, ItineraryStatus.PENDING, date(2026, 2, 10), 2)
+    plan(
+        second,
+        [("Gallery", time(9)), ("Hike", time(18))],
+        {"visita": 50, "excursion": 50},
+        {"Art": 100},
+    )
+    third = create_itinerary(andes_id, ItineraryStatus.VALIDATED, date(2026, 3, 10), 1)
+    plan(
+        third,
+        [("Museum", time(9))],
+        {"visita": 100},
+        {"History": 100, "Nature": 50},
+    )
+
+    tourist = user_service.create_user(
+        db_session,
+        TouristCreate(name="Ada", role="tourist", email="ada@example.com", password="x", age=30),
+    )
+    db_session.add(Assignment(itinerary_id=third, tourist_id=tourist.id, admin_id=admin_id))
+    db_session.commit()
+
+    return {
+        "packages": {"andes": andes_id, "alps": alps_id},
+        "categories": {name: category.id for name, category in categories.items()},
+        "itineraries": {"first": first, "second": second, "third": third},
+    }
