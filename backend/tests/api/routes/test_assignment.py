@@ -24,6 +24,12 @@ def _create_admin(client, email="ana@example.com") -> int:
     return _create_user(client, "admin", email)
 
 
+def _item_url(itinerary_id, tourist_id, assignment_date=None):
+    """URL of one assignment; it is identified by its date, which defaults to today."""
+    day = (assignment_date or date.today()).isoformat()
+    return f"/api/itineraries/{itinerary_id}/assignments/{tourist_id}/{day}"
+
+
 def test_create_assignment_returns_201(client):
     itinerary_id = _create_itinerary(client)
     tourist_id = _create_tourist(client)
@@ -43,6 +49,20 @@ def test_create_assignment_returns_201(client):
     }
 
 
+def test_create_assignment_keeps_the_given_date(client):
+    itinerary_id = _create_itinerary(client)
+    tourist_id = _create_tourist(client)
+    admin_id = _create_admin(client)
+
+    response = client.post(
+        f"/api/itineraries/{itinerary_id}/assignments/{tourist_id}",
+        json={"admin_id": admin_id, "assignment_date": "2026-05-01"},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["assignment_date"] == "2026-05-01"
+
+
 def test_create_assignment_twice_returns_409(client):
     itinerary_id = _create_itinerary(client)
     tourist_id = _create_tourist(client)
@@ -53,6 +73,35 @@ def test_create_assignment_twice_returns_409(client):
     response = client.post(url, json={"admin_id": admin_id})
 
     assert response.status_code == 409
+
+
+def test_the_same_itinerary_can_be_assigned_on_two_dates(client):
+    itinerary_id = _create_itinerary(client)
+    tourist_id = _create_tourist(client)
+    admin_id = _create_admin(client)
+    url = f"/api/itineraries/{itinerary_id}/assignments/{tourist_id}"
+
+    first = client.post(url, json={"admin_id": admin_id, "assignment_date": "2026-05-01"})
+    second = client.post(url, json={"admin_id": admin_id, "assignment_date": "2026-06-01"})
+    again = client.post(url, json={"admin_id": admin_id, "assignment_date": "2026-06-01"})
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+    assert again.status_code == 409
+    assert len(client.get(f"/api/itineraries/{itinerary_id}/assignments").json()) == 2
+
+
+def test_create_assignment_with_invalid_date_returns_422(client):
+    itinerary_id = _create_itinerary(client)
+    tourist_id = _create_tourist(client)
+    admin_id = _create_admin(client)
+
+    response = client.post(
+        f"/api/itineraries/{itinerary_id}/assignments/{tourist_id}",
+        json={"admin_id": admin_id, "assignment_date": "not-a-date"},
+    )
+
+    assert response.status_code == 422
 
 
 def test_create_assignment_returns_404_when_itinerary_missing(client):
@@ -104,7 +153,7 @@ def test_update_assignment_changes_the_status(client):
     url = f"/api/itineraries/{itinerary_id}/assignments/{tourist_id}"
     client.post(url, json={"admin_id": admin_id})
 
-    response = client.patch(url, json={"status": "in_progress"})
+    response = client.patch(_item_url(itinerary_id, tourist_id), json={"status": "in_progress"})
 
     assert response.status_code == 200
     assert response.json()["status"] == "in_progress"
@@ -117,7 +166,7 @@ def test_update_assignment_with_unknown_status_returns_422(client):
     url = f"/api/itineraries/{itinerary_id}/assignments/{tourist_id}"
     client.post(url, json={"admin_id": admin_id})
 
-    response = client.patch(url, json={"status": "lost"})
+    response = client.patch(_item_url(itinerary_id, tourist_id), json={"status": "lost"})
 
     assert response.status_code == 422
 
@@ -126,8 +175,21 @@ def test_update_assignment_returns_404_when_missing(client):
     itinerary_id = _create_itinerary(client)
     tourist_id = _create_tourist(client)
 
+    response = client.patch(_item_url(itinerary_id, tourist_id), json={"status": "finished"})
+
+    assert response.status_code == 404
+
+
+def test_update_assignment_returns_404_for_another_date(client):
+    itinerary_id = _create_itinerary(client)
+    tourist_id = _create_tourist(client)
+    admin_id = _create_admin(client)
+    client.post(
+        f"/api/itineraries/{itinerary_id}/assignments/{tourist_id}", json={"admin_id": admin_id}
+    )
+
     response = client.patch(
-        f"/api/itineraries/{itinerary_id}/assignments/{tourist_id}", json={"status": "finished"}
+        _item_url(itinerary_id, tourist_id, date(2026, 1, 1)), json={"status": "in_progress"}
     )
 
     assert response.status_code == 404
@@ -182,7 +244,7 @@ def test_delete_assignment_returns_204(client):
     url = f"/api/itineraries/{itinerary_id}/assignments/{tourist_id}"
     client.post(url, json={"admin_id": admin_id})
 
-    response = client.delete(url)
+    response = client.delete(_item_url(itinerary_id, tourist_id))
 
     assert response.status_code == 204
     assert client.get(f"/api/itineraries/{itinerary_id}/assignments").json() == []
@@ -192,6 +254,6 @@ def test_delete_assignment_returns_404_when_missing(client):
     itinerary_id = _create_itinerary(client)
     tourist_id = _create_tourist(client)
 
-    response = client.delete(f"/api/itineraries/{itinerary_id}/assignments/{tourist_id}")
+    response = client.delete(_item_url(itinerary_id, tourist_id))
 
     assert response.status_code == 404
