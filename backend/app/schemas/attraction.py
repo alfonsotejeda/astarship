@@ -3,6 +3,7 @@
 from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.base import ORMSchema
+from app.services.attraction_network.tariff import TravelMode
 
 
 class AttractionCreate(BaseModel):
@@ -39,3 +40,20 @@ class AttractionRead(ORMSchema):
     address: str
     latitude: float
     longitude: float
+
+
+class AttractionConnection(BaseModel):
+    """A connection to another attraction of the network, rounded for display (RF-32)."""
+
+    attraction_id: int
+    name: str
+    meters: int
+    minutes: int  # at least 1, a connection never takes no time
+    cost: float  # USD, two decimals
+    mode: TravelMode
+
+
+class AttractionDetail(AttractionRead):
+    """An attraction with its connections in the network, quickest first."""
+
+    connections: list[AttractionConnection]

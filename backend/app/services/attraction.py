@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models.activity import Activity
 from app.models.attraction import Attraction
-from app.schemas.attraction import AttractionCreate, AttractionUpdate
+from app.schemas.attraction import AttractionConnection, AttractionCreate, AttractionUpdate
 from app.services.attraction_network import store as network_store
 
 
@@ -17,6 +17,25 @@ def list_attractions(db: Session) -> list[Attraction]:
 def get_attraction(db: Session, attraction_id: int) -> Attraction | None:
     """Return an attraction by id, or None if it doesn't exist."""
     return db.get(Attraction, attraction_id)
+
+
+def connections_of(db: Session, attraction_id: int) -> list[AttractionConnection]:
+    """Return the connections of an attraction in the network, quickest first."""
+    network = network_store.get_network(db)
+    connections = []
+    for edge in network.edges_from(attraction_id):
+        travel = edge.travel
+        connections.append(
+            AttractionConnection(
+                attraction_id=edge.target,
+                name=network.node(edge.target).name,
+                meters=round(travel.meters),
+                minutes=max(1, round(travel.seconds / 60)),
+                cost=round(travel.cost, 2),
+                mode=travel.mode,
+            )
+        )
+    return connections
 
 
 def create_attraction(db: Session, data: AttractionCreate) -> Attraction:
