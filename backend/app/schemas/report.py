@@ -15,6 +15,14 @@ class SortOrder(StrEnum):
     DESC = "desc"
 
 
+class EffortLevel(StrEnum):
+    """Effort band shown in the reports, derived from the activity's numeric level."""
+
+    BAJO = "bajo"
+    MEDIO = "medio"
+    ALTO = "alto"
+
+
 class Rc1SortColumn(StrEnum):
     """Columns the RC-1 table can be sorted by."""
 
@@ -71,3 +79,58 @@ class Rc1Report(BaseModel):
 
     rows: list[Rc1Row]
     chart: list[Rc1ChartPoint]
+
+
+class Rc2SortColumn(StrEnum):
+    """Columns the RC-2 table can be sorted by."""
+
+    ACTIVITY_ID = "activity_id"
+    ACTIVITY_NAME = "activity_name"
+    CATEGORY_ID = "category_id"
+    CATEGORY = "category_name"
+    ACTIVITY_TYPE_CODE = "activity_type_code"
+    ACTIVITY_TYPE = "activity_type_name"
+    EFFORT = "effort"
+    USES = "uses"
+    PERCENTAGE = "percentage"
+
+
+class Rc2Row(BaseModel):
+    """Activity used in final itineraries, with its category, type and effort band."""
+
+    activity_id: int
+    activity_name: str
+    category_id: int
+    category_name: str
+    activity_type_code: str
+    activity_type_name: str
+    effort: EffortLevel
+    uses: int
+    percentage: float
+
+
+class Rc2ChartPoint(BaseModel):
+    """Uses of one category's activities, stacked by effort level."""
+
+    category_id: int
+    category: str
+    bajo: int
+    medio: int
+    alto: int
+
+
+class Rc2Summary(BaseModel):
+    """Totals shown in the RC-2 tiles."""
+
+    final_itineraries: int
+    distinct_activities: int
+    total_uses: int
+    high_effort_uses: int
+
+
+class Rc2Report(BaseModel):
+    """RC-2 table rows, the category by effort chart data and the summary tiles."""
+
+    rows: list[Rc2Row]
+    chart: list[Rc2ChartPoint]
+    summary: Rc2Summary
