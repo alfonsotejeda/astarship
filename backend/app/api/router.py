@@ -18,6 +18,7 @@ from app.api.routes import (
     itinerary,
     itinerary_approval,
     itinerary_composition,
+    itinerary_validation,
     membership,
     modification_request,
     package,
@@ -26,8 +27,8 @@ from app.api.routes import (
     report,
     tourist,
     travel_group,
-    itinerary_validation,
     user,
+    visit,
 )
 
 api_router = APIRouter()
@@ -59,3 +60,4 @@ api_router.include_router(attraction.router, dependencies=authenticated)
 api_router.include_router(itinerary_validation.router, dependencies=authenticated)
 api_router.include_router(itinerary_approval.router, dependencies=authenticated)
 api_router.include_router(report.router, dependencies=authenticated)
+api_router.include_router(visit.router, dependencies=authenticated)

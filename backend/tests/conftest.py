@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Generator
 from contextlib import AbstractContextManager, contextmanager
-from datetime import date
+from datetime import date, time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -20,14 +20,19 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
 from app.models.status import ItineraryStatus
+from app.models.assignment import Assignment
 from app.models.user.admin import Admin
 from app.models.user.user import User
+from app.schemas.activity import ActivityCreate
 from app.schemas.authorization import AuthorizationUpsert
 from app.schemas.itinerary import ItineraryCreate
+from app.schemas.itinerary_composition import ItineraryCompositionCreate
 from app.schemas.package import PackageCreate
-from app.schemas.user import AdminCreate, GuideCreate
+from app.schemas.user import AdminCreate, GuideCreate, TouristCreate
+from app.services import activity as activity_service
 from app.services import authorization as authorization_service
 from app.services import itinerary as itinerary_service
+from app.services import itinerary_composition as composition_service
 from app.services import package as package_service
 from app.services import user as user_service
 
