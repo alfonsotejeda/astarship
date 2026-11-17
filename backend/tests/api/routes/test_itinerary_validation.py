@@ -223,8 +223,6 @@ def test_create_validation_rejected(client, db_session, sample_data):
     """A rejected validation marks the itinerary as rejected."""
     d = sample_data
     authorize(db_session, d["g1"], d["package"])
-    d["empty"].status = ItineraryStatus.VALIDATED
-    db_session.commit()
 
     response = client.post(
         url(d["empty"].id), json={"guide_id": d["g1"].id, "result": False}
@@ -234,6 +232,21 @@ def test_create_validation_rejected(client, db_session, sample_data):
     assert response.json()["result"] is False
     db_session.refresh(d["empty"])
     assert d["empty"].status == ItineraryStatus.REJECTED
+
+
+def test_create_validation_of_a_validated_itinerary(client, db_session, sample_data):
+    """An itinerary that is no longer pending returns 409."""
+    d = sample_data
+    authorize(db_session, d["g1"], d["package"])
+    d["empty"].status = ItineraryStatus.VALIDATED
+    db_session.commit()
+
+    response = client.post(
+        url(d["empty"].id), json={"guide_id": d["g1"].id, "result": True}
+    )
+
+    assert response.status_code == 409
+    assert "pending" in response.json()["detail"].lower()
 
 
 def test_create_validation_without_authorization(client, sample_data):

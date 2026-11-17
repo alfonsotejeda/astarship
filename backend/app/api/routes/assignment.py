@@ -1,5 +1,7 @@
 """Assignment routes."""
 
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -7,6 +9,7 @@ from app.api.deps.auth import get_current_user, require_admin
 from app.api.deps.rules import forbid_acting_for_others
 from app.db.session import get_db
 from app.models.assignment import Assignment
+from app.models.status import ItineraryStatus
 from app.models.user.user import User
 from app.schemas.assignment import AssignmentCreate, AssignmentRead, AssignmentUpdate
 from app.services import assignment as assignment_service
@@ -28,9 +31,12 @@ def _ensure_tourist_exists(db: Session, tourist_id: int) -> None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tourist not found")
 
 
-def _get_assignment_or_404(db: Session, itinerary_id: int, tourist_id: int) -> Assignment:
+def _get_assignment_or_404( db: Session,
+                            itinerary_id: int,
+                            tourist_id: int,
+                            assignment_date: date) -> Assignment:
     """Return the assignment or raise a 404."""
-    assignment = assignment_service.get_assignment(db, itinerary_id, tourist_id)
+    assignment = assignment_service.get_assignment(db, itinerary_id, tourist_id, assignment_date)
     if assignment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assignment not found")
     return assignment
@@ -61,40 +67,53 @@ def list_tourist_assignments(
 def create_assignment(
     itinerary_id: int, tourist_id: int, data: AssignmentCreate, db: Session = Depends(get_db)
 ) -> AssignmentRead:
-    """Assign an itinerary to a tourist."""
-    _ensure_itinerary_exists(db, itinerary_id)
+    """Assign an approved itinerary to a tourist."""
+    itinerary = itinerary_service.get_itinerary(db, itinerary_id)
+    if itinerary is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Itinerary not found")
     _ensure_tourist_exists(db, tourist_id)
     if user_service.get_admin(db, data.admin_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
-    if assignment_service.get_assignment(db, itinerary_id, tourist_id) is not None:
+    if assignment_service.get_assignment(db, itinerary_id,
+                                        tourist_id, data.assignment_date) is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Itinerary already assigned to tourist"
+        )
+    if itinerary.status is not ItineraryStatus.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Only approved itineraries can be assigned"
         )
     return assignment_service.create_assignment(db, itinerary_id, tourist_id, data)
 
 
 @router.patch(
-    "/itineraries/{itinerary_id}/assignments/{tourist_id}", response_model=AssignmentRead
+    "/itineraries/{itinerary_id}/assignments/{tourist_id}/{assignment_date}",
+    response_model=AssignmentRead
 )
 def update_assignment(
     itinerary_id: int,
     tourist_id: int,
+    assignment_date: date,
     data: AssignmentUpdate,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> AssignmentRead:
     """Update an assignment, typically for its tourist to advance its status."""
     forbid_acting_for_others(user, tourist_id)
-    assignment = _get_assignment_or_404(db, itinerary_id, tourist_id)
+    assignment = _get_assignment_or_404(db, itinerary_id, tourist_id, assignment_date)
+    return assignment_service.update_assignment(db, assignment, data)
     return assignment_service.update_assignment(db, assignment, data)
 
 
 @router.delete(
-    "/itineraries/{itinerary_id}/assignments/{tourist_id}",
+    "/itineraries/{itinerary_id}/assignments/{tourist_id}/{assignment_date}",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(require_admin)],
 )
-def delete_assignment(itinerary_id: int, tourist_id: int, db: Session = Depends(get_db)) -> None:
+def delete_assignment(  itinerary_id: int,
+                        tourist_id: int,
+                        assignment_date: date,
+                        db: Session = Depends(get_db)) -> None:
     """Remove an itinerary from a tourist."""
-    assignment = _get_assignment_or_404(db, itinerary_id, tourist_id)
+    assignment = _get_assignment_or_404(db, itinerary_id, tourist_id, assignment_date)
     assignment_service.delete_assignment(db, assignment)

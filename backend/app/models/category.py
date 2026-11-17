@@ -4,6 +4,7 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.activity import Activity
 from app.models.proportion_category import ProportionCategory
 
 
@@ -17,3 +18,4 @@ class Category(Base):
     proportion_categories: Mapped[list[ProportionCategory]] = relationship(
         cascade="all, delete-orphan"
     )
+    activities: Mapped[list[Activity]] = relationship(back_populates="category")

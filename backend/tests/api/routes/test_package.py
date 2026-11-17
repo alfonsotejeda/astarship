@@ -130,9 +130,7 @@ def test_get_package_returns_created_package(client, admin_id):
 def test_update_package_treats_null_fields_as_not_sent(client, admin_id):
     created = _create_package(client, admin_id)
 
-    response = client.patch(
-        f"/api/packages/{created['id']}", json={"name": None, "status": None}
-    )
+    response = client.patch(f"/api/packages/{created['id']}", json={"name": None, "status": None})
 
     assert response.status_code == 200
     assert response.json() == created
@@ -195,6 +193,46 @@ def test_delete_package_removes_it(client, admin_id):
 
     assert response.status_code == 204
     assert client.get(f"/api/packages/{created['id']}").status_code == 404
+
+
+def _create_tourist(client, email="ada@example.com", age=30):
+    return client.post(
+        "/api/users",
+        json={"name": "Ada", "role": "tourist", "email": email, "password": "s3cret", "age": age},
+    ).json()
+
+
+def _create_booking(client, tourist_id, package_id, booking_date="2026-10-01"):
+    return client.post(
+        "/api/bookings",
+        json={"tourist_id": tourist_id, "package_id": package_id, "booking_date": booking_date},
+    )
+
+
+def test_get_package_tourists_returns_booked_tourists(client, admin_id):
+    tourist = _create_tourist(client, email="pkgtourist@example.com", age=30)
+    package = _create_package(client, admin_id)
+    _create_booking(client, tourist["id"], package["id"])
+
+    response = client.get(f"/api/packages/{package['id']}/tourists")
+
+    assert response.status_code == 200
+    assert any(t["age"] == 30 for t in response.json())
+
+
+def test_get_package_tourists_returns_404_when_package_missing(client):
+    response = client.get("/api/packages/999999/tourists")
+
+    assert response.status_code == 404
+
+
+def test_get_package_tourists_empty_when_no_bookings(client, admin_id):
+    package = _create_package(client, admin_id)
+
+    response = client.get(f"/api/packages/{package['id']}/tourists")
+
+    assert response.status_code == 200
+    assert response.json() == []
 
 
 def test_create_package_conflict_leaves_session_usable(client, db_session, monkeypatch, admin_id):

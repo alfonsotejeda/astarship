@@ -22,10 +22,9 @@ class ItineraryCreate(BaseModel):
 
 
 class ItineraryUpdate(BaseModel):
-    """Fields allowed when updating an itinerary."""
+    """Fields allowed when updating an itinerary; validations and approvals change its status."""
 
     creation_date: date | None = None
-    status: ItineraryStatus | None = None
     activity_count: int | None = None
 
 

@@ -19,7 +19,7 @@ import { exportReportPdf } from "@/lib/pdf";
 import { findReport, REPORTS, TABS } from "./reports";
 import type { ReportKey } from "./reports";
 
-function ReportHeader({ rc, onExport }: { rc: ReportKey; onExport?: () => void }) {
+export function ReportHeader({ rc, onExport }: { rc: ReportKey; onExport?: () => void }) {
   const navigate = useNavigate();
   const report = findReport(rc) ?? REPORTS[0];
 

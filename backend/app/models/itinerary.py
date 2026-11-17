@@ -39,3 +39,4 @@ class Itinerary(Base):
         cascade="all, delete-orphan", order_by=ItineraryComposition.order
     )
     approvals: Mapped[list[ItineraryApproval]] = relationship(cascade="all, delete-orphan")
+    bookings = relationship("Booking", back_populates="itinerary")

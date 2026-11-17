@@ -118,3 +118,93 @@ def test_delete_admin_with_packages_returns_409(client):
 
     assert response.status_code == 409
     assert client.get(f"/api/users/{admin['id']}").status_code == 200
+
+
+def test_delete_admin_with_validations_returns_409(client, insert_activity):
+    admin = client.post(
+        "/api/users",
+        json={"name": "Ada", "role": "admin", "email": "ada@example.com", "password": "x"},
+    ).json()
+    activity_id = insert_activity().id
+    client.post(
+        f"/api/activities/{activity_id}/validations",
+        json={"admin_id": admin["id"], "result": "approved"},
+    )
+
+    response = client.delete(f"/api/users/{admin['id']}")
+
+    assert response.status_code == 409
+    assert client.get(f"/api/users/{admin['id']}").status_code == 200
+
+
+def _create_guide(client):
+    return client.post(
+        "/api/users",
+        json={
+            "name": "Gil",
+            "role": "guide",
+            "email": "gil@example.com",
+            "password": "x",
+            "specialty": "History",
+        },
+    ).json()
+
+
+def test_create_guide_returns_its_subtype_fields(client):
+    response = client.post(
+        "/api/users",
+        json={
+            "name": "Gil",
+            "role": "guide",
+            "email": "gil@example.com",
+            "password": "x",
+            "specialty": "History",
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["role"] == "guide"
+    assert body["guide"] == {"specialty": "History"}
+    assert body["tourist"] is None
+
+
+def test_delete_guide_without_activities_returns_204(client):
+    guide = _create_guide(client)
+
+    response = client.delete(f"/api/users/{guide['id']}")
+
+    assert response.status_code == 204
+
+
+def test_delete_guide_with_activities_returns_409(client, as_user):
+    guide = _create_guide(client)
+    category = client.post("/api/categories/create", json={"name": "Adventure"}).json()
+    client.post("/api/activity-types", json={"code": "HIKE", "name": "Hiking"})
+    attraction = client.post(
+        "/api/attractions",
+        json={
+            "name": "Malecón",
+            "address": "Av. del Puerto",
+            "latitude": 23.14,
+            "longitude": -82.36,
+        },
+    ).json()
+    with as_user(guide["id"]):
+        client.post(
+            "/api/activities",
+            json={
+                "name": "Hiking",
+                "effort_level": 3,
+                "duration": 90,
+                "activity_type_code": "HIKE",
+                "category_id": category["id"],
+                "guide_id": guide["id"],
+                "attraction_id": attraction["id"],
+            },
+        )
+
+    response = client.delete(f"/api/users/{guide['id']}")
+
+    assert response.status_code == 409
+    assert client.get(f"/api/users/{guide['id']}").status_code == 200

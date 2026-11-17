@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps.auth import require_admin
 from app.db.session import get_db
+from app.schemas.activity import ActivityRead
 from app.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
 from app.services import category as category_sv
 
@@ -19,19 +20,23 @@ def get_category(db: Session, category_id: int):
     return category
 
 
-
 @router.get("", response_model=list[CategoryRead])
 def list_categories(db: Session = Depends(get_db)) -> list[CategoryRead]:
     """List all categories."""
     return category_sv.list_categories(db)
 
 
+# Probar este endpoint
+@router.get("/activities_count", response_model=list[tuple[CategoryRead, int]])
+def activities_count_by_categories(db: Session = Depends(get_db)) -> list[tuple[CategoryRead, int]]:
+    """Return the count of activities for each category."""
+    return category_sv.activities_count_by_categories(db)
+
 
 @router.get("/{category_id}", response_model=CategoryRead)
 def get_category_by_id(category_id: int, db: Session = Depends(get_db)) -> CategoryRead:
     """Return a category by its ID."""
     return get_category(db, category_id)
-
 
 
 @router.get("/name/{category_name}", response_model=CategoryRead)
@@ -84,3 +89,13 @@ def delete_category(category_id: int, db: Session = Depends(get_db)) -> None:
         return category_sv.delete_category(db, category)
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
+
+
+# Probar este endopoint
+@router.get("/{category_id}/activities", response_model=list[ActivityRead])
+def activities_by_category(category_id: int, db: Session = Depends(get_db)) -> list[ActivityRead]:
+    """Return the activities for a specific category."""
+    try:
+        return category_sv.activities_by_category(db, category_id)
+    except LookupError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error

@@ -163,6 +163,9 @@ def create_validation(
     if itinerary.guide_id == guide.id:
         raise PermissionError("A guide cannot validate an itinerary they generated")
 
+    if itinerary.status is not ItineraryStatus.PENDING:
+        raise ValueError("Only pending itineraries can be validated")
+
     authorization = get_authorization(db, itinerary.package_id, guide.id)
     if authorization is None or not authorization.can_validate:
         raise PermissionError("The guide cannot validate itineraries of this package")

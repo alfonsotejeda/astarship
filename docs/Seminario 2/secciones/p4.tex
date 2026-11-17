@@ -1,0 +1,85 @@
+\section[Pregunta 4: Granularidad y acoplamiento]{Pregunta 4: El dilema de la granularidad y el acoplamiento en microservicios\\(sistema de recursos humanos)}
+
+% Responsable: Kamila Reinoso Asín
+
+El equipo obtuvo el peor resultado posible: pagó íntegro el coste de la distribución ---red, serialización, despliegues independientes, observabilidad--- y no recibió ninguna de sus ventajas. El sistema resultante es más frágil que el monolito del que partió, porque cada llamada interna que antes era una invocación en memoria es ahora una llamada remota que puede fallar, tardar o perderse \parencite{richardsford2020}. Este resultado tiene un nombre: \textbf{monolito distribuido}.
+
+\subsection{El error fundamental: confundir entidad con bounded context}
+
+El equipo tomó como eje de descomposición el esquema de datos del monolito. Allí donde había una tabla ---Empleado, Departamento, Nómina, Beneficios--- crearon un servicio. \textcite{fordhardparts2021} denominan a esto la \emph{trampa de la entidad} (\emph{entity trap}) y la describen como uno de los errores más frecuentes al definir límites de servicio.
+
+El problema es que una entidad de datos no es una capacidad de negocio. El \emph{bounded context} de \textcite{evans2003}, que \textcite{richardsford2020} sitúan como el fundamento conceptual de los microservicios, no delimita un conjunto de tablas sino un ámbito en el que un modelo del dominio y su lenguaje tienen un significado coherente y único. Contratar a un empleado no es una operación sobre la tabla \emph{Empleado}: es un proceso de negocio que crea un empleado, lo adscribe a un departamento, lo da de alta en nómina y le asigna beneficios. Al partir por entidades, el equipo trazó los límites justo por el medio de ese proceso.
+
+De ahí se siguen dos consecuencias encadenadas:
+
+\begin{enumerate}[leftmargin=1.8em]
+  \item \textbf{Toda operación de negocio se convierte en una transacción distribuida.} Lo que en el monolito era una transacción ACID sobre cuatro tablas pasa a requerir cuatro transacciones locales en cuatro bases de datos, sin atomicidad posible entre ellas. La corrección pasa a depender de sagas y compensaciones que el equipo no había previsto \parencite{fordhardparts2021}.
+  \item \textbf{La coreografía síncrona reintroduce el acoplamiento dinámico.} Los servicios se llaman unos a otros en cadena para completar una sola operación. La disponibilidad del conjunto es el producto de las disponibilidades individuales y la latencia es la suma de las latencias: el sistema es menos disponible y más lento que el monolito original.
+\end{enumerate}
+
+Conviene nombrar también el supuesto implícito que llevó allí: la idea de que «cuanto más pequeño el servicio, mejor». \textcite{fordhardparts2021} insisten en que la granularidad no es un valor a maximizar sino un trade-off a equilibrar, y en que modularidad y granularidad son cosas distintas: la primera indica cómo se separan las responsabilidades, la segunda cuántas asume cada servicio desplegable.
+
+\subsection{Nueva estrategia de descomposición}
+
+La descomposición no debe partir del esquema de datos, sino de las capacidades de negocio, y debe someterse después a las fuerzas que justifican separar o unir servicios. El enunciado pide aplicar tres de ellas.
+
+\paragraph{Propósito.} Cada servicio debe corresponder a una capacidad de dominio con cohesión funcional propia: debe poder describirse con un verbo de negocio, no con un sustantivo del modelo de datos \parencite{fordhardparts2021}. «Gestionar la vida laboral del empleado» es un propósito; «administrar la tabla Departamento» no lo es. Esta es la fuerza que decide la partición inicial.
+
+\paragraph{Transacciones.} Lo que el negocio exige que ocurra de forma atómica debe residir dentro de un único servicio, con una única base de datos y una única transacción ACID. Es el criterio más fuerte para \emph{unir} servicios: si dos operaciones no pueden quedar en estados distintos sin dejar el sistema incorrecto, separarlas obliga a una saga, y una saga es un coste permanente de diseño, de pruebas y de operación \parencite{fordhardparts2021}. En el caso de recursos humanos, crear al empleado y adscribirlo a su departamento es exactamente esa clase de par indivisible.
+
+\paragraph{Coreografía.} La intensidad de la comunicación entre servicios es un indicador de que el límite está mal trazado. Si dos servicios necesitan hablar constantemente para completar operaciones ordinarias, el dominio está diciendo que pertenecen al mismo ámbito y deben fusionarse \parencite{fordhardparts2021}. Como regla práctica: una operación de negocio habitual no debería requerir más de una o dos interacciones entre servicios.
+
+A estas tres se añaden, como fuerzas de separación, la volatilidad del código, las necesidades diferenciadas de escalado y los requisitos de seguridad; esta última es relevante aquí, porque los datos salariales exigen un tratamiento más restrictivo que el organigrama y justifican por sí solos un límite de servicio \parencite{fordhardparts2021}.
+
+\subsection{Propuesta concreta}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    svc/.style={draw, rounded corners, align=center, minimum height=0.85cm, minimum width=2.1cm, font=\scriptsize},
+    nuevo/.style={svc, fill=black!5, minimum width=2.9cm, minimum height=1.1cm},
+    flecha/.style={-{Stealth[length=1.8mm]}, thin},
+    evento/.style={-{Stealth[length=1.8mm]}, thick, dashed},
+  ]
+  % --- ANTES ---
+  \node[font=\small\bfseries] at (2.1,2.6) {Antes: un servicio por entidad};
+  \node[svc] (e) at (0.6,1.6) {Empleado};
+  \node[svc] (d) at (3.6,1.6) {Departamento};
+  \node[svc] (n) at (0.6,0.2) {Nómina};
+  \node[svc] (b) at (3.6,0.2) {Beneficios};
+  \draw[flecha] (e) -- (d);
+  \draw[flecha] (e) -- (n);
+  \draw[flecha] (e) -- (b);
+  \draw[flecha] (d) -- (n);
+  \draw[flecha] (d) -- (b);
+  \draw[flecha] (n) -- (b);
+
+  % --- DESPUES ---
+  \node[font=\small\bfseries] at (10.3,2.6) {Después: por capacidad de negocio};
+  \node[nuevo] (em) at (8.6,1.3) {Gestión de\\Empleados};
+  \node[nuevo] (py) at (12.2,1.3) {Nómina y\\Beneficios};
+  \draw[evento] (em) -- node[above, font=\scriptsize] {\texttt{EmployeeHired}} (py);
+  \node[font=\scriptsize] at (10.4,0.3) {(evento asíncrono)};
+\end{tikzpicture}
+\caption{La descomposición por entidades obliga a una coreografía síncrona entre casi todos los servicios; la descomposición por capacidad reduce la contratación a una llamada y un evento.}
+\end{figure}
+
+\begin{description}[leftmargin=0.6cm, style=nextline]
+  \item[\texttt{EmployeeManagement}] Reúne al empleado, su adscripción a un departamento y la estructura organizativa. Justificación: las tres cosas cambian juntas en los procesos de alta, traslado y baja, y deben hacerlo de forma atómica (criterio de transacciones); su propósito común es «mantener la situación laboral del empleado».
+  \item[\texttt{PayrollAndBenefits}] Reúne nómina y beneficios. Justificación: los beneficios son, en su mayoría, deducciones y aportaciones que intervienen en el cálculo de la nómina, de modo que separarlos generaba una conversación constante entre ambos servicios (criterio de coreografía) y una relación de datos estrecha. Además comparten un requisito de seguridad más estricto que el resto del sistema.
+  \item[\texttt{Recruiting}] Opcional según el alcance del sistema: gestiona vacantes y candidatos. Su propósito es distinto ---termina donde empieza la contratación---, su volatilidad es mayor y su carga es independiente, de modo que las fuerzas de separación lo justifican.
+\end{description}
+
+\subsection{La operación de «contratación»}
+
+Con esta descomposición, la contratación deja de ser una coreografía de cuatro servicios:
+
+\begin{enumerate}[leftmargin=1.8em]
+  \item El cliente realiza \textbf{una única llamada síncrona} a \texttt{EmployeeManagement}. El servicio crea el empleado y su adscripción al departamento dentro de una \textbf{transacción ACID local}, porque ambos datos viven en su base de datos. Si algo falla, la transacción se revierte y no queda ningún estado intermedio que compensar.
+  \item Confirmada la transacción, \texttt{EmployeeManagement} publica el evento \texttt{EmployeeHired} con los datos necesarios para el resto del proceso.
+  \item \texttt{PayrollAndBenefits} consume el evento de forma \textbf{asíncrona} y realiza su propio trabajo ---alta en nómina y asignación de beneficios por defecto--- en una segunda transacción local.
+\end{enumerate}
+
+La consistencia entre ambos servicios es eventual, y el dominio lo admite sin dificultad: el empleado debe figurar en la nómina antes del cierre del período, no en el mismo milisegundo en que se firma el contrato. Esta es la comprobación que el equipo original no hizo: antes de aceptar consistencia eventual hay que verificar que el negocio la tolera, y antes de separar hay que verificar que no la tolera.
+
+El usuario obtiene respuesta inmediata en cuanto la transacción crítica confirma; la caída temporal de \texttt{PayrollAndBenefits} no impide contratar, porque el evento permanece en la cola hasta que el servicio se recupera. Se ha pasado de tres o cuatro llamadas síncronas encadenadas ---con su acoplamiento dinámico y su disponibilidad multiplicativa--- a una llamada síncrona y un evento asíncrono, que es lo que \textcite{fordhardparts2021} describen como el objetivo de un reparto de límites correcto: que las transacciones queden dentro de los servicios y la comunicación entre ellos sea asíncrona y escasa.

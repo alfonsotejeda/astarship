@@ -6,11 +6,27 @@ import pytest
 
 from app.models.activity import Activity
 from app.models.status import ItineraryStatus
+from app.schemas.activity_type import ActivityTypeCreate
+from app.schemas.attraction import AttractionCreate
+from app.schemas.category import CategoryCreate
 from app.schemas.itinerary import ItineraryGenerate
+from app.schemas.user import GuideCreate
+from app.services import activity_type as activity_type_service
+from app.services import attraction as attraction_service
+from app.services import category as category_service
 from app.services import itinerary_generator as generator_service
+from app.services import user as user_service
 
 
-def _activity(activity_id, type_code="walk", category_id=1, effort_level=1, duration=60):
+def _activity(
+    activity_id,
+    type_code="walk",
+    category_id=1,
+    effort_level=1,
+    duration=60,
+    guide_id=None,
+    attraction_id=None,
+):
     return Activity(
         id=activity_id,
         name=f"Activity {activity_id}",
@@ -18,12 +34,40 @@ def _activity(activity_id, type_code="walk", category_id=1, effort_level=1, dura
         duration=duration,
         activity_type_code=type_code,
         category_id=category_id,
+        guide_id=guide_id,
+        attraction_id=attraction_id,
     )
 
 
 def _params(**overrides) -> ItineraryGenerate:
     fields = {"package_id": 1, "days": 1, "activity_count": 2, "candidate_ids": [1]}
     return ItineraryGenerate(**{**fields, **overrides})
+
+
+def _create_refs(db_session):
+    """Create the rows that an activity saved in the database points to."""
+    category = category_service.create_category(db_session, CategoryCreate(name="Culture"))
+    activity_type = activity_type_service.create_activity_type(
+        db_session, ActivityTypeCreate(code="walk", name="Walk")
+    )
+    guide = user_service.create_user(
+        db_session,
+        GuideCreate(
+            name="Author", role="guide", email="author@example.com", password="x", specialty="Art"
+        ),
+    )
+    attraction = attraction_service.create_attraction(
+        db_session,
+        AttractionCreate(
+            name="Malecón", address="Av. del Puerto", latitude=23.14, longitude=-82.36
+        ),
+    )
+    return {
+        "type_code": activity_type.code,
+        "category_id": category.id,
+        "guide_id": guide.id,
+        "attraction_id": attraction.id,
+    }
 
 
 def test_type_targets_round_halves_up():
@@ -131,7 +175,7 @@ def test_evaluate_criteria_reports_met_and_unmet_criteria():
 def test_save_itinerary_stores_it_pending_with_parameters_and_activities(
     db_session, itinerary_owners
 ):
-    activity = _activity(None)
+    activity = _activity(None, **_create_refs(db_session))
     db_session.add(activity)
     db_session.commit()
     data = _params(

@@ -246,7 +246,7 @@ Decisiones ya tomadas por el equipo y aprobadas por el profesor:
 - **Base de datos:** PostgreSQL 18, con SQLAlchemy y migraciones con Alembic.
 - **Frontend:** TypeScript + React (Vite).
 - **Entorno:** Docker y Docker Compose.
-- **Despliegue:** propuesto Vercel (frontend) + Render (API). Sin cerrar.
+- **Despliegue:** Vercel (frontend), Render (API) y Neon (base de datos).
 - **Caché:** Redis, si RNF-01 lo exige.
 
 ---
