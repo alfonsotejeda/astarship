@@ -12,6 +12,12 @@ def list_travel_groups(db: Session) -> list[TravelGroup]:
     return list(db.scalars(select(TravelGroup)))
 
 
+def guide_attends_travel_groups(db: Session, guide_id: int) -> bool:
+    """Return whether the guide attends at least one travel group."""
+    query = select(TravelGroup.id).where(TravelGroup.guide_id == guide_id).limit(1)
+    return db.scalar(query) is not None
+
+
 def get_travel_group(db: Session, travel_group_id: int) -> TravelGroup | None:
     """Return a travel group by id, or None if it doesn't exist."""
     return db.get(TravelGroup, travel_group_id)

@@ -1,0 +1,64 @@
+.reports__tabs {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.reports__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+
+.reports__charts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.reports__charts > * {
+  flex: 1 1 520px;
+  min-width: 0;
+}
+
+/* RC-6 has its own layout: the dispersion gets more width than the per-package bars */
+.reports__rc6-charts {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  align-items: start;
+  gap: var(--space-5);
+}
+
+.reports__code {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.reports__mono {
+  font: var(--type-data);
+}
+
+.reports__muted {
+  color: var(--ink-muted);
+}
+
+.reports__positive {
+  color: var(--ok);
+}
+
+.reports__negative {
+  color: var(--bad);
+}
+
+@media (max-width: 900px) {
+  .reports__rc6-charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .reports__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -11,6 +11,12 @@ class ProportionCategoryCreate(BaseModel):
     value: int = Field(ge=0, le=100)
 
 
+class ProportionCategoryParam(ProportionCategoryCreate):
+    """Category proportion requested when generating an itinerary."""
+
+    category_id: int
+
+
 class ProportionCategoryUpdate(BaseModel):
     """Fields allowed when updating a category's proportion on an itinerary."""
 

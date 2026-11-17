@@ -3,8 +3,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.rules import require_itinerary_author
 from app.db.session import get_db
 from app.models.itinerary_composition import ItineraryComposition
+from app.models.status import ReviewStatus
 from app.schemas.itinerary_composition import (
     ItineraryCompositionCreate,
     ItineraryCompositionRead,
@@ -50,6 +52,7 @@ def list_compositions(
     "/{activity_id}",
     response_model=ItineraryCompositionRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_itinerary_author)],
 )
 def create_composition(
     itinerary_id: int,
@@ -57,10 +60,13 @@ def create_composition(
     data: ItineraryCompositionCreate,
     db: Session = Depends(get_db),
 ) -> ItineraryCompositionRead:
-    """Add an activity to an itinerary."""
+    """Add an approved activity to an itinerary."""
     _ensure_itinerary_exists(db, itinerary_id)
-    if activity_service.get_activity(db, activity_id) is None:
+    activity = activity_service.get_activity(db, activity_id)
+    if activity is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activity not found")
+    if activity.status is not ReviewStatus.APPROVED:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Activity is not approved")
     if composition_service.get_composition(db, itinerary_id, activity_id) is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Activity already in itinerary"
@@ -68,7 +74,11 @@ def create_composition(
     return composition_service.create_composition(db, itinerary_id, activity_id, data)
 
 
-@router.patch("/{activity_id}", response_model=ItineraryCompositionRead)
+@router.patch(
+    "/{activity_id}",
+    response_model=ItineraryCompositionRead,
+    dependencies=[Depends(require_itinerary_author)],
+)
 def update_composition(
     itinerary_id: int,
     activity_id: int,
@@ -80,7 +90,11 @@ def update_composition(
     return composition_service.update_composition(db, composition, data)
 
 
-@router.delete("/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{activity_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_itinerary_author)],
+)
 def delete_composition(itinerary_id: int, activity_id: int, db: Session = Depends(get_db)) -> None:
     """Remove an activity from an itinerary."""
     composition = _get_composition_or_404(db, itinerary_id, activity_id)

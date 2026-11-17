@@ -25,6 +25,7 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-astarship}:${POSTGRES_PASSWORD:-astarship}@database:5432/${POSTGRES_DB:-astarship}
       ENVIRONMENT: development
       DEBUG: "true"
+      ERROR_WEBHOOK_URL: ${ERROR_WEBHOOK_URL:-}
     ports:
       - "8000:8000"
     volumes:

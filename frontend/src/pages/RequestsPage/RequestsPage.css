@@ -1,0 +1,142 @@
+.requests__columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.requests__cards {
+  flex: 999 1 560px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.requests__main {
+  flex: 999 1 480px;
+  min-width: 0;
+}
+
+.requests__side {
+  flex: 1 1 360px;
+  min-width: 0;
+  max-width: 440px;
+  scroll-margin-top: var(--space-4);
+}
+
+.requests__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.requests__item > .request-card {
+  align-self: stretch;
+}
+
+.requests__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.requests__empty {
+  grid-column: 1 / -1;
+}
+
+.requests__panel {
+  box-shadow: var(--shadow-overlay);
+}
+
+.requests__quote {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.requests__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.requests__detail {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.requests__label,
+.requests__group-label {
+  font: var(--type-label);
+  color: var(--ink-muted);
+}
+
+.requests__group-label {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink);
+}
+
+.requests__group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.requests__muted {
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
+
+.requests__mono {
+  font: var(--type-data);
+}
+
+.requests__send {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.requests__mine {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.requests__title {
+  margin: 0;
+  font: var(--type-heading);
+  color: var(--ink);
+}
+
+.requests__toast {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 10;
+}
+
+@media (max-width: 480px) {
+  .requests__side {
+    max-width: none;
+  }
+
+  .requests__cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Above the mobile tab bar */
+  .requests__toast {
+    left: var(--space-4);
+    right: var(--space-4);
+    bottom: 88px;
+  }
+}

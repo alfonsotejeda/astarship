@@ -13,11 +13,25 @@ class ReviewStatus(StrEnum):
     REJECTED = "rejected"
 
 
+class ValidationResult(StrEnum):
+    """Outcome of an activity validation; it decides the activity's final status."""
+
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
 class ItineraryStatus(StrEnum):
     """Status of an itinerary, changed by its validation and approval."""
 
     PENDING = "pending"
     VALIDATED = "validated"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class ApprovalResult(StrEnum):
+    """Final decision of an operations manager on a validated itinerary."""
+
     APPROVED = "approved"
     REJECTED = "rejected"
 
@@ -30,11 +44,34 @@ class AssignmentStatus(StrEnum):
     FINISHED = "finished"
 
 
-def status_enum(enum_class: type[StrEnum]) -> Enum:
-    """Return a portable column type storing the enum values behind a check constraint."""
+class ModificationRequestStatus(StrEnum):
+    """Progress of a modification request while a guide handles it."""
+
+    REQUESTED = "requested"
+    IN_PROGRESS = "in_progress"
+    RESOLVED = "resolved"
+    DENIED = "denied"
+
+
+class BookingStatus(StrEnum):
+    """Lifecycle status of a booking between a tourist and a package."""
+
+    PENDING = "pending"
+    ASSIGNED = "assigned"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"
+
+
+def status_enum(enum_class: type[StrEnum], name: str = "status") -> Enum:
+    """Return a portable column type storing the enum values behind a check constraint.
+
+    Args:
+        enum_class: Enum whose values are the allowed column values.
+        name: Name of the type, which also names its check constraint.
+    """
     return Enum(
         enum_class,
-        name="status",
+        name=name,
         native_enum=False,
         create_constraint=True,
         length=20,

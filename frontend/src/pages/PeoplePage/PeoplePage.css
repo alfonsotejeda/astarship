@@ -1,0 +1,254 @@
+.people__muted {
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
+
+.people__mono {
+  font: var(--type-data);
+}
+
+.people__eyebrow {
+  font: var(--type-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.people__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.people__link {
+  font: var(--type-small);
+  color: var(--route);
+}
+
+.people__link:hover {
+  color: var(--ink);
+}
+
+.people__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The tab content, with the side panel to its right; they stack on a narrow screen */
+.people__layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.people__content {
+  flex: 999 1 560px;
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.people__field-group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.people__field-label {
+  font: var(--type-small);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.people__dates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+
+/* Guías y permisos */
+
+.people__legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+
+.people__legend-item {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.people__legend-title {
+  font-weight: 600;
+}
+
+/* The matrix scrolls sideways inside the panel, never the page */
+.people__matrix-scroll {
+  overflow-x: auto;
+}
+
+.people__matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.people__matrix th,
+.people__matrix td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.people__matrix thead th {
+  background: var(--surface-sunken);
+  font: var(--type-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.people__matrix .people__package-head {
+  border-left: 1px solid var(--line);
+  font: var(--type-small);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.people__sub-head {
+  text-align: center;
+}
+
+.people__guide-head,
+.people__guide {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 180px;
+  text-align: left;
+}
+
+.people__guide {
+  background: var(--surface-raised);
+  font-weight: 400;
+}
+
+.people__guide-text {
+  display: grid;
+}
+
+.people__guide-name {
+  font-weight: 600;
+}
+
+.people__matrix tbody tr:hover td,
+.people__matrix tbody tr:hover .people__guide {
+  background: var(--surface-sunken);
+}
+
+.people__cell {
+  min-width: 72px;
+  text-align: center;
+}
+
+.people__cell .checkbox {
+  justify-content: center;
+}
+
+.people__cell--start {
+  border-left: 1px solid var(--line);
+}
+
+.people__matrix tbody .people__cell--changed {
+  background: var(--warn-soft);
+}
+
+/* Turistas y grupos */
+
+.people__columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.people__groups {
+  flex: 1 1 260px;
+  max-width: 320px;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.people__group {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-3);
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.people__group:hover {
+  border-color: var(--line-strong);
+}
+
+.people__group:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.people__group--selected,
+.people__group--selected:hover {
+  background: var(--route-soft);
+  border-color: var(--route);
+}
+
+.people__group-name {
+  font-weight: 600;
+}
+
+.people__main {
+  flex: 999 1 560px;
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.people__toast {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 10;
+}
+
+@media (max-width: 480px) {
+  .people__groups {
+    max-width: none;
+  }
+
+  /* Above the mobile tab bar */
+  .people__toast {
+    left: var(--space-4);
+    right: var(--space-4);
+    bottom: 88px;
+  }
+}

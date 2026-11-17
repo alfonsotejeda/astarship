@@ -10,10 +10,10 @@ from app.services import itinerary as itinerary_service
 from app.services import proportion_category as proportion_category_service
 
 
-def _create_itinerary(db_session):
+def _create_itinerary(db_session, owners):
     return itinerary_service.create_itinerary(
         db_session,
-        ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=4),
+        ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=4, **owners),
     )
 
 
@@ -21,8 +21,8 @@ def _create_category(db_session, name="Culture"):
     return category_service.create_category(db_session, CategoryCreate(name=name))
 
 
-def test_create_proportion_category_stores_the_value(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_create_proportion_category_stores_the_value(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     category = _create_category(db_session)
 
     proportion_category = proportion_category_service.create_proportion_category(
@@ -34,8 +34,8 @@ def test_create_proportion_category_stores_the_value(db_session):
     assert proportion_category.value == 40
 
 
-def test_update_proportion_category_replaces_the_value(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_update_proportion_category_replaces_the_value(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     category = _create_category(db_session)
     proportion_category = proportion_category_service.create_proportion_category(
         db_session, itinerary.id, category.id, ProportionCategoryCreate(value=40)
@@ -55,9 +55,9 @@ def test_update_proportion_category_replaces_the_value(db_session):
     assert len(proportion_categories) == 1
 
 
-def test_list_proportion_categories_only_returns_the_itinerary_ones(db_session):
-    itinerary = _create_itinerary(db_session)
-    other = _create_itinerary(db_session)
+def test_list_proportion_categories_only_returns_the_itinerary_ones(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
+    other = _create_itinerary(db_session, itinerary_owners)
     culture = _create_category(db_session, "Culture")
     nature = _create_category(db_session, "Nature")
     proportion_category_service.create_proportion_category(
@@ -81,8 +81,8 @@ def test_get_proportion_category_returns_none_when_missing(db_session):
     assert proportion_category_service.get_proportion_category(db_session, 999, 999) is None
 
 
-def test_delete_proportion_category_removes_it(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_delete_proportion_category_removes_it(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     category = _create_category(db_session)
     proportion_category = proportion_category_service.create_proportion_category(
         db_session, itinerary.id, category.id, ProportionCategoryCreate(value=40)
@@ -96,8 +96,8 @@ def test_delete_proportion_category_removes_it(db_session):
     )
 
 
-def test_deleting_the_itinerary_removes_its_proportion_categories(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_deleting_the_itinerary_removes_its_proportion_categories(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     category = _create_category(db_session)
     proportion_category_service.create_proportion_category(
         db_session, itinerary.id, category.id, ProportionCategoryCreate(value=40)
@@ -111,8 +111,8 @@ def test_deleting_the_itinerary_removes_its_proportion_categories(db_session):
     )
 
 
-def test_deleting_the_category_removes_its_proportion_categories(db_session):
-    itinerary = _create_itinerary(db_session)
+def test_deleting_the_category_removes_its_proportion_categories(db_session, itinerary_owners):
+    itinerary = _create_itinerary(db_session, itinerary_owners)
     category = _create_category(db_session)
     proportion_category_service.create_proportion_category(
         db_session, itinerary.id, category.id, ProportionCategoryCreate(value=40)

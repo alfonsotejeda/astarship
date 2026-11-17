@@ -17,6 +17,19 @@
     "files.exclude": {
       "backend": true,
       "frontend": true
-    }
+    },
+    "sqltools.connections": [
+      {
+        "ssh": "Disabled",
+        "previewLimit": 50,
+        "server": "localhost",
+        "port": 5432,
+        "driver": "PostgreSQL",
+        "name": "astarship",
+        "database": "astarship",
+        "username": "astarship",
+        "password": "astarship"
+      }
+    ]
   }
 }

@@ -3,6 +3,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.authorization import Authorization
 from app.models.itinerary import Itinerary
 from app.models.status import ItineraryStatus
 from app.schemas.itinerary import ItineraryCreate, ItineraryUpdate
@@ -13,6 +14,32 @@ def list_itineraries(db: Session, status: ItineraryStatus | None = None) -> list
     statement = select(Itinerary)
     if status is not None:
         statement = statement.where(Itinerary.status == status)
+    return list(db.scalars(statement))
+
+
+def list_pending_for_guide(db: Session, guide_id: int) -> list[Itinerary]:
+    """Return the pending itineraries a guide can validate, oldest first; never their own."""
+    statement = (
+        select(Itinerary)
+        .join(Authorization, Authorization.package_id == Itinerary.package_id)
+        .where(
+            Authorization.guide_id == guide_id,
+            Authorization.can_validate.is_(True),
+            Itinerary.guide_id != guide_id,
+            Itinerary.status == ItineraryStatus.PENDING,
+        )
+        .order_by(Itinerary.creation_date, Itinerary.id)
+    )
+    return list(db.scalars(statement))
+
+
+def list_validated(db: Session) -> list[Itinerary]:
+    """Return the validated itineraries waiting for a manager's decision, oldest first."""
+    statement = (
+        select(Itinerary)
+        .where(Itinerary.status == ItineraryStatus.VALIDATED)
+        .order_by(Itinerary.creation_date, Itinerary.id)
+    )
     return list(db.scalars(statement))
 
 

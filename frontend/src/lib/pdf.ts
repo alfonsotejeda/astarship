@@ -11,8 +11,19 @@ interface PdfTable {
   rows: Cell[][];
 }
 
-export function exportPdf({ title, filter, columns, rows }: PdfTable) {
-  const doc = new jsPDF({ orientation: columns.length > 5 ? "landscape" : "portrait" });
+interface PdfReport {
+  title: string;
+  filter?: string;
+  tables: Omit<PdfTable, "filter">[];
+}
+
+const TABLE_STYLES = {
+  styles: { fontSize: 9 },
+  headStyles: { fillColor: [11, 16, 32] as [number, number, number] },
+};
+
+function newDocument(title: string, filter: string | undefined, wide: boolean) {
+  const doc = new jsPDF({ orientation: wide ? "landscape" : "portrait" });
 
   doc.setFontSize(16);
   doc.text(title, 14, 18);
@@ -22,13 +33,42 @@ export function exportPdf({ title, filter, columns, rows }: PdfTable) {
   doc.text(filter ? `Filtro: ${filter}` : "Sin filtros", 14, 25);
   doc.text(`Generado el ${formatDate(new Date())}`, 14, 30);
 
-  autoTable(doc, {
-    startY: 36,
-    head: [columns],
-    body: rows,
-    styles: { fontSize: 9 },
-    headStyles: { fillColor: [11, 16, 32] },
-  });
+  return doc;
+}
+
+export function exportPdf({ title, filter, columns, rows }: PdfTable) {
+  const doc = newDocument(title, filter, columns.length > 5);
+
+  autoTable(doc, { startY: 36, head: [columns], body: rows, ...TABLE_STYLES });
+
+  doc.save(`${fileName(title)}.pdf`);
+}
+
+// Every table of a report in one file, each under its own heading
+export function exportReportPdf({ title, filter, tables }: PdfReport) {
+  const doc = newDocument(title, filter, tables.some(table => table.columns.length > 5));
+  let y = 36;
+
+  for (const table of tables) {
+    if (y > doc.internal.pageSize.getHeight() - 30) {
+      doc.addPage();
+      y = 18;
+    }
+
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(table.title, 14, y + 4);
+
+    autoTable(doc, {
+      startY: y + 8,
+      head: [table.columns],
+      body: table.rows,
+      ...TABLE_STYLES,
+      didDrawPage: data => {
+        y = (data.cursor?.y ?? y) + 10;
+      },
+    });
+  }
 
   doc.save(`${fileName(title)}.pdf`);
 }
