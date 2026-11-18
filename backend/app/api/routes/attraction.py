@@ -3,8 +3,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps.auth import require_admin
+from app.api.deps.auth import get_current_user, require_admin
 from app.db.session import get_db
+from app.models.user.user import User
 from app.schemas.activity import ActivityRead
 from app.schemas.attraction import (
     AttractionCreate,
@@ -27,30 +28,39 @@ def _get_attraction_or_404(db: Session, attraction_id: int):
 
 
 @router.get("", response_model=list[AttractionSummary])
-def list_attractions(db: Session = Depends(get_db)) -> list[AttractionSummary]:
-    """List all attractions with their number of activities."""
-    return attraction_service.list_summaries(db)
+def list_attractions(
+    db: Session = Depends(get_db), viewer: User = Depends(get_current_user)
+) -> list[AttractionSummary]:
+    """List all attractions with how many activities the user can see at each one."""
+    return attraction_service.list_summaries(db, viewer)
 
 
 @router.get("/count_activities_by_attraction", response_model=list[tuple[AttractionRead, int]])
-def activities_count_by_attraction(db: Session = Depends(get_db)):
-    """Get the count of activities for each attraction."""
-    return attraction_service.activities_count_by_attractions(db)
+def activities_count_by_attraction(
+    db: Session = Depends(get_db), viewer: User = Depends(get_current_user)
+):
+    """Get how many activities the user can see at each attraction."""
+    return attraction_service.activities_count_by_attractions(db, viewer)
 
 
 @router.get("/activities_by_attraction/{attraction_id}", response_model=list[ActivityRead])
-def get_activities_by_attraction(attraction_id: int, db: Session = Depends(get_db)):
-    """Get all activities for a specific attraction."""
+def get_activities_by_attraction(
+    attraction_id: int, db: Session = Depends(get_db), viewer: User = Depends(get_current_user)
+):
+    """Get the activities of an attraction that the user can see."""
     try:
-        return attraction_service.activities_by_attraction(db, attraction_id)
+        return attraction_service.activities_by_attraction(db, attraction_id, viewer)
     except LookupError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
 
 
 @router.get("/{attraction_id}", response_model=AttractionDetail)
-def get_attraction(attraction_id: int, db: Session = Depends(get_db)) -> AttractionDetail:
-    """Get a single attraction by id, with its activities and its connections in the network."""
-    return attraction_service.get_detail(db, _get_attraction_or_404(db, attraction_id))
+def get_attraction(
+    attraction_id: int, db: Session = Depends(get_db), viewer: User = Depends(get_current_user)
+) -> AttractionDetail:
+    """Get an attraction with the activities the user can see and its connections."""
+    attraction = _get_attraction_or_404(db, attraction_id)
+    return attraction_service.get_detail(db, attraction, viewer)
 
 
 @router.post(

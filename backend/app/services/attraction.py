@@ -1,10 +1,11 @@
 """Attraction service."""
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
 from app.models.activity import Activity
 from app.models.attraction import Attraction
+from app.models.user.user import User
 from app.schemas.activity import ActivityRead
 from app.schemas.attraction import (
     AttractionConnection,
@@ -14,6 +15,7 @@ from app.schemas.attraction import (
     AttractionSummary,
     AttractionUpdate,
 )
+from app.services.activity import visible_to
 from app.services.attraction_network import store as network_store
 
 
@@ -27,19 +29,19 @@ def get_attraction(db: Session, attraction_id: int) -> Attraction | None:
     return db.get(Attraction, attraction_id)
 
 
-def list_summaries(db: Session) -> list[AttractionSummary]:
-    """Return every attraction with its number of activities, ordered by id."""
+def list_summaries(db: Session, viewer: User) -> list[AttractionSummary]:
+    """Return every attraction with how many activities the user can see there, ordered by id."""
     return [
         AttractionSummary(
             **AttractionRead.model_validate(attraction).model_dump(), activity_count=count
         )
-        for attraction, count in activities_count_by_attractions(db)
+        for attraction, count in activities_count_by_attractions(db, viewer)
     ]
 
 
-def get_detail(db: Session, attraction: Attraction) -> AttractionDetail:
-    """Return the attraction with its activities and its connections in the network."""
-    activities = activities_by_attraction(db, attraction.id)
+def get_detail(db: Session, attraction: Attraction, viewer: User) -> AttractionDetail:
+    """Return the attraction with the activities the user can see and its connections."""
+    activities = activities_by_attraction(db, attraction.id, viewer)
     return AttractionDetail(
         **AttractionRead.model_validate(attraction).model_dump(),
         activity_count=len(activities),
@@ -96,22 +98,25 @@ def delete_attraction(db: Session, attraction: Attraction) -> None:
     network_store.invalidate()
 
 
-def activities_by_attraction(db: Session, attraction_id: int) -> list[Activity]:
-    """Return the activities of an attraction ordered by name."""
+def activities_by_attraction(db: Session, attraction_id: int, viewer: User) -> list[Activity]:
+    """Return the activities of an attraction that the user can see, ordered by name."""
     if db.get(Attraction, attraction_id) is None:
         raise LookupError("Attraction not found")
-    return list(
-        db.scalars(
-            select(Activity).where(Activity.attraction_id == attraction_id).order_by(Activity.name)
-        )
+    statement = (
+        select(Activity)
+        .where(Activity.attraction_id == attraction_id, visible_to(viewer))
+        .order_by(Activity.name)
     )
+    return list(db.scalars(statement))
 
 
-def activities_count_by_attractions(db: Session) -> list[tuple[Attraction, int]]:
-    """Return every attraction with its number of activities, including zero."""
+def activities_count_by_attractions(db: Session, viewer: User) -> list[tuple[Attraction, int]]:
+    """Return every attraction with how many of its activities the user can see, including zero."""
+    # The condition goes in the join, not in a WHERE: a WHERE would drop the attractions whose
+    # activities are all hidden, instead of counting zero for them
     rows = db.execute(
         select(Attraction, func.count(Activity.id))
-        .outerjoin(Activity, Activity.attraction_id == Attraction.id)
+        .outerjoin(Activity, and_(Activity.attraction_id == Attraction.id, visible_to(viewer)))
         .group_by(Attraction.id)
         .order_by(Attraction.id)
     )

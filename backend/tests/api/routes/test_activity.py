@@ -73,6 +73,10 @@ def test_create_activity_returns_201(client, as_guide, refs):
     assert body["attraction_id"] == refs["attraction_id"]
     assert body["status"] == "pending"
     assert body["creation_date"] == date.today().isoformat()
+    assert body["attraction_name"] == "Malecón"
+    assert body["author_name"] == "Gil"
+    assert body["uses"] == 0
+    assert body["last_validation"] is None
 
 
 def test_create_activity_returns_422_without_duration(client, as_guide, refs):
@@ -150,6 +154,43 @@ def test_get_activity_returns_404_when_missing(client):
     response = client.get("/api/activities/999999")
 
     assert response.status_code == 404
+
+
+@pytest.fixture
+def other_guide_id(client):
+    """Id of a guide who didn't describe the activities of a test."""
+    return client.post(
+        "/api/users",
+        json={
+            "name": "Olga",
+            "role": "guide",
+            "email": "olga@example.com",
+            "password": "x",
+            "specialty": "Art",
+        },
+    ).json()["id"]
+
+
+def test_get_activity_shows_a_pending_activity_to_its_author(client, as_guide, refs):
+    created = _create(client, as_guide, refs).json()
+
+    with as_guide():
+        response = client.get(f"/api/activities/{created['id']}")
+
+    assert response.status_code == 200
+
+
+def test_get_activity_hides_a_pending_activity_from_other_guides(
+    client, as_guide, as_user, refs, other_guide_id
+):
+    created = _create(client, as_guide, refs).json()
+
+    with as_user(other_guide_id):
+        detail = client.get(f"/api/activities/{created['id']}")
+        listed = client.get("/api/activities").json()
+
+    assert detail.status_code == 404
+    assert listed == []
 
 
 def test_update_activity_changes_name(client, as_guide, refs):

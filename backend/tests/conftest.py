@@ -74,6 +74,12 @@ def _test_admin() -> User:
 
 
 @pytest.fixture
+def admin_viewer() -> User:
+    """User who sees every activity (RNF-10), for service calls that need someone watching."""
+    return _test_admin()
+
+
+@pytest.fixture
 def anonymous_client(db_session: Session) -> Generator[TestClient, None, None]:
     """TestClient without credentials, with the database pointed at the test session."""
     app.dependency_overrides[get_db] = lambda: db_session

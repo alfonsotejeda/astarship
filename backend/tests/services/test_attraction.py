@@ -99,42 +99,46 @@ def test_delete_attraction_with_activities_raises(db_session, refs):
     assert attraction_service.get_attraction(db_session, attraction.id) is not None
 
 
-def test_activities_by_attraction_returns_only_its_activities_ordered_by_name(db_session, refs):
+def test_activities_by_attraction_returns_only_its_activities_ordered_by_name(
+    db_session, refs, admin_viewer
+):
     malecon = attraction_service.create_attraction(db_session, _data("Malecón"))
     capitolio = attraction_service.create_attraction(db_session, _data("Capitolio"))
     _add_activity(db_session, refs, malecon, "Beta")
     _add_activity(db_session, refs, malecon, "Alpha")
     _add_activity(db_session, refs, capitolio, "Visita")
 
-    result = attraction_service.activities_by_attraction(db_session, malecon.id)
+    result = attraction_service.activities_by_attraction(db_session, malecon.id, admin_viewer)
 
     assert [a.name for a in result] == ["Alpha", "Beta"]
 
 
-def test_activities_by_attraction_returns_empty_list_when_it_has_none(db_session):
+def test_activities_by_attraction_returns_empty_list_when_it_has_none(db_session, admin_viewer):
     attraction = attraction_service.create_attraction(db_session, _data())
 
-    assert attraction_service.activities_by_attraction(db_session, attraction.id) == []
+    result = attraction_service.activities_by_attraction(db_session, attraction.id, admin_viewer)
+
+    assert result == []
 
 
-def test_activities_by_attraction_raises_when_attraction_is_missing(db_session):
+def test_activities_by_attraction_raises_when_attraction_is_missing(db_session, admin_viewer):
     with pytest.raises(LookupError, match="Attraction"):
-        attraction_service.activities_by_attraction(db_session, 999)
+        attraction_service.activities_by_attraction(db_session, 999, admin_viewer)
 
 
-def test_activities_count_includes_attractions_without_activities(db_session, refs):
+def test_activities_count_includes_attractions_without_activities(db_session, refs, admin_viewer):
     malecon = attraction_service.create_attraction(db_session, _data("Malecón"))
     capitolio = attraction_service.create_attraction(db_session, _data("Capitolio"))
     _add_activity(db_session, refs, malecon, "Alpha")
     _add_activity(db_session, refs, malecon, "Beta")
 
-    result = attraction_service.activities_count_by_attractions(db_session)
+    result = attraction_service.activities_count_by_attractions(db_session, admin_viewer)
 
     assert [(a.id, count) for a, count in result] == [(malecon.id, 2), (capitolio.id, 0)]
 
 
-def test_activities_count_is_empty_without_attractions(db_session):
-    assert attraction_service.activities_count_by_attractions(db_session) == []
+def test_activities_count_is_empty_without_attractions(db_session, admin_viewer):
+    assert attraction_service.activities_count_by_attractions(db_session, admin_viewer) == []
 
 
 def test_new_attraction_joins_the_network(db_session):
