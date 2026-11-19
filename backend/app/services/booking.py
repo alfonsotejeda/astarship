@@ -1,8 +1,10 @@
 """Booking service."""
 
+from datetime import date
+
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.booking import Booking
 from app.models.itinerary import Itinerary
@@ -14,7 +16,10 @@ from app.schemas.booking import BookingCreate, BookingUpdate
 
 def list_bookings(db: Session, tourist_id: int | None = None) -> list[Booking]:
     """Return all bookings, optionally filtered by tourist id."""
-    statement = select(Booking)
+    statement = select(Booking).options(
+        joinedload(Booking.tourist).joinedload(Tourist.user),
+        joinedload(Booking.package),
+    )
     if tourist_id is not None:
         statement = statement.where(Booking.tourist_id == tourist_id)
     return list(db.scalars(statement))
@@ -22,7 +27,15 @@ def list_bookings(db: Session, tourist_id: int | None = None) -> list[Booking]:
 
 def get_booking(db: Session, tourist_id: int, package_id: int) -> Booking | None:
     """Return a booking by its tourist and package ids, or None if it doesn't exist."""
-    return db.get(Booking, (tourist_id, package_id))
+    statement = (
+        select(Booking)
+        .where(Booking.tourist_id == tourist_id, Booking.package_id == package_id)
+        .options(
+            joinedload(Booking.tourist).joinedload(Tourist.user),
+            joinedload(Booking.package),
+        )
+    )
+    return db.scalars(statement).first()
 
 
 def create_booking(db: Session, data: BookingCreate) -> Booking:
@@ -55,11 +68,13 @@ def create_booking(db: Session, data: BookingCreate) -> Booking:
         tourist=tourist,
         package=package,
         booking_date=data.booking_date,
-        proposed_date=data.proposed_date,
+        requested_start_date=data.requested_start_date,
+        preferred_itinerary_id=data.preferred_itinerary_id,
         itinerary_id=data.itinerary_id,
         rejection_reason=data.rejection_reason,
         status=data.status,
     )
+    _apply_resolved_date(booking, data.status)
     db.add(booking)
     try:
         db.commit()
@@ -105,10 +120,24 @@ def update_booking(db: Session, booking: Booking, data: BookingUpdate) -> Bookin
     for field, value in update_data.items():
         setattr(booking, field, value)
 
+    _apply_resolved_date(booking, new_status)
+
     db.add(booking)
     db.commit()
     db.refresh(booking)
     return booking
+
+
+def _apply_resolved_date(booking: Booking, status: BookingStatus) -> None:
+    """Fill or clear ``resolved_date`` depending on the resulting status.
+
+    A booking that moves to ``rejected`` or ``cancelled`` is resolved today;
+    one that goes back to ``pending`` is unresolved again.
+    """
+    if status in (BookingStatus.REJECTED, BookingStatus.CANCELLED):
+        booking.resolved_date = date.today()
+    elif status in (BookingStatus.PENDING, BookingStatus.ASSIGNED):
+        booking.resolved_date = None
 
 
 def delete_booking(db: Session, booking: Booking) -> None:

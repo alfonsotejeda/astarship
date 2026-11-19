@@ -58,10 +58,14 @@ def test_create_booking_returns_201_and_pair(client):
         "tourist_id": tourist["id"],
         "package_id": package["id"],
         "booking_date": "2026-10-01",
-        "proposed_date": None,
+        "requested_start_date": None,
+        "preferred_itinerary_id": None,
         "itinerary_id": None,
+        "resolved_date": None,
         "rejection_reason": None,
         "status": "pending",
+        "tourist_name": "Ada",
+        "package_name": "Europa Capitales",
     }
 
 
@@ -81,7 +85,8 @@ def test_create_booking_with_optional_fields(client, db_session, itinerary_owner
         client,
         tourist["id"],
         package["id"],
-        proposed_date="2026-11-01",
+        requested_start_date="2026-11-01",
+        preferred_itinerary_id=itinerary.id,
         itinerary_id=itinerary.id,
         status="rejected",
         rejection_reason="Sin cupos",
@@ -89,8 +94,10 @@ def test_create_booking_with_optional_fields(client, db_session, itinerary_owner
 
     assert response.status_code == 201
     body = response.json()
-    assert body["proposed_date"] == "2026-11-01"
+    assert body["requested_start_date"] == "2026-11-01"
+    assert body["preferred_itinerary_id"] == itinerary.id
     assert body["itinerary_id"] == itinerary.id
+    assert body["resolved_date"] is not None
     assert body["rejection_reason"] == "Sin cupos"
     assert body["status"] == "rejected"
 
@@ -110,14 +117,21 @@ def test_update_booking_returns_200_and_modified_fields(client, db_session, itin
 
     response = client.patch(
         f"/api/bookings/{tourist['id']}/{package['id']}",
-        json={"status": "assigned", "proposed_date": "2026-11-05", "itinerary_id": itinerary.id},
+        json={
+            "status": "assigned",
+            "requested_start_date": "2026-11-05",
+            "preferred_itinerary_id": itinerary.id,
+            "itinerary_id": itinerary.id,
+        },
     )
 
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "assigned"
-    assert body["proposed_date"] == "2026-11-05"
+    assert body["requested_start_date"] == "2026-11-05"
+    assert body["preferred_itinerary_id"] == itinerary.id
     assert body["itinerary_id"] == itinerary.id
+    assert body["resolved_date"] is None
     assert body["booking_date"] == "2026-10-01"
 
 

@@ -51,18 +51,36 @@ def _raise_conflict(db: Session, exc: Exception) -> None:
     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=conflict_detail) from exc
 
 
+def _to_read(booking: Booking) -> BookingRead:
+    """Build the read schema, filling the derived names from the loaded
+    ``tourist`` and ``package`` relationships (session must be open)."""
+    return BookingRead(
+        tourist_id=booking.tourist_id,
+        package_id=booking.package_id,
+        booking_date=booking.booking_date,
+        requested_start_date=booking.requested_start_date,
+        preferred_itinerary_id=booking.preferred_itinerary_id,
+        resolved_date=booking.resolved_date,
+        itinerary_id=booking.itinerary_id,
+        rejection_reason=booking.rejection_reason,
+        status=booking.status,
+        tourist_name=booking.tourist.user.name,
+        package_name=booking.package.name,
+    )
+
+
 @router.get("", response_model=list[BookingRead])
 def list_bookings(
     tourist_id: int | None = None, db: Session = Depends(get_db)
 ) -> list[BookingRead]:
     """List all bookings, optionally filtered by tourist id."""
-    return booking_service.list_bookings(db, tourist_id=tourist_id)
+    return [_to_read(b) for b in booking_service.list_bookings(db, tourist_id=tourist_id)]
 
 
 @router.get("/{tourist_id}/{package_id}", response_model=BookingRead)
 def get_booking(tourist_id: int, package_id: int, db: Session = Depends(get_db)) -> BookingRead:
     """Get a single booking by its tourist and package ids."""
-    return _get_booking_or_404(db, tourist_id, package_id)
+    return _to_read(_get_booking_or_404(db, tourist_id, package_id))
 
 
 @router.post("", response_model=BookingRead, status_code=status.HTTP_201_CREATED)
@@ -71,7 +89,7 @@ def create_booking(data: BookingCreate, db: Session = Depends(get_db)) -> Bookin
     _get_tourist_or_404(db, data.tourist_id)
     _get_package_or_404(db, data.package_id)
     try:
-        return booking_service.create_booking(db, data)
+        return _to_read(booking_service.create_booking(db, data))
     except (ValueError, IntegrityError) as exc:
         _raise_conflict(db, exc)
 
@@ -94,6 +112,6 @@ def update_booking(
     """
     booking = _get_booking_or_404(db, tourist_id, package_id)
     try:
-        return booking_service.update_booking(db, booking, data)
+        return _to_read(booking_service.update_booking(db, booking, data))
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
