@@ -14,12 +14,29 @@ from app.models.user.tourist import Tourist
 from app.schemas.booking import BookingCreate, BookingUpdate
 
 
-def list_bookings(db: Session, tourist_id: int | None = None) -> list[Booking]:
-    """Return all bookings, optionally filtered by tourist id."""
-    statement = select(Booking).options(
-        joinedload(Booking.tourist).joinedload(Tourist.user),
-        joinedload(Booking.package),
+def list_bookings(
+    db: Session,
+    status: BookingStatus | None = None,
+    tourist_id: int | None = None,
+    *,
+    descending: bool = False,
+) -> list[Booking]:
+    """Return bookings filtered by status/tourist, ordered deterministically by booking_date."""
+    order_cols = (
+        (Booking.booking_date.desc(), Booking.package_id.desc())
+        if descending
+        else (Booking.booking_date.asc(), Booking.tourist_id.asc(), Booking.package_id.asc())
     )
+    statement = (
+        select(Booking)
+        .options(
+            joinedload(Booking.tourist).joinedload(Tourist.user),
+            joinedload(Booking.package),
+        )
+        .order_by(*order_cols)
+    )
+    if status is not None:
+        statement = statement.where(Booking.status == status)
     if tourist_id is not None:
         statement = statement.where(Booking.tourist_id == tourist_id)
     return list(db.scalars(statement))
@@ -39,18 +56,12 @@ def get_booking(db: Session, tourist_id: int, package_id: int) -> Booking | None
 
 
 def create_booking(db: Session, data: BookingCreate) -> Booking:
-    """Create and persist a new booking between an existing tourist and a package.
+    """Create (or re-reserve) a booking between a tourist and a package.
 
-    Args:
-        db: Database session.
-        data: Creation payload with tourist_id and package_id.
-
-    Returns:
-        The persisted booking.
-
-    Raises:
-        ValueError: If the tourist, the package or the itinerary does not exist,
-            or if a booking for the same pair already exists.
+    ``data`` carries the tourist/package ids and optional fields. A
+    ``pending`` or ``assigned`` duplicate raises ``ValueError``. A
+    ``cancelled``/``rejected`` row is reused in place: it is reset to
+    ``pending`` with cleared dates/reason.
     """
     tourist = db.get(Tourist, data.tourist_id)
     if tourist is None:
@@ -62,8 +73,28 @@ def create_booking(db: Session, data: BookingCreate) -> Booking:
         itinerary = db.get(Itinerary, data.itinerary_id)
         if itinerary is None:
             raise ValueError("Itinerary not found")
-    if get_booking(db, data.tourist_id, data.package_id) is not None:
-        raise ValueError("Booking for this tourist and package already exists")
+
+    existing = get_booking(db, data.tourist_id, data.package_id)
+    if existing is not None:
+        if existing.status in (BookingStatus.PENDING, BookingStatus.ASSIGNED):
+            raise ValueError("Booking for this tourist and package already exists")
+        # Re-reserve in place: reset the cancelled/rejected row to pending.
+        existing.status = BookingStatus.PENDING
+        existing.requested_start_date = data.requested_start_date
+        existing.preferred_itinerary_id = data.preferred_itinerary_id
+        existing.itinerary_id = data.itinerary_id
+        existing.resolved_date = None
+        existing.rejection_reason = data.rejection_reason
+        existing.booking_date = data.booking_date
+        db.add(existing)
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise ValueError("Booking for this tourist and package already exists")
+        db.refresh(existing)
+        return existing
+
     booking = Booking(
         tourist=tourist,
         package=package,
@@ -92,18 +123,6 @@ def update_booking(db: Session, booking: Booking, data: BookingUpdate) -> Bookin
     left untouched. When the resulting status is ``rejected`` a non-empty
     rejection reason must be present (either sent in the request or already
     stored on the booking).
-
-    Args:
-        db: Database session.
-        booking: The booking row to update.
-        data: Partial update payload.
-
-    Returns:
-        The updated booking.
-
-    Raises:
-        ValueError: If the itinerary does not exist, or if the booking is
-            rejected without a reason.
     """
     update_data = data.model_dump(exclude_unset=True)
 
@@ -129,11 +148,7 @@ def update_booking(db: Session, booking: Booking, data: BookingUpdate) -> Bookin
 
 
 def _apply_resolved_date(booking: Booking, status: BookingStatus) -> None:
-    """Fill or clear ``resolved_date`` depending on the resulting status.
-
-    A booking that moves to ``rejected`` or ``cancelled`` is resolved today;
-    one that goes back to ``pending`` is unresolved again.
-    """
+    """Fill or clear ``resolved_date`` depending on the resulting status."""
     if status in (BookingStatus.REJECTED, BookingStatus.CANCELLED):
         booking.resolved_date = date.today()
     elif status in (BookingStatus.PENDING, BookingStatus.ASSIGNED):
@@ -141,7 +156,13 @@ def _apply_resolved_date(booking: Booking, status: BookingStatus) -> None:
 
 
 def delete_booking(db: Session, booking: Booking) -> None:
-    """Delete a booking."""
+    """Delete a booking.
+
+    Raises:
+        ValueError: if the booking is assigned or already has an assigned itinerary.
+    """
+    if booking.status is BookingStatus.ASSIGNED or booking.itinerary_id is not None:
+        raise ValueError("Cannot delete a booking with an assigned itinerary")
     db.delete(booking)
     db.commit()
 

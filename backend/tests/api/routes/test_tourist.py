@@ -32,17 +32,23 @@ def _create_package(client, name="Europa Capitales", destination="París"):
     ).json()
 
 
-def _create_booking(client, tourist_id, package_id, booking_date="2026-10-01"):
+def _create_booking(client, db_session, tourist_id, package_id, booking_date="2026-10-01"):
+    from app.models.package import Package
+    from app.models.status import ReviewStatus
+
+    pkg = db_session.get(Package, package_id)
+    pkg.status = ReviewStatus.APPROVED
+    db_session.commit()
     return client.post(
-        "/api/bookings",
-        json={"tourist_id": tourist_id, "package_id": package_id, "booking_date": booking_date},
+        f"/api/packages/{package_id}/bookings",
+        json={"tourist_id": tourist_id},
     )
 
 
-def test_get_tourist_packages_returns_booked_packages(client):
+def test_get_tourist_packages_returns_booked_packages(client, db_session):
     tourist = _create_tourist(client, email="viajera@example.com")
     package = _create_package(client)
-    _create_booking(client, tourist["id"], package["id"])
+    _create_booking(client, db_session, tourist["id"], package["id"])
 
     response = client.get(f"/api/tourists/{tourist['id']}/packages")
 
