@@ -1,0 +1,54 @@
+\section[Pregunta 2: Elasticidad extrema]{Pregunta 2: Diseño para elasticidad extrema y consistencia de datos\\(venta de entradas para conciertos)}
+
+% Responsable: Adrián Estévez Álvarez
+
+El escenario describe un pico de carga que pasa de cientos a decenas de miles de usuarios concurrentes en segundos. Lo decisivo no es el volumen absoluto, sino la \emph{forma} de la curva: un crecimiento casi instantáneo, impredecible y de corta duración. Esta distinción entre escalabilidad ---capacidad de sostener una carga creciente--- y elasticidad ---capacidad de absorber picos repentinos--- es la que orienta toda la respuesta \parencite{richardsford2020}.
+
+\subsection{Por qué el cuello de botella es la base de datos}
+
+Una Microservices Architecture escala bien la capa de cómputo: cada servicio se replica de forma independiente y se puede dimensionar el que más lo necesita. Pero todas esas instancias terminan convergiendo en almacenes de datos persistentes, y es ahí donde aparece el límite. Con decenas de miles de peticiones por segundo contra un mismo conjunto de asientos, la contención de bloqueos, el número de conexiones disponibles y la latencia de escritura de la base de datos se convierten en el factor limitante \parencite{richardsford2020}. Añadir instancias de servicio no solo no resuelve el problema: lo agrava, porque cada instancia nueva compite por el mismo recurso compartido.
+
+A esto se añade un problema de tiempos. La elasticidad no depende solo de poder arrancar instancias, sino de cuánto tardan en ser útiles. Una instancia de microservicio recién arrancada debe establecer conexiones, calentar cachés y empezar a consultar la base de datos; durante ese intervalo contribuye a la congestión antes de aliviarla. En un pico que se forma en segundos, ese retraso es determinante.
+
+\subsection{Por qué Space-Based Architecture resuelve el escenario}
+
+La arquitectura basada en espacio se construye sobre una decisión radical: \textbf{eliminar la base de datos del camino de la petición} \parencite{richardsford2020}. El modelo, derivado de la tuple space de Gelernter, sustituye el acceso a disco por memoria replicada entre unidades de procesamiento. Sus componentes son:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Processing unit:} contiene la lógica de la aplicación y, junto a ella, la caché de datos en memoria que necesita para operar. Escalar consiste en arrancar más unidades, cada una autosuficiente.
+  \item \textbf{Virtualized middleware:} gobierna la topología. Se compone del \emph{messaging grid}, que gestiona la petición de entrada y el reparto de sesiones entre unidades; el \emph{data grid}, responsable de la replicación de datos entre cachés ---el componente más importante del estilo---; el \emph{processing grid}, opcional, que coordina peticiones que afectan a varios tipos de unidad; y el \emph{deployment manager}, que arranca y detiene unidades según la carga.
+  \item \textbf{Data pumps, data writers y data readers:} el canal asíncrono hacia la persistencia. La unidad de procesamiento publica el cambio en un \emph{data pump} y continúa; un \emph{data writer} lo lleva a la base de datos fuera del camino crítico, y un \emph{data reader} recarga los datos en memoria cuando una unidad arranca o tras una caída.
+\end{itemize}
+
+El efecto sobre la elasticidad es directo. La base de datos deja de ser un recurso en contención y pasa a ser un destino asíncrono; una unidad nueva arranca con los datos ya en memoria y rinde desde el primer momento. Por eso \textcite{richardsford2020} clasifican este estilo con las puntuaciones más altas en elasticidad, escalabilidad y rendimiento, y utilizan precisamente la venta de entradas para conciertos como su ejemplo canónico.
+
+El precio es igualmente claro y conviene declararlo: complejidad operativa y de pruebas muy alta, dependencia de productos de middleware especializados, coste elevado y, sobre todo, el riesgo de perder datos que aún no se han escrito en disco si caen varias unidades a la vez.
+
+\subsection{Colisiones de datos en cachés replicadas}
+
+Una colisión ocurre cuando dos unidades de procesamiento actualizan el mismo dato en sus respectivas cachés dentro de la ventana de tiempo que tarda la replicación en propagarse. Ambas actualizaciones se consideran válidas localmente, pero al replicarse una sobrevive y la otra se pierde silenciosamente. \textcite{richardsford2020} identifican cuatro factores que determinan la probabilidad de que esto ocurra:
+
+\begin{enumerate}[leftmargin=1.8em]
+  \item el \textbf{número de instancias} que mantienen una réplica de la caché;
+  \item el \textbf{ritmo de actualización} del dato, en actualizaciones por segundo;
+  \item el \textbf{tamaño de la caché}, es decir, la cantidad de registros entre los que se reparten esas actualizaciones;
+  \item la \textbf{latencia de replicación}, que define la duración de la ventana de riesgo.
+\end{enumerate}
+
+La venta de asientos numerados es el peor caso posible para los cuatro: muchas unidades activas durante el pico, un ritmo de actualización altísimo, un conjunto de registros reducido ---los asientos de un recinto--- y una ventana de replicación que, por pequeña que sea, se recorre miles de veces por segundo. Y el dominio no tolera el error: vender dos veces la misma butaca no es una inconsistencia temporal que se corrija sola, es un billete que alguien no podrá usar.
+
+\subsection{Mecanismos de mitigación y trade-offs}
+
+\paragraph{1. Particionar la caché por propietario único.} Es la medida más eficaz. En lugar de replicar todos los asientos en todas las unidades, se asigna cada sección del recinto a una partición y cada partición a una única unidad de procesamiento responsable de sus escrituras. Si solo un componente escribe un dato, la colisión deja de ser posible por construcción: el problema se elimina en vez de gestionarse. El \emph{messaging grid} encamina cada petición a la unidad propietaria de la sección solicitada. El trade-off es que la elasticidad deja de ser uniforme ---las secciones más demandadas concentran la carga--- y que la caída de una unidad inutiliza temporalmente su sección hasta que otra asume la partición.
+
+\paragraph{2. Reducir la latencia de replicación.} Actúa sobre la ventana de riesgo sin cambiar el diseño: red dedicada de baja latencia entre unidades, replicación de deltas en lugar de registros completos y limitación del número de réplicas. Es una mitigación barata, pero solo \emph{reduce} la probabilidad; no la anula. Por sí sola es insuficiente para un dominio que no admite errores.
+
+\paragraph{3. Caché distribuida en lugar de replicada.} Los datos residen en un servidor de caché externo con una única fuente de verdad y las unidades los consultan por red. Las colisiones desaparecen porque no hay copias divergentes, a cambio de introducir latencia en cada acceso y un punto central de fallo: se renuncia a parte del rendimiento y de la tolerancia a fallos que justificaban el estilo \parencite{richardsford2020}.
+
+\paragraph{4. Caché híbrida o \emph{near-cache}.} Permite combinar lo anterior según la naturaleza del dato, y en este dominio la distinción es natural. El catálogo ---conciertos, recintos, mapas de sala, precios--- se lee masivamente y casi no cambia: replicado. El estado de ocupación de cada asiento se escribe en competencia: particionado o distribuido. Aplicar la misma política a todos los datos es el error que conviene evitar.
+
+\paragraph{5. Reserva con control de concurrencia y expiración.} Complementa a los anteriores dentro de la unidad propietaria. La operación sobre el asiento no es «escribir ocupado», sino «pasar de libre a reservado si y solo si sigue libre», una actualización condicional con número de versión que convierte el conflicto en un rechazo explícito y no en una pérdida silenciosa. La reserva se mantiene con un tiempo de expiración que la libera si el pago no se completa.
+
+\subsection{Conclusión}
+
+Space-Based Architecture es la elección adecuada porque ataca el cuello de botella real del escenario ---la base de datos bajo un pico instantáneo--- en lugar de escalar la capa que no lo sufre. La consistencia de los asientos numerados no se obtiene del estilo por defecto, sino de una decisión de diseño explícita: particionar el dato crítico de modo que cada asiento tenga un único propietario, y reservar la replicación para los datos de lectura. El trade-off aceptado es conocido y acotado: se sacrifica parte de la elasticidad uniforme y se añade complejidad de encaminamiento a cambio de la garantía de no vender dos veces la misma butaca. En términos de \textcite{brewer2012cap}, es la decisión de priorizar la consistencia en el único punto del sistema donde el negocio no admite otra cosa.
