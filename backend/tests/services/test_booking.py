@@ -332,15 +332,18 @@ def test_create_booking_stores_optional_fields(db_session):
             tourist_id=tourist.id,
             package_id=package.id,
             booking_date=date(2026, 10, 1),
-            proposed_date=date(2026, 11, 1),
+            requested_start_date=date(2026, 11, 1),
+            preferred_itinerary_id=itinerary.id,
             itinerary_id=itinerary.id,
             rejection_reason="",
             status=BookingStatus.PENDING,
         ),
     )
 
-    assert booking.proposed_date == date(2026, 11, 1)
+    assert booking.requested_start_date == date(2026, 11, 1)
+    assert booking.preferred_itinerary_id == itinerary.id
     assert booking.itinerary_id == itinerary.id
+    assert booking.resolved_date is None
     assert booking.status is BookingStatus.PENDING
 
 
@@ -378,14 +381,17 @@ def test_update_booking_changes_fields(db_session):
         booking,
         BookingUpdate(
             status=BookingStatus.ASSIGNED,
-            proposed_date=date(2026, 11, 5),
+            requested_start_date=date(2026, 11, 5),
+            preferred_itinerary_id=itinerary.id,
             itinerary_id=itinerary.id,
         ),
     )
 
     assert updated.status is BookingStatus.ASSIGNED
-    assert updated.proposed_date == date(2026, 11, 5)
+    assert updated.requested_start_date == date(2026, 11, 5)
+    assert updated.preferred_itinerary_id == itinerary.id
     assert updated.itinerary_id == itinerary.id
+    assert updated.resolved_date is None
     assert updated.booking_date == date(2026, 10, 1)  # unchanged
 
 
@@ -407,7 +413,8 @@ def test_update_booking_partial_only_provided_fields(db_session):
     )
 
     assert updated.status is BookingStatus.CANCELLED
-    assert updated.proposed_date is None
+    assert updated.requested_start_date is None
+    assert updated.resolved_date == date.today()
 
 
 def test_update_booking_rejects_requires_reason(db_session):
@@ -450,6 +457,7 @@ def test_update_booking_rejects_with_reason_is_ok(db_session):
 
     assert updated.status is BookingStatus.REJECTED
     assert updated.rejection_reason == "No cupos"
+    assert updated.resolved_date == date.today()
 
 
 def test_update_booking_clears_itinerary(db_session):
