@@ -14,12 +14,29 @@ from app.models.user.tourist import Tourist
 from app.schemas.booking import BookingCreate, BookingUpdate
 
 
-def list_bookings(db: Session, tourist_id: int | None = None) -> list[Booking]:
-    """Return all bookings, optionally filtered by tourist id."""
-    statement = select(Booking).options(
-        joinedload(Booking.tourist).joinedload(Tourist.user),
-        joinedload(Booking.package),
+def list_bookings(
+    db: Session,
+    status: BookingStatus | None = None,
+    tourist_id: int | None = None,
+    *,
+    descending: bool = False,
+) -> list[Booking]:
+    """Return bookings filtered by status/tourist, ordered deterministically by booking_date."""
+    order_cols = (
+        (Booking.booking_date.desc(), Booking.package_id.desc())
+        if descending
+        else (Booking.booking_date.asc(), Booking.tourist_id.asc(), Booking.package_id.asc())
     )
+    statement = (
+        select(Booking)
+        .options(
+            joinedload(Booking.tourist).joinedload(Tourist.user),
+            joinedload(Booking.package),
+        )
+        .order_by(*order_cols)
+    )
+    if status is not None:
+        statement = statement.where(Booking.status == status)
     if tourist_id is not None:
         statement = statement.where(Booking.tourist_id == tourist_id)
     return list(db.scalars(statement))
@@ -38,13 +55,7 @@ def get_booking(db: Session, tourist_id: int, package_id: int) -> Booking | None
     return db.scalars(statement).first()
 
 
-def create_booking(
-    db: Session,
-    data: BookingCreate,
-    *,
-    current_user_id: int | None = None,
-    is_admin: bool = False,
-) -> Booking:
+def create_booking(db: Session, data: BookingCreate) -> Booking:
     """Create (or re-reserve) a booking between a tourist and a package.
 
     ``data`` carries the tourist/package ids and optional fields. A
@@ -148,9 +159,9 @@ def delete_booking(db: Session, booking: Booking) -> None:
     """Delete a booking.
 
     Raises:
-        ValueError: if the booking already has an assigned itinerary.
+        ValueError: if the booking is assigned or already has an assigned itinerary.
     """
-    if booking.itinerary_id is not None:
+    if booking.status is BookingStatus.ASSIGNED or booking.itinerary_id is not None:
         raise ValueError("Cannot delete a booking with an assigned itinerary")
     db.delete(booking)
     db.commit()
