@@ -8,7 +8,14 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import require_role
 from app.db.session import get_db
 from app.models.user.user import UserRole
-from app.schemas.report import Rc1Report, Rc1SortColumn, SortOrder
+from app.schemas.report import (
+    Rc1Report,
+    Rc1SortColumn,
+    Rc5Report,
+    Rc5Set,
+    Rc5SortColumn,
+    SortOrder,
+)
 from app.services import report as report_service
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -40,6 +47,24 @@ def rc1_generated_itineraries(
 ) -> Rc1Report:
     """RC-1: itineraries generated for a package, with creator, creation date and parameters."""
     _check_date_range(date_from, date_to)
-    return report_service.rc1_generated_itineraries(
-        db, package_id, date_from, date_to, sort, order
-    )
+    return report_service.rc1_generated_itineraries(db, package_id, date_from, date_to, sort, order)
+
+
+@router.get(
+    "/rc5",
+    response_model=Rc5Report,
+    dependencies=[
+        Depends(require_role(UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.GUIDE))
+    ],
+)
+def rc5_compare_packages(
+    set: Rc5Set = Rc5Set.ALL,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    sort: Rc5SortColumn = Rc5SortColumn.PACKAGE,
+    order: SortOrder = SortOrder.ASC,
+    db: Session = Depends(get_db),
+) -> Rc5Report:
+    """RC-5: compare itineraries of different packages against their parametrization."""
+    _check_date_range(date_from, date_to)
+    return report_service.rc5_compare_packages(db, set, date_from, date_to, sort, order)

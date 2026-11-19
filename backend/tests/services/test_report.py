@@ -1,5 +1,6 @@
 """Tests for the report service."""
 
+from collections import Counter
 from datetime import date
 
 import pytest
@@ -11,7 +12,7 @@ from app.schemas.itinerary import ItineraryCreate
 from app.schemas.package import PackageCreate
 from app.schemas.proportion_category import ProportionCategoryCreate
 from app.schemas.proportion_type import ProportionTypeCreate
-from app.schemas.report import Rc1SortColumn, SortOrder
+from app.schemas.report import Rc1SortColumn, Rc5Set, Rc5SortColumn, SortOrder
 from app.schemas.user import GuideCreate
 from app.services import activity_type as activity_type_service
 from app.services import category as category_service
@@ -154,3 +155,192 @@ def test_rc1_is_empty_without_itineraries(db_session):
 
     assert report.rows == []
     assert report.chart == []
+
+
+def test_rc5_compares_each_itinerary_with_its_parametrization(db_session, rc5_data):
+    report = report_service.rc5_compare_packages(db_session)
+    by_id = {row.id: row for row in report.rows}
+    ids = rc5_data["itineraries"]
+
+    first = by_id[ids["first"]]
+    assert (first.package_id, first.status, first.assigned) == (
+        rc5_data["packages"]["andes"],
+        ItineraryStatus.APPROVED,
+        False,
+    )
+    assert first.creation_date == date(2026, 1, 10)
+    assert first.activity_count == 3
+    assert [(item.activity_type_code, item.count) for item in first.activity_types] == [
+        ("visita", 1),
+        ("excursion", 1),
+        ("taller", 1),
+    ]
+    assert first.proportion == [33, 33, 34]
+    assert (first.covered_categories, first.package_categories, first.high_effort) == (2, 2, 1)
+    assert (first.criteria_met, first.criteria_total, first.balanced) == (4, 4, True)
+
+    second = by_id[ids["second"]]
+    assert second.proportion == [50, 50, 0]
+    assert (second.covered_categories, second.package_categories) == (1, 1)
+    assert (second.criteria_met, second.criteria_total, second.balanced) == (2, 4, False)
+
+    third = by_id[ids["third"]]
+    assert third.assigned is True
+    assert third.proportion == [100, 0, 0]
+    assert (third.covered_categories, third.package_categories, third.high_effort) == (1, 2, 0)
+    assert (third.criteria_met, third.criteria_total, third.balanced) == (3, 4, False)
+
+
+def test_rc5_charts_aggregate_activities_by_package(db_session, rc5_data):
+    report = report_service.rc5_compare_packages(db_session)
+
+    assert [
+        (point.package_name, point.visita, point.excursion, point.taller)
+        for point in report.type_chart
+    ] == [
+        ("Alps", 1, 1, 0),
+        ("Andes", 2, 1, 1),
+    ]
+    assert [
+        (point.package_name, point.bajo, point.medio, point.alto) for point in report.effort_chart
+    ] == [
+        ("Alps", 1, 0, 1),
+        ("Andes", 2, 1, 1),
+    ]
+
+
+def test_rc5_summary_counts_itineraries_activities_and_balance(db_session, rc5_data):
+    summary = report_service.rc5_compare_packages(db_session).summary
+
+    assert summary.itineraries == 3
+    assert summary.packages == 2
+    assert summary.activities == 6
+    assert (summary.balanced, summary.unbalanced, summary.high_effort) == (1, 2, 2)
+
+
+@pytest.mark.parametrize(
+    ("subset", "expected"),
+    [
+        (Rc5Set.ALL, ["second", "first", "third"]),
+        (Rc5Set.APPROVED, ["first"]),
+        (Rc5Set.PENDING, ["second"]),
+        (Rc5Set.VALIDATED, ["third"]),
+        (Rc5Set.REJECTED, []),
+        (Rc5Set.ASSIGNED, ["third"]),
+    ],
+)
+def test_rc5_filters_by_subset(db_session, rc5_data, subset, expected):
+    ids = rc5_data["itineraries"]
+
+    report = report_service.rc5_compare_packages(db_session, itinerary_set=subset)
+
+    assert [row.id for row in report.rows] == [ids[name] for name in expected]
+
+
+def test_rc5_filters_by_date_range(db_session, rc5_data):
+    ids = rc5_data["itineraries"]
+    from_date = report_service.rc5_compare_packages(db_session, date_from=date(2026, 2, 1))
+    to_date = report_service.rc5_compare_packages(db_session, date_to=date(2026, 2, 28))
+    both = report_service.rc5_compare_packages(
+        db_session, date_from=date(2026, 2, 1), date_to=date(2026, 2, 28)
+    )
+
+    assert [row.id for row in from_date.rows] == [ids["second"], ids["third"]]
+    assert [row.id for row in to_date.rows] == [ids["second"], ids["first"]]
+    assert [row.id for row in both.rows] == [ids["second"]]
+
+
+@pytest.mark.parametrize(
+    ("sort", "order", "expected"),
+    [
+        (Rc5SortColumn.ID, SortOrder.ASC, ["first", "second", "third"]),
+        (Rc5SortColumn.PACKAGE, SortOrder.DESC, ["first", "third", "second"]),
+        (Rc5SortColumn.CREATION_DATE, SortOrder.DESC, ["third", "second", "first"]),
+        (Rc5SortColumn.STATUS, SortOrder.ASC, ["first", "second", "third"]),
+        (Rc5SortColumn.ASSIGNED, SortOrder.DESC, ["third", "second", "first"]),
+        (Rc5SortColumn.ACTIVITY_COUNT, SortOrder.DESC, ["first", "second", "third"]),
+        (Rc5SortColumn.PROPORTION, SortOrder.ASC, ["first", "second", "third"]),
+        (Rc5SortColumn.COVERAGE, SortOrder.ASC, ["third", "second", "first"]),
+        (Rc5SortColumn.PACKAGE_CATEGORIES, SortOrder.DESC, ["first", "third", "second"]),
+        (Rc5SortColumn.HIGH_EFFORT, SortOrder.DESC, ["second", "first", "third"]),
+        (Rc5SortColumn.CRITERIA_MET, SortOrder.DESC, ["first", "third", "second"]),
+        (Rc5SortColumn.BALANCED, SortOrder.ASC, ["second", "third", "first"]),
+    ],
+)
+def test_rc5_sorts_by_any_column(db_session, rc5_data, sort, order, expected):
+    ids = rc5_data["itineraries"]
+
+    report = report_service.rc5_compare_packages(db_session, sort=sort, order=order)
+
+    assert [row.id for row in report.rows] == [ids[name] for name in expected]
+
+
+def test_rc5_is_empty_without_itineraries(db_session, itinerary_owners):
+    report = report_service.rc5_compare_packages(db_session)
+
+    assert report.rows == []
+    assert report.type_chart == []
+    assert report.effort_chart == []
+    assert report.summary.itineraries == 0
+
+
+def test_rc5_percentages_sum_to_100_when_rounding_overflows():
+    percentages = report_service._rc5_percentages(Counter({"visita": 3, "excursion": 5, "taller": 0}))
+
+    assert percentages == [38, 62, 0]
+    assert sum(percentages) == 100
+
+
+def test_rc5_sorts_by_package_case_insensitively(db_session, itinerary_owners):
+    admin_id = package_service.get_package(db_session, itinerary_owners["package_id"]).admin_id
+    zapato_id = package_service.create_package(
+        db_session, PackageCreate(name="Zapato", destination="X", admin_id=admin_id)
+    ).id
+    alps_id = package_service.create_package(
+        db_session, PackageCreate(name="alps", destination="Y", admin_id=admin_id)
+    ).id
+    for package_id in (zapato_id, alps_id):
+        itinerary_service.create_itinerary(
+            db_session,
+            ItineraryCreate(
+                creation_date=date(2026, 1, 1),
+                activity_count=1,
+                package_id=package_id,
+                guide_id=itinerary_owners["guide_id"],
+            ),
+        )
+
+    report = report_service.rc5_compare_packages(db_session)
+
+    assert [row.package_name for row in report.rows] == ["alps", "Zapato"]
+
+
+def test_rc5_percentages_sum_to_100_when_rounding_overflows():
+    percentages = report_service._rc5_percentages(Counter({"visita": 3, "excursion": 5, "taller": 0}))
+
+    assert percentages == [38, 62, 0]
+    assert sum(percentages) == 100
+
+
+def test_rc5_sorts_by_package_case_insensitively(db_session, itinerary_owners):
+    admin_id = package_service.get_package(db_session, itinerary_owners["package_id"]).admin_id
+    zapato_id = package_service.create_package(
+        db_session, PackageCreate(name="Zapato", destination="X", admin_id=admin_id)
+    ).id
+    alps_id = package_service.create_package(
+        db_session, PackageCreate(name="alps", destination="Y", admin_id=admin_id)
+    ).id
+    for package_id in (zapato_id, alps_id):
+        itinerary_service.create_itinerary(
+            db_session,
+            ItineraryCreate(
+                creation_date=date(2026, 1, 1),
+                activity_count=1,
+                package_id=package_id,
+                guide_id=itinerary_owners["guide_id"],
+            ),
+        )
+
+    report = report_service.rc5_compare_packages(db_session)
+
+    assert [row.package_name for row in report.rows] == ["alps", "Zapato"]

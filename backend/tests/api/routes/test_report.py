@@ -143,3 +143,90 @@ def test_rc1_requires_authentication(anonymous_client):
     response = anonymous_client.get("/api/reports/rc1")
 
     assert response.status_code == 401
+
+
+def test_rc5_returns_rows_charts_and_summary(client, rc5_data):
+    response = client.get("/api/reports/rc5")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [row["id"] for row in body["rows"]] == [
+        rc5_data["itineraries"]["second"],
+        rc5_data["itineraries"]["first"],
+        rc5_data["itineraries"]["third"],
+    ]
+    assert body["rows"][1]["proportion"] == [33, 33, 34]
+    assert body["rows"][1]["balanced"] is True
+    assert [(point["package_name"], point["alto"]) for point in body["effort_chart"]] == [
+        ("Alps", 1),
+        ("Andes", 1),
+    ]
+    assert body["summary"] == {
+        "itineraries": 3,
+        "packages": 2,
+        "activities": 6,
+        "balanced": 1,
+        "unbalanced": 2,
+        "high_effort": 2,
+    }
+
+
+def test_rc5_applies_set_and_date_filters(client, rc5_data):
+    assigned = client.get("/api/reports/rc5", params={"set": "assigned"}).json()
+    status = client.get("/api/reports/rc5", params={"set": "approved"}).json()
+    dates = client.get(
+        "/api/reports/rc5", params={"date_from": "2026-02-01", "date_to": "2026-02-28"}
+    ).json()
+
+    assert [row["id"] for row in assigned["rows"]] == [rc5_data["itineraries"]["third"]]
+    assert [row["id"] for row in status["rows"]] == [rc5_data["itineraries"]["first"]]
+    assert [row["id"] for row in dates["rows"]] == [rc5_data["itineraries"]["second"]]
+
+
+def test_rc5_accepts_sort_column_and_order(client, rc5_data):
+    response = client.get("/api/reports/rc5", params={"sort": "criteria_met", "order": "desc"})
+
+    assert response.status_code == 200
+    assert [row["id"] for row in response.json()["rows"]] == [
+        rc5_data["itineraries"]["first"],
+        rc5_data["itineraries"]["third"],
+        rc5_data["itineraries"]["second"],
+    ]
+
+
+def test_rc5_rejects_unknown_set_and_sort_column(client):
+    assert client.get("/api/reports/rc5", params={"set": "everything"}).status_code == 422
+    assert client.get("/api/reports/rc5", params={"sort": "password"}).status_code == 422
+
+
+def test_rc5_rejects_inverted_date_range(client):
+    response = client.get(
+        "/api/reports/rc5", params={"date_from": "2026-03-01", "date_to": "2026-02-01"}
+    )
+
+    assert response.status_code == 422
+
+
+def test_rc5_is_available_to_the_operations_manager(client, as_user, rc5_data):
+    manager_id = _create_user(client, "operations_manager", "ops@example.com")
+
+    with as_user(manager_id):
+        response = client.get("/api/reports/rc5")
+
+    assert response.status_code == 200
+    assert len(response.json()["rows"]) == 3
+
+
+def test_rc5_is_forbidden_to_tourists(client, as_user, rc5_data):
+    tourist_id = _create_user(client, "tourist", "tourist@example.com", age=30)
+
+    with as_user(tourist_id):
+        response = client.get("/api/reports/rc5")
+
+    assert response.status_code == 403
+
+
+def test_rc5_requires_authentication(anonymous_client):
+    response = anonymous_client.get("/api/reports/rc5")
+
+    assert response.status_code == 401
