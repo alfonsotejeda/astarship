@@ -29,9 +29,7 @@ def test_table_name():
 
 
 def test_primary_key_is_itinerary_and_tourist():
-    assert {c.name for c in Assignment.__table__.primary_key}=={"itinerary_id",
-                                                                "tourist_id",
-                                                                "assignment_date"}
+    assert {c.name for c in Assignment.__table__.primary_key} == {"itinerary_id", "tourist_id"}
 
 
 def test_foreign_keys():
