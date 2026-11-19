@@ -143,3 +143,92 @@ def test_rc1_requires_authentication(anonymous_client):
     response = anonymous_client.get("/api/reports/rc1")
 
     assert response.status_code == 401
+
+
+def test_rc4_returns_rows_chart_summary_and_filter_options(client, rc4_data):
+    response = client.get("/api/reports/rc4")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [(row["id"], row["effort"], row["visits"]) for row in body["rows"]] == [
+        (rc4_data["activities"]["Canyon"], "bajo", 3),
+        (rc4_data["activities"]["Museum"], "medio", 3),
+        (rc4_data["activities"]["Peak"], "alto", 2),
+    ]
+    assert [(point["effort"], point["label"]) for point in body["chart"]] == [
+        ("bajo", "Bajo"),
+        ("medio", "Medio"),
+        ("alto", "Alto"),
+    ]
+    assert body["summary"] == {
+        "visits": 8,
+        "completed": 5,
+        "skipped": 3,
+        "rated": 5,
+        "tourists": 3,
+        "rating": 19 / 5,
+        "satisfaction": 3 / 8 * 100,
+        "abandonment": 3 / 8 * 100,
+    }
+    assert [item["id"] for item in body["itineraries"]] == rc4_data["itineraries"][::-1]
+    assert [item["name"] for item in body["groups"]] == ["Alpha", "Beta"]
+
+
+def test_rc4_applies_itinerary_and_group_filters(client, rc4_data):
+    first = client.get(
+        "/api/reports/rc4", params={"itinerary_id": rc4_data["itineraries"][0]}
+    ).json()
+    beta = client.get("/api/reports/rc4", params={"group_id": rc4_data["groups"]["beta"]}).json()
+    both = client.get(
+        "/api/reports/rc4",
+        params={
+            "itinerary_id": rc4_data["itineraries"][0],
+            "group_id": rc4_data["groups"]["beta"],
+        },
+    ).json()
+
+    assert [row["visits"] for row in first["rows"]] == [2, 2, 2]
+    assert [row["visits"] for row in beta["rows"]] == [1, 1]
+    assert both["rows"] == []
+
+
+def test_rc4_accepts_sort_column_and_order(client, rc4_data):
+    response = client.get("/api/reports/rc4", params={"sort": "abandonment", "order": "desc"})
+
+    assert response.status_code == 200
+    assert [row["id"] for row in response.json()["rows"]] == [
+        rc4_data["activities"]["Museum"],
+        rc4_data["activities"]["Peak"],
+        rc4_data["activities"]["Canyon"],
+    ]
+
+
+def test_rc4_rejects_unknown_sort_column(client):
+    response = client.get("/api/reports/rc4", params={"sort": "password"})
+
+    assert response.status_code == 422
+
+
+def test_rc4_is_available_to_the_operations_manager(client, as_user, rc4_data):
+    manager_id = _create_user(client, "operations_manager", "ops@example.com")
+
+    with as_user(manager_id):
+        response = client.get("/api/reports/rc4")
+
+    assert response.status_code == 200
+    assert len(response.json()["rows"]) == 3
+
+
+def test_rc4_is_forbidden_to_tourists(client, as_user, rc4_data):
+    tourist_id = _create_user(client, "tourist", "tourist@example.com", age=30)
+
+    with as_user(tourist_id):
+        response = client.get("/api/reports/rc4")
+
+    assert response.status_code == 403
+
+
+def test_rc4_requires_authentication(anonymous_client):
+    response = anonymous_client.get("/api/reports/rc4")
+
+    assert response.status_code == 401

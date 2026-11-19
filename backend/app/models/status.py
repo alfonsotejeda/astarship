@@ -44,6 +44,13 @@ class AssignmentStatus(StrEnum):
     FINISHED = "finished"
 
 
+class VisitStatus(StrEnum):
+    """Outcome of a tourist's visit to an activity."""
+
+    DONE = "done"
+    SKIPPED = "skipped"
+
+
 class ModificationRequestStatus(StrEnum):
     """Progress of a modification request while a guide handles it."""
 
