@@ -289,3 +289,148 @@ def test_rc4_is_empty_without_visits(db_session, itinerary_owners):
     assert (report.summary.visits, report.summary.tourists, report.summary.rating) == (0, 0, None)
     assert report.itineraries == []
     assert report.groups == []
+
+
+def test_rc4_sorts_rating_desc_with_nulls_last(db_session, rc4_data):
+    from datetime import time
+
+    from app.models.activity import Activity
+    from app.models.itinerary_composition import ItineraryComposition
+    from app.models.status import VisitStatus
+    from app.models.visit import Visit
+
+    ref = db_session.get(Activity, rc4_data["activities"]["Peak"])
+    unrated = Activity(
+        name="Anchor",
+        effort_level=1,
+        duration=60,
+        activity_type_code=ref.activity_type_code,
+        category_id=ref.category_id,
+        guide_id=ref.guide_id,
+        attraction_id=ref.attraction_id,
+    )
+    db_session.add(unrated)
+    db_session.flush()
+    db_session.add(
+        ItineraryComposition(
+            itinerary_id=rc4_data["itineraries"][0],
+            activity_id=unrated.id,
+            order=10,
+            day=1,
+            start_time=time(12, 0),
+        )
+    )
+    db_session.flush()
+    db_session.add(
+        Visit(
+            itinerary_id=rc4_data["itineraries"][0],
+            tourist_id=rc4_data["tourists"]["Ada"],
+            activity_id=unrated.id,
+            status=VisitStatus.SKIPPED,
+        )
+    )
+    db_session.commit()
+
+    report = report_service.rc4_tourist_experience(
+        db_session, sort=Rc4SortColumn.RATING, order=SortOrder.DESC
+    )
+
+    assert report.rows[-1].activity_name == "Anchor"
+    assert report.rows[-1].rating is None
+    assert all(row.rating is not None for row in report.rows[:-1])
+
+
+def test_rc4_sorts_activity_name_case_insensitively(db_session, rc4_data):
+    from datetime import time
+
+    from app.models.activity import Activity
+    from app.models.itinerary_composition import ItineraryComposition
+    from app.models.status import VisitStatus
+    from app.models.visit import Visit
+
+    ref = db_session.get(Activity, rc4_data["activities"]["Peak"])
+    for index, name in enumerate(("albatross", "Bravo"), start=20):
+        activity = Activity(
+            name=name,
+            effort_level=1,
+            duration=60,
+            activity_type_code=ref.activity_type_code,
+            category_id=ref.category_id,
+            guide_id=ref.guide_id,
+            attraction_id=ref.attraction_id,
+        )
+        db_session.add(activity)
+        db_session.flush()
+        db_session.add(
+            ItineraryComposition(
+                itinerary_id=rc4_data["itineraries"][0],
+                activity_id=activity.id,
+                order=index,
+                day=1,
+                start_time=time(12, index),
+            )
+        )
+        db_session.flush()
+        db_session.add(
+            Visit(
+                itinerary_id=rc4_data["itineraries"][0],
+                tourist_id=rc4_data["tourists"]["Ada"],
+                activity_id=activity.id,
+                status=VisitStatus.DONE,
+                rating=3,
+            )
+        )
+    db_session.commit()
+
+    report = report_service.rc4_tourist_experience(
+        db_session, sort=Rc4SortColumn.ACTIVITY_NAME, order=SortOrder.ASC
+    )
+
+    names = [row.activity_name for row in report.rows]
+    assert names.index("albatross") < names.index("Bravo")
+
+
+def test_rc4_sorts_group_options_case_insensitively(db_session, rc4_data, itinerary_owners):
+    from app.models.assignment import Assignment
+    from app.models.membership import Membership
+    from app.models.status import VisitStatus
+    from app.models.travel_group import TravelGroup
+    from app.models.visit import Visit
+    from app.schemas.user import TouristCreate
+
+    admin_id = package_service.get_package(db_session, itinerary_owners["package_id"]).admin_id
+    guide_id = itinerary_owners["guide_id"]
+    group = TravelGroup(name="aardvark", guide_id=guide_id)
+    db_session.add(group)
+    db_session.flush()
+    tourist = user_service.create_user(
+        db_session,
+        TouristCreate(
+            name="Zoe",
+            role="tourist",
+            email="zoe-rc4@example.com",
+            password="x",
+            age=29,
+        ),
+    )
+    db_session.add(Membership(tourist_id=tourist.id, travel_group_id=group.id))
+    db_session.add(
+        Assignment(
+            itinerary_id=rc4_data["itineraries"][0], tourist_id=tourist.id, admin_id=admin_id
+        )
+    )
+    db_session.add(
+        Visit(
+            itinerary_id=rc4_data["itineraries"][0],
+            tourist_id=tourist.id,
+            activity_id=rc4_data["activities"]["Canyon"],
+            status=VisitStatus.DONE,
+            rating=4,
+        )
+    )
+    db_session.commit()
+
+    report = report_service.rc4_tourist_experience(db_session)
+
+    names = [group.name for group in report.groups]
+    assert names.index("aardvark") < names.index("Alpha")

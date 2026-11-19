@@ -235,7 +235,7 @@ def rc4_tourist_experience(
     abandonment_expr = case((visits > 0, skipped * 100.0 / visits), else_=0.0)
     sort_columns = {
         Rc4SortColumn.ACTIVITY_ID: Activity.id,
-        Rc4SortColumn.ACTIVITY_NAME: Activity.name,
+        Rc4SortColumn.ACTIVITY_NAME: func.lower(Activity.name),
         Rc4SortColumn.EFFORT: effort_band,
         Rc4SortColumn.VISITS: visits,
         Rc4SortColumn.COMPLETED: completed,
@@ -244,6 +244,7 @@ def rc4_tourist_experience(
         Rc4SortColumn.ABANDONMENT: abandonment_expr,
     }
     column = sort_columns[sort]
+    primary = column.asc() if order is SortOrder.ASC else column.desc()
 
     rows_statement = _rc4_filter(
         select(
@@ -262,10 +263,10 @@ def rc4_tourist_experience(
         itinerary_id,
         group_id,
     ).order_by(
-        column.asc() if order is SortOrder.ASC else column.desc(),
+        primary.nullslast(),
         visits.desc(),
         effort_band.asc(),
-        Activity.name.asc(),
+        func.lower(Activity.name).asc(),
         Activity.id.asc(),
     )
     entries = []
@@ -363,7 +364,7 @@ def rc4_tourist_experience(
         .join(Membership, Membership.travel_group_id == TravelGroup.id)
         .join(Visit, Visit.tourist_id == Membership.tourist_id)
         .distinct()
-        .order_by(TravelGroup.name, TravelGroup.id)
+        .order_by(func.lower(TravelGroup.name), TravelGroup.id)
     )
     groups = [Rc4Group(id=group_id, name=name) for group_id, name in db.execute(groups_statement)]
     return Rc4Report(
