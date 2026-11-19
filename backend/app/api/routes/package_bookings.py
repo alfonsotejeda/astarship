@@ -27,6 +27,20 @@ def _require_tourist_row(db: Session, user: User) -> None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Tourist not found")
 
 
+def _validate_preferred_itinerary(db: Session, package_id: int, itinerary_id: int) -> None:
+    itinerary = db.get(Itinerary, itinerary_id)
+    if itinerary is None or itinerary.package_id != package_id:
+        raise HTTPException(
+            status_code=http_status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="El itinerario preferido no es de este paquete.",
+        )
+    if itinerary.status is not ItineraryStatus.APPROVED:
+        raise HTTPException(
+            status_code=http_status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="El itinerario preferido no está aprobado.",
+        )
+
+
 @router.post(
     "", response_model=BookingRead, status_code=http_status.HTTP_201_CREATED
 )
@@ -53,29 +67,32 @@ def create_booking(
         tourist_id = data.tourist_id
         if db.get(Tourist, tourist_id) is None:
             raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Tourist not found")
-        requested_start_date = None
-        preferred_itinerary_id = None
+        if data.requested_start_date is not None and data.requested_start_date < date.today():
+            raise HTTPException(
+                status_code=http_status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Elige una fecha de inicio a partir de hoy.",
+            )
+        if data.preferred_itinerary_id is not None:
+            _validate_preferred_itinerary(db, package_id, data.preferred_itinerary_id)
+        requested_start_date = data.requested_start_date
+        preferred_itinerary_id = data.preferred_itinerary_id
     else:
         _require_tourist_row(db, current_user)
+        if data.tourist_id is not None and data.tourist_id != current_user.id:
+            raise HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="No puedes reservar para otro turista.",
+            )
         if data.requested_start_date is None or data.requested_start_date < date.today():
             raise HTTPException(
                 status_code=http_status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Elige una fecha de inicio a partir de hoy.",
             )
+        if data.preferred_itinerary_id is not None:
+            _validate_preferred_itinerary(db, package_id, data.preferred_itinerary_id)
         tourist_id = current_user.id
         requested_start_date = data.requested_start_date
         preferred_itinerary_id = data.preferred_itinerary_id
-        if preferred_itinerary_id is not None:
-            itinerary = db.get(Itinerary, preferred_itinerary_id)
-            if (
-                itinerary is None
-                or itinerary.package_id != package_id
-                or itinerary.status is not ItineraryStatus.APPROVED
-            ):
-                raise HTTPException(
-                    status_code=http_status.HTTP_422_UNPROCESSABLE_CONTENT,
-                    detail="El itinerario preferido no es de este paquete.",
-                )
 
     try:
         booking_data = BookingCreate(
@@ -86,12 +103,7 @@ def create_booking(
             preferred_itinerary_id=preferred_itinerary_id,
             status=BookingStatus.PENDING,
         )
-        booking = booking_service.create_booking(
-            db,
-            booking_data,
-            current_user_id=current_user.id,
-            is_admin=current_user.role is UserRole.ADMIN,
-        )
+        booking = booking_service.create_booking(db, booking_data)
     except ValueError as exc:
         raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     return _to_read(booking)
@@ -106,22 +118,13 @@ def update_booking(
     db: Session = Depends(get_db),
 ) -> BookingRead:
     """Cancel (tourist owner) or reject (admin, with reason) a pending booking."""
-    get_approved_package(db, package_id)
-    booking = booking_service.get_booking(db, tourist_id, package_id)
-    if booking is None:
-        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Booking not found")
-    if booking.status is not BookingStatus.PENDING:
-        raise HTTPException(
-            status_code=http_status.HTTP_409_CONFLICT,
-            detail="Solo se puede cambiar una reserva pendiente.",
-        )
-
     if data.status is BookingStatus.CANCELLED:
         if current_user.role is not UserRole.TOURIST or current_user.id != tourist_id:
             raise HTTPException(
                 status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="Solo el turista cancela su reserva.",
             )
+        rejection_reason = None
     elif data.status is BookingStatus.REJECTED:
         if current_user.role is not UserRole.ADMIN:
             raise HTTPException(
@@ -133,13 +136,23 @@ def update_booking(
                 status_code=http_status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Escribe el motivo del rechazo.",
             )
+        rejection_reason = data.rejection_reason.strip()
     else:
         raise HTTPException(
             status_code=http_status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Estado no admitido.",
         )
 
-    update = BookingUpdate(status=data.status, rejection_reason=data.rejection_reason)
+    booking = booking_service.get_booking(db, tourist_id, package_id)
+    if booking is None:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Booking not found")
+    if booking.status is not BookingStatus.PENDING:
+        raise HTTPException(
+            status_code=http_status.HTTP_409_CONFLICT,
+            detail="Solo se puede cambiar una reserva pendiente.",
+        )
+
+    update = BookingUpdate(status=data.status, rejection_reason=rejection_reason)
     updated = booking_service.update_booking(db, booking, update)
     return _to_read(updated)
 
@@ -157,7 +170,6 @@ def delete_booking(
             status_code=http_status.HTTP_403_FORBIDDEN,
             detail="Solo el administrador gestiona inscripciones.",
         )
-    get_approved_package(db, package_id)
     booking = booking_service.get_booking(db, tourist_id, package_id)
     if booking is None:
         raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Booking not found")

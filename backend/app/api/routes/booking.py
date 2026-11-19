@@ -18,7 +18,7 @@ def _get_booking_or_404(db: Session, tourist_id: int, package_id: int) -> Bookin
     """Return the booking or raise a 404."""
     booking = booking_service.get_booking(db, tourist_id, package_id)
     if booking is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Booking not found")
     return booking
 
 

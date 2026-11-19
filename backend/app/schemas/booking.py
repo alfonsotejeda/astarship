@@ -1,6 +1,7 @@
 """Booking schema."""
 
 from datetime import date
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -55,7 +56,7 @@ class BookingPatch(BaseModel):
 
     model_config = {"extra": "forbid"}
 
-    status: BookingStatus = Field(
+    status: Literal[BookingStatus.CANCELLED, BookingStatus.REJECTED] = Field(
         description="Only cancelled or rejected are admitted."
     )
     rejection_reason: str | None = None
