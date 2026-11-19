@@ -256,3 +256,102 @@ def test_create_package_conflict_leaves_session_usable(client, db_session, monke
         client.post("/api/packages", json={"name": "Otro", "destination": "Lugar", "admin_id": admin_id}).status_code
         == 201
     )
+
+
+@pytest.fixture
+def categories(client):
+    """Two stored categories as returned by the API."""
+    return [
+        client.post("/api/categories/create", json={"name": n}).json()
+        for n in ("Cultura", "Aventura")
+    ]
+
+
+def _put_categories(client, package_id, category_ids):
+    return client.put(f"/api/packages/{package_id}/categories", json={"category_ids": category_ids})
+
+
+def test_package_responses_include_categories(client, admin_id):
+    created = _create_package(client, admin_id)
+
+    assert created["categories"] == []
+    assert client.get(f"/api/packages/{created['id']}").json()["categories"] == []
+    assert client.get("/api/packages").json()[0]["categories"] == []
+
+
+def test_put_package_categories_returns_the_package_with_them(client, admin_id, categories):
+    created = _create_package(client, admin_id)
+
+    response = _put_categories(client, created["id"], [c["id"] for c in categories])
+
+    assert response.status_code == 200
+    assert sorted(response.json()["categories"], key=lambda c: c["id"]) == categories
+    stored = client.get(f"/api/packages/{created['id']}").json()["categories"]
+    assert sorted(stored, key=lambda c: c["id"]) == categories
+
+
+def test_put_package_categories_sends_approved_package_back_to_pending(
+    client, admin_id, categories
+):
+    created = _create_package(client, admin_id)
+    _put_categories(client, created["id"], [categories[0]["id"]])
+    client.patch(f"/api/packages/{created['id']}", json={"status": "approved"})
+
+    response = _put_categories(client, created["id"], [c["id"] for c in categories])
+
+    assert response.json()["status"] == "pending"
+
+
+def test_put_package_categories_with_same_set_keeps_approval(client, admin_id, categories):
+    created = _create_package(client, admin_id)
+    ids = [c["id"] for c in categories]
+    _put_categories(client, created["id"], ids)
+    client.patch(f"/api/packages/{created['id']}", json={"status": "approved"})
+
+    response = _put_categories(client, created["id"], list(reversed(ids)))
+
+    assert response.json()["status"] == "approved"
+
+
+def test_put_package_categories_returns_404_when_package_missing(client):
+    response = _put_categories(client, 999999, [])
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Package not found"
+
+
+def test_put_package_categories_returns_404_when_category_missing(client, admin_id, categories):
+    created = _create_package(client, admin_id)
+
+    response = _put_categories(client, created["id"], [categories[0]["id"], 999999])
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Categories not found: [999999]"
+    assert client.get(f"/api/packages/{created['id']}").json()["categories"] == []
+
+
+def test_put_package_categories_rejects_malformed_body(client, admin_id):
+    created = _create_package(client, admin_id)
+
+    assert _put_categories(client, created["id"], "hola").status_code == 422
+    assert client.put(f"/api/packages/{created['id']}/categories", json={}).status_code == 422
+
+
+def test_put_package_categories_requires_admin(client, as_user, admin_id, categories):
+    created = _create_package(client, admin_id)
+    guide_id = client.post(
+        "/api/users",
+        json={
+            "name": "Gil",
+            "role": "guide",
+            "email": "gil@example.com",
+            "password": "x",
+            "specialty": "History",
+        },
+    ).json()["id"]
+
+    with as_user(guide_id):
+        response = _put_categories(client, created["id"], [categories[0]["id"]])
+
+    assert response.status_code == 403
+    assert client.get(f"/api/packages/{created['id']}").json()["categories"] == []
