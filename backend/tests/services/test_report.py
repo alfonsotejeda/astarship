@@ -1,5 +1,6 @@
 """Tests for the report service."""
 
+from collections import Counter
 from datetime import date
 
 import pytest
@@ -281,3 +282,34 @@ def test_rc5_is_empty_without_itineraries(db_session, itinerary_owners):
     assert report.type_chart == []
     assert report.effort_chart == []
     assert report.summary.itineraries == 0
+
+
+def test_rc5_percentages_sum_to_100_when_rounding_overflows():
+    percentages = report_service._rc5_percentages(Counter({"visita": 3, "excursion": 5, "taller": 0}))
+
+    assert percentages == [38, 62, 0]
+    assert sum(percentages) == 100
+
+
+def test_rc5_sorts_by_package_case_insensitively(db_session, itinerary_owners):
+    admin_id = package_service.get_package(db_session, itinerary_owners["package_id"]).admin_id
+    zapato_id = package_service.create_package(
+        db_session, PackageCreate(name="Zapato", destination="X", admin_id=admin_id)
+    ).id
+    alps_id = package_service.create_package(
+        db_session, PackageCreate(name="alps", destination="Y", admin_id=admin_id)
+    ).id
+    for package_id in (zapato_id, alps_id):
+        itinerary_service.create_itinerary(
+            db_session,
+            ItineraryCreate(
+                creation_date=date(2026, 1, 1),
+                activity_count=1,
+                package_id=package_id,
+                guide_id=itinerary_owners["guide_id"],
+            ),
+        )
+
+    report = report_service.rc5_compare_packages(db_session)
+
+    assert [row.package_name for row in report.rows] == ["alps", "Zapato"]

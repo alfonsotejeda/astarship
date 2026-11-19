@@ -178,17 +178,23 @@ def _rc5_quota(value: int, activity_count: int) -> int:
 
 
 def _rc5_percentages(counts: Counter[str]) -> list[int]:
-    """Return the three type shares adding up to 100, rounding the last to the remainder."""
+    """Return the three type shares adding up to 100."""
     total = sum(counts[code] for code in _RC5_TYPE_CODES)
     if total == 0:
         return [0, 0, 0]
     visita = int(counts["visita"] * 100 / total + 0.5)
     excursion = int(counts["excursion"] * 100 / total + 0.5)
-    return [visita, excursion, max(0, 100 - visita - excursion)]
+    taller = 100 - visita - excursion
+    if taller < 0:
+        excursion += taller
+        taller = 0
+    return [visita, excursion, taller]
 
 
 def _rc5_sort_key(sort: Rc5SortColumn, row: Rc5Row):
     """Return the comparable value of a row for the requested sort column."""
+    if sort is Rc5SortColumn.PACKAGE:
+        return row.package_name.casefold()
     if sort is Rc5SortColumn.STATUS:
         return row.status.value
     if sort is Rc5SortColumn.PROPORTION:
