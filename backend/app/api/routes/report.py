@@ -8,7 +8,13 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import require_role
 from app.db.session import get_db
 from app.models.user.user import UserRole
-from app.schemas.report import Rc1Report, Rc1SortColumn, SortOrder
+from app.schemas.report import (
+    Rc1Report,
+    Rc1SortColumn,
+    Rc2Report,
+    Rc2SortColumn,
+    SortOrder,
+)
 from app.services import report as report_service
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -40,6 +46,24 @@ def rc1_generated_itineraries(
 ) -> Rc1Report:
     """RC-1: itineraries generated for a package, with creator, creation date and parameters."""
     _check_date_range(date_from, date_to)
-    return report_service.rc1_generated_itineraries(
-        db, package_id, date_from, date_to, sort, order
-    )
+    return report_service.rc1_generated_itineraries(db, package_id, date_from, date_to, sort, order)
+
+
+@router.get(
+    "/rc2",
+    response_model=Rc2Report,
+    dependencies=[
+        Depends(require_role(UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.GUIDE))
+    ],
+)
+def rc2_most_used_activities(
+    package_id: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    sort: Rc2SortColumn = Rc2SortColumn.USES,
+    order: SortOrder = SortOrder.DESC,
+    db: Session = Depends(get_db),
+) -> Rc2Report:
+    """RC-2: activities most used in a package's final itineraries, by effort and category."""
+    _check_date_range(date_from, date_to)
+    return report_service.rc2_most_used_activities(db, package_id, date_from, date_to, sort, order)

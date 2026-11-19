@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Generator
 from contextlib import AbstractContextManager, contextmanager
-from datetime import date
+from datetime import date, time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,23 +11,25 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.deps.auth import get_current_user
-from app.models.activity import Activity
-from app.models.activity_type import ActivityType
-from app.models.attraction import Attraction
-from app.models.category import Category
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from app.models.activity import Activity
+from app.models.activity_type import ActivityType
+from app.models.attraction import Attraction
+from app.models.category import Category
 from app.models.status import ItineraryStatus
 from app.models.user.admin import Admin
 from app.models.user.user import User
 from app.schemas.authorization import AuthorizationUpsert
 from app.schemas.itinerary import ItineraryCreate
+from app.schemas.itinerary_composition import ItineraryCompositionCreate
 from app.schemas.package import PackageCreate
 from app.schemas.user import AdminCreate, GuideCreate
 from app.services import authorization as authorization_service
 from app.services import itinerary as itinerary_service
+from app.services import itinerary_composition as itinerary_composition_service
 from app.services import package as package_service
 from app.services import user as user_service
 
@@ -191,3 +193,85 @@ def insert_activity(db_session: Session) -> Callable[..., Activity]:
         return activity
 
     return insert
+
+
+@pytest.fixture
+def rc2_data(db_session, itinerary_owners, insert_activity) -> dict[str, object]:
+    """Activities of every effort level in approved, pending and out-of-range itineraries."""
+    peak = insert_activity("Peak")
+    water_category = Category(name="Water")
+    boat_type = ActivityType(code="boat", name="Boat")
+    db_session.add_all([water_category, boat_type])
+    db_session.flush()
+
+    forest = Activity(
+        name="Forest",
+        effort_level=2,
+        duration=30,
+        activity_type_code=peak.activity_type_code,
+        category_id=peak.category_id,
+        guide_id=peak.guide_id,
+        attraction_id=peak.attraction_id,
+    )
+    river = Activity(
+        name="River",
+        effort_level=1,
+        duration=45,
+        activity_type_code=boat_type.code,
+        category_id=water_category.id,
+        guide_id=peak.guide_id,
+        attraction_id=peak.attraction_id,
+    )
+    db_session.add_all([forest, river])
+    db_session.commit()
+
+    andes_id = itinerary_owners["package_id"]
+    admin_id = package_service.get_package(db_session, andes_id).admin_id
+    alps_id = package_service.create_package(
+        db_session, PackageCreate(name="Alps", destination="Swiss", admin_id=admin_id)
+    ).id
+
+    def add_itinerary(
+        package_id: int, created: date, status: ItineraryStatus, activity_ids: list[int]
+    ) -> int:
+        itinerary = itinerary_service.create_itinerary(
+            db_session,
+            ItineraryCreate(
+                creation_date=created,
+                activity_count=len(activity_ids),
+                package_id=package_id,
+                guide_id=itinerary_owners["guide_id"],
+            ),
+        )
+        itinerary.status = status
+        db_session.commit()
+        for order, activity_id in enumerate(activity_ids, start=1):
+            itinerary_composition_service.create_composition(
+                db_session,
+                itinerary.id,
+                activity_id,
+                ItineraryCompositionCreate(order=order, day=1, start_time=time(9, 0)),
+            )
+        return itinerary.id
+
+    first = add_itinerary(
+        andes_id, date(2026, 1, 10), ItineraryStatus.APPROVED, [peak.id, forest.id]
+    )
+    second = add_itinerary(
+        andes_id, date(2026, 2, 10), ItineraryStatus.APPROVED, [peak.id, river.id]
+    )
+    pending = add_itinerary(andes_id, date(2026, 2, 11), ItineraryStatus.PENDING, [peak.id])
+    alps = add_itinerary(alps_id, date(2026, 3, 10), ItineraryStatus.APPROVED, [river.id])
+    last = add_itinerary(
+        andes_id, date(2026, 3, 15), ItineraryStatus.APPROVED, [peak.id, forest.id]
+    )
+    return {
+        "andes_id": andes_id,
+        "alps_id": alps_id,
+        "peak_id": peak.id,
+        "forest_id": forest.id,
+        "river_id": river.id,
+        "hiking_category_id": peak.category_id,
+        "water_category_id": water_category.id,
+        "itineraries": [first, second, pending, alps, last],
+    }

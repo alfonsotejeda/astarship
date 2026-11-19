@@ -11,7 +11,7 @@ from app.schemas.itinerary import ItineraryCreate
 from app.schemas.package import PackageCreate
 from app.schemas.proportion_category import ProportionCategoryCreate
 from app.schemas.proportion_type import ProportionTypeCreate
-from app.schemas.report import Rc1SortColumn, SortOrder
+from app.schemas.report import EffortLevel, Rc1SortColumn, Rc2SortColumn, SortOrder
 from app.schemas.user import GuideCreate
 from app.services import activity_type as activity_type_service
 from app.services import category as category_service
@@ -154,3 +154,120 @@ def test_rc1_is_empty_without_itineraries(db_session):
 
     assert report.rows == []
     assert report.chart == []
+
+
+def test_rc2_counts_uses_of_approved_itineraries_only(db_session, rc2_data):
+    report = report_service.rc2_most_used_activities(db_session)
+
+    assert [(row.activity_name, row.effort, row.uses, row.percentage) for row in report.rows] == [
+        ("Peak", EffortLevel.ALTO, 3, pytest.approx(3 / 7 * 100)),
+        ("Forest", EffortLevel.MEDIO, 2, pytest.approx(2 / 7 * 100)),
+        ("River", EffortLevel.BAJO, 2, pytest.approx(2 / 7 * 100)),
+    ]
+
+
+def test_rc2_returns_activity_details(db_session, rc2_data):
+    report = report_service.rc2_most_used_activities(db_session)
+
+    peak = next(row for row in report.rows if row.activity_id == rc2_data["peak_id"])
+    river = next(row for row in report.rows if row.activity_id == rc2_data["river_id"])
+    assert (peak.activity_name, peak.activity_type_code, peak.activity_type_name) == (
+        "Peak",
+        "hike",
+        "Hike",
+    )
+    assert peak.category_id == rc2_data["hiking_category_id"]
+    assert peak.category_name == "Hiking routes"
+    assert (river.activity_type_code, river.activity_type_name, river.category_name) == (
+        "boat",
+        "Boat",
+        "Water",
+    )
+
+
+def test_rc2_sorts_by_uses_descending_by_default(db_session, rc2_data):
+    report = report_service.rc2_most_used_activities(db_session)
+
+    assert [row.activity_name for row in report.rows] == ["Peak", "Forest", "River"]
+
+
+@pytest.mark.parametrize(
+    ("sort", "order", "expected"),
+    [
+        (Rc2SortColumn.ACTIVITY_NAME, SortOrder.ASC, ["Forest", "Peak", "River"]),
+        (Rc2SortColumn.CATEGORY, SortOrder.ASC, ["Peak", "Forest", "River"]),
+        (Rc2SortColumn.ACTIVITY_TYPE, SortOrder.ASC, ["River", "Peak", "Forest"]),
+        (Rc2SortColumn.EFFORT, SortOrder.ASC, ["River", "Forest", "Peak"]),
+        (Rc2SortColumn.USES, SortOrder.ASC, ["Forest", "River", "Peak"]),
+        (Rc2SortColumn.PERCENTAGE, SortOrder.DESC, ["Peak", "Forest", "River"]),
+    ],
+)
+def test_rc2_sorts_by_the_requested_column(db_session, rc2_data, sort, order, expected):
+    report = report_service.rc2_most_used_activities(db_session, sort=sort, order=order)
+
+    assert [row.activity_name for row in report.rows] == expected
+
+
+def test_rc2_filters_by_package(db_session, rc2_data):
+    report = report_service.rc2_most_used_activities(db_session, package_id=rc2_data["andes_id"])
+
+    assert [(row.activity_name, row.uses) for row in report.rows] == [
+        ("Peak", 3),
+        ("Forest", 2),
+        ("River", 1),
+    ]
+    assert report.summary.final_itineraries == 3
+    assert report.summary.total_uses == 6
+
+
+def test_rc2_filters_by_date_range(db_session, rc2_data):
+    report = report_service.rc2_most_used_activities(
+        db_session, date_from=date(2026, 2, 1), date_to=date(2026, 2, 28)
+    )
+
+    assert [(row.activity_name, row.uses) for row in report.rows] == [
+        ("Peak", 1),
+        ("River", 1),
+    ]
+    assert report.summary.final_itineraries == 1
+
+
+def test_rc2_chart_stacks_uses_by_category_and_effort(db_session, rc2_data):
+    report = report_service.rc2_most_used_activities(db_session)
+
+    assert [(point.category, point.bajo, point.medio, point.alto) for point in report.chart] == [
+        ("Hiking routes", 0, 2, 3),
+        ("Water", 2, 0, 0),
+    ]
+
+
+def test_rc2_chart_uses_the_same_filters(db_session, rc2_data):
+    report = report_service.rc2_most_used_activities(db_session, package_id=rc2_data["alps_id"])
+
+    assert [(point.category, point.bajo, point.medio, point.alto) for point in report.chart] == [
+        ("Water", 1, 0, 0)
+    ]
+
+
+def test_rc2_summarizes_final_itineraries_and_high_effort(db_session, rc2_data):
+    report = report_service.rc2_most_used_activities(db_session)
+
+    assert report.summary.model_dump() == {
+        "final_itineraries": 4,
+        "distinct_activities": 3,
+        "total_uses": 7,
+        "high_effort_uses": 3,
+    }
+
+
+def test_rc2_is_empty_without_final_itineraries(db_session):
+    report = report_service.rc2_most_used_activities(db_session)
+
+    assert report.rows == []
+    assert report.chart == []
+    assert report.summary.model_dump() == {
+        "final_itineraries": 0,
+        "distinct_activities": 0,
+        "total_uses": 0,
+        "high_effort_uses": 0,
+    }

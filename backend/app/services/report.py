@@ -3,23 +3,32 @@
 from collections import defaultdict
 from datetime import date
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, case, func, select
 from sqlalchemy.orm import Session
 
+from app.models.activity import Activity
 from app.models.activity_type import ActivityType
 from app.models.category import Category
 from app.models.itinerary import Itinerary
+from app.models.itinerary_composition import ItineraryComposition
 from app.models.package import Package
 from app.models.proportion_category import ProportionCategory
 from app.models.proportion_type import ProportionType
+from app.models.status import ItineraryStatus
 from app.models.user.user import User
 from app.schemas.report import (
+    EffortLevel,
     Rc1CategoryParam,
     Rc1ChartPoint,
     Rc1Report,
     Rc1Row,
     Rc1SortColumn,
     Rc1TypeParam,
+    Rc2ChartPoint,
+    Rc2Report,
+    Rc2Row,
+    Rc2SortColumn,
+    Rc2Summary,
     SortOrder,
 )
 
@@ -150,3 +159,148 @@ def rc1_generated_itineraries(
         for guide_id, creator, status, count in db.execute(chart_statement)
     ]
     return Rc1Report(rows=rows, chart=chart)
+
+
+def _effort_level(level: int) -> EffortLevel:
+    """Map an activity's numeric effort level to the band shown in the report."""
+    if level <= 1:
+        return EffortLevel.BAJO
+    if level == 2:
+        return EffortLevel.MEDIO
+    return EffortLevel.ALTO
+
+
+def _rc2_sort_column(sort: Rc2SortColumn):
+    """Return the expression the RC-2 rows are sorted by."""
+    uses = func.count(ItineraryComposition.itinerary_id)
+    effort_band = case(
+        (Activity.effort_level <= 1, 1),
+        (Activity.effort_level == 2, 2),
+        else_=3,
+    )
+    columns = {
+        Rc2SortColumn.ACTIVITY_ID: Activity.id,
+        Rc2SortColumn.ACTIVITY_NAME: Activity.name,
+        Rc2SortColumn.CATEGORY_ID: Category.id,
+        Rc2SortColumn.CATEGORY: Category.name,
+        Rc2SortColumn.ACTIVITY_TYPE_CODE: ActivityType.code,
+        Rc2SortColumn.ACTIVITY_TYPE: ActivityType.name,
+        Rc2SortColumn.EFFORT: effort_band,
+        Rc2SortColumn.USES: uses,
+        # Both are the same order: every row divides its uses by the same total.
+        Rc2SortColumn.PERCENTAGE: uses,
+    }
+    return columns[sort]
+
+
+def _rc2_filter(
+    statement: Select,
+    package_id: int | None,
+    date_from: date | None,
+    date_to: date | None,
+) -> Select:
+    """Restrict an RC-2 query to final itineraries of a package and a creation date range."""
+    statement = statement.where(Itinerary.status == ItineraryStatus.APPROVED)
+    if package_id is not None:
+        statement = statement.where(Itinerary.package_id == package_id)
+    if date_from is not None:
+        statement = statement.where(Itinerary.creation_date >= date_from)
+    if date_to is not None:
+        statement = statement.where(Itinerary.creation_date <= date_to)
+    return statement
+
+
+def rc2_most_used_activities(
+    db: Session,
+    package_id: int | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    sort: Rc2SortColumn = Rc2SortColumn.USES,
+    order: SortOrder = SortOrder.DESC,
+) -> Rc2Report:
+    """RC-2: activities used in final itineraries, grouped by effort and category."""
+    column = _rc2_sort_column(sort)
+    uses_statement = _rc2_filter(
+        select(
+            Activity.id,
+            Activity.name,
+            Category.id,
+            Category.name,
+            ActivityType.code,
+            ActivityType.name,
+            Activity.effort_level,
+            func.count(ItineraryComposition.itinerary_id).label("uses"),
+        )
+        .join(Activity, Activity.id == ItineraryComposition.activity_id)
+        .join(Category, Category.id == Activity.category_id)
+        .join(ActivityType, ActivityType.code == Activity.activity_type_code)
+        .join(Itinerary, Itinerary.id == ItineraryComposition.itinerary_id)
+        .group_by(
+            Activity.id,
+            Activity.name,
+            Category.id,
+            Category.name,
+            ActivityType.code,
+            ActivityType.name,
+            Activity.effort_level,
+        ),
+        package_id,
+        date_from,
+        date_to,
+    ).order_by(
+        column.asc() if order is SortOrder.ASC else column.desc(),
+        Activity.id,
+    )
+    results = db.execute(uses_statement).all()
+
+    total_uses = sum(uses for *_, uses in results)
+    rows = [
+        Rc2Row(
+            activity_id=activity_id,
+            activity_name=activity_name,
+            category_id=category_id,
+            category_name=category_name,
+            activity_type_code=type_code,
+            activity_type_name=type_name,
+            effort=_effort_level(effort_level),
+            uses=uses,
+            percentage=(uses / total_uses * 100) if total_uses else 0.0,
+        )
+        for (
+            activity_id,
+            activity_name,
+            category_id,
+            category_name,
+            type_code,
+            type_name,
+            effort_level,
+            uses,
+        ) in results
+    ]
+
+    chart_by_category: dict[int, Rc2ChartPoint] = {}
+    for row in rows:
+        point = chart_by_category.get(row.category_id)
+        if point is None:
+            point = Rc2ChartPoint(
+                category_id=row.category_id,
+                category=row.category_name,
+                bajo=0,
+                medio=0,
+                alto=0,
+            )
+            chart_by_category[row.category_id] = point
+        setattr(point, row.effort.value, getattr(point, row.effort.value) + row.uses)
+    chart = sorted(
+        chart_by_category.values(),
+        key=lambda point: (-(point.bajo + point.medio + point.alto), point.category),
+    )
+
+    finals_statement = _rc2_filter(select(func.count(Itinerary.id)), package_id, date_from, date_to)
+    summary = Rc2Summary(
+        final_itineraries=db.scalar(finals_statement) or 0,
+        distinct_activities=len(rows),
+        total_uses=total_uses,
+        high_effort_uses=sum(row.uses for row in rows if row.effort is EffortLevel.ALTO),
+    )
+    return Rc2Report(rows=rows, chart=chart, summary=summary)
