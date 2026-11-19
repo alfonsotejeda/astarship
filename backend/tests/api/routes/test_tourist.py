@@ -56,6 +56,30 @@ def test_get_tourist_packages_returns_booked_packages(client, db_session):
     assert [p["id"] for p in response.json()] == [package["id"]]
 
 
+def test_get_tourist_packages_owner_returns_200(client, db_session, as_user):
+    tourist = _create_tourist(client, email="owner-packages@example.com")
+    package = _create_package(client)
+    _create_booking(client, db_session, tourist["id"], package["id"])
+
+    with as_user(tourist["id"]):
+        response = client.get(f"/api/tourists/{tourist['id']}/packages")
+
+    assert response.status_code == 200
+    assert [p["id"] for p in response.json()] == [package["id"]]
+
+
+def test_get_tourist_packages_other_tourist_returns_403(client, db_session, as_user):
+    owner = _create_tourist(client, email="owner-other-packages@example.com")
+    other = _create_tourist(client, email="other-packages@example.com")
+    package = _create_package(client)
+    _create_booking(client, db_session, owner["id"], package["id"])
+
+    with as_user(other["id"]):
+        response = client.get(f"/api/tourists/{owner['id']}/packages")
+
+    assert response.status_code == 403
+
+
 def test_get_tourist_packages_returns_404_when_tourist_missing(client):
     response = client.get("/api/tourists/999999/packages")
 
@@ -69,3 +93,12 @@ def test_get_tourist_packages_empty_when_no_bookings(client):
 
     assert response.status_code == 200
     assert response.json() == []
+
+
+def test_get_tourist_packages_other_tourist_missing_id_returns_403(client, as_user):
+    other = _create_tourist(client, email="other-missing@example.com")
+
+    with as_user(other["id"]):
+        response = client.get("/api/tourists/999999/packages")
+
+    assert response.status_code == 403

@@ -241,6 +241,27 @@ def test_get_package_tourists_empty_when_no_bookings(client, admin_id):
     assert response.json() == []
 
 
+def test_get_package_tourists_tourist_returns_403(client, db_session, as_user, admin_id):
+    tourist = _create_tourist(client, email="tourist-tourists@example.com", age=30)
+    package = _create_package(client, admin_id)
+    _create_booking(client, db_session, tourist["id"], package["id"])
+
+    with as_user(tourist["id"]):
+        response = client.get(f"/api/packages/{package['id']}/tourists")
+
+    assert response.status_code == 403
+
+
+def test_get_package_tourists_admin_returns_200(client, db_session, admin_id):
+    tourist = _create_tourist(client, email="admin-tourists@example.com", age=30)
+    package = _create_package(client, admin_id)
+    _create_booking(client, db_session, tourist["id"], package["id"])
+
+    response = client.get(f"/api/packages/{package['id']}/tourists")
+
+    assert response.status_code == 200
+
+
 def test_create_package_conflict_leaves_session_usable(client, db_session, monkeypatch, admin_id):
     """A 409 from a real IntegrityError must not poison the shared session."""
     from app.models.package import Package
