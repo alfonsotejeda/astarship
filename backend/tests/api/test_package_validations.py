@@ -1,5 +1,7 @@
 """Tests for the package validation routes."""
 
+import time
+
 
 def _create_user(client, role, email, **fields) -> int:
     return client.post(
@@ -47,16 +49,24 @@ def test_list_validations_returns_the_most_recent_first(client, as_user):
     with as_user(manager_id):
         first = _validate(client, package_id, "rejected", observations="Needs work")
         assert first.status_code == 201
-        # Un paquete ya validado ya no está pendiente: no admite otra validación.
+
+    assert (
+        client.patch(f"/api/packages/{package_id}", json={"status": "pending"}).status_code
+        == 200
+    )
+    time.sleep(0.01)
+
+    with as_user(manager_id):
         second = _validate(client, package_id, "approved")
-        assert second.status_code == 409
+        assert second.status_code == 201
 
     response = client.get(f"/api/packages/{package_id}/validations")
 
     assert response.status_code == 200
     body = response.json()
-    assert [v["result"] for v in body] == ["rejected"]
-    assert body[0]["observations"] == "Needs work"
+    assert [v["result"] for v in body] == ["approved", "rejected"]
+    assert body[0]["observations"] is None
+    assert body[1]["observations"] == "Needs work"
     assert body[0]["reviewer_id"] == manager_id
     assert body[0]["reviewer_name"] == "Olga"
 
@@ -118,6 +128,18 @@ def test_create_validation_rejected_without_observations_returns_422(client, as_
     assert client.get(f"/api/packages/{package_id}").json()["status"] == "pending"
 
 
+def test_create_validation_rejected_with_blank_observations_returns_422(client, as_user):
+    admin_id = _create_user(client, "admin", "ana@example.com")
+    package_id = _create_package(client, admin_id)
+    manager_id = _create_manager(client)
+
+    with as_user(manager_id):
+        response = _validate(client, package_id, "rejected", observations="   ")
+
+    assert response.status_code == 422
+    assert client.get(f"/api/packages/{package_id}").json()["status"] == "pending"
+
+
 def test_create_validation_returns_404_when_package_missing(client, as_user):
     manager_id = _create_manager(client)
 
@@ -155,7 +177,7 @@ def test_create_validation_returns_409_when_package_already_validated(client, as
     with as_user(manager_id):
         first = _validate(client, package_id, "approved")
         assert first.status_code == 201
-        # Pydantic exige observations en rejected; sin ellas sería 422 antes del servicio.
+        # Pydantic requires observations when rejected; without them it returns 422 before the service.
         second = _validate(client, package_id, "rejected", observations="Ya está validado")
 
     assert second.status_code == 409

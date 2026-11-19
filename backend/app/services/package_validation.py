@@ -1,6 +1,6 @@
 """PackageValidation service."""
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.package import Package
@@ -36,13 +36,22 @@ def create_validation(
     Both changes are committed together, so a package never changes status without a
     validation to explain it. The latest validation determines the package's status.
     """
-    if package.status is not ReviewStatus.PENDING:
+    if package.status != ReviewStatus.PENDING:
+        raise ValueError("Only pending packages can be validated")
+    new_status = _STATUS_BY_RESULT[data.result]
+    updated = db.execute(
+        update(Package)
+        .where(Package.id == package.id, Package.status == ReviewStatus.PENDING)
+        .values(status=new_status)
+    )
+    if updated.rowcount == 0:
+        db.rollback()
         raise ValueError("Only pending packages can be validated")
     validation = PackageValidation(
         package_id=package.id, manager_id=manager_id, **data.model_dump()
     )
     db.add(validation)
-    package.status = _STATUS_BY_RESULT[data.result]
     db.commit()
     db.refresh(validation)
+    db.refresh(package)
     return validation

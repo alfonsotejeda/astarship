@@ -20,7 +20,9 @@ class PackageValidationCreate(BaseModel):
 
     @model_validator(mode="after")
     def _observations_required_when_rejected(self) -> "PackageValidationCreate":
-        if self.result is ValidationResult.REJECTED and not self.observations:
+        if self.result is ValidationResult.REJECTED and (
+            not self.observations or not self.observations.strip()
+        ):
             raise ValueError("observations is required when result is rejected")
         return self
 
