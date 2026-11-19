@@ -77,19 +77,7 @@ def test_read_validates_from_orm_instance():
         status=BookingStatus.PENDING,
     )
 
-    read = BookingRead(
-        tourist_id=booking.tourist_id,
-        package_id=booking.package_id,
-        booking_date=booking.booking_date,
-        requested_start_date=booking.requested_start_date,
-        preferred_itinerary_id=booking.preferred_itinerary_id,
-        resolved_date=booking.resolved_date,
-        itinerary_id=booking.itinerary_id,
-        rejection_reason=booking.rejection_reason,
-        status=booking.status,
-        tourist_name=tourist.user.name,
-        package_name=package.name,
-    )
+    read = BookingRead.model_validate(booking)
 
     assert read.tourist_id == 1
     assert read.package_id == 2

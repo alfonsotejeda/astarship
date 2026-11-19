@@ -4,7 +4,7 @@ from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.booking import Booking
 from app.models.itinerary import Itinerary
@@ -16,7 +16,10 @@ from app.schemas.booking import BookingCreate, BookingUpdate
 
 def list_bookings(db: Session, tourist_id: int | None = None) -> list[Booking]:
     """Return all bookings, optionally filtered by tourist id."""
-    statement = select(Booking)
+    statement = select(Booking).options(
+        joinedload(Booking.tourist).joinedload(Tourist.user),
+        joinedload(Booking.package),
+    )
     if tourist_id is not None:
         statement = statement.where(Booking.tourist_id == tourist_id)
     return list(db.scalars(statement))
@@ -24,7 +27,15 @@ def list_bookings(db: Session, tourist_id: int | None = None) -> list[Booking]:
 
 def get_booking(db: Session, tourist_id: int, package_id: int) -> Booking | None:
     """Return a booking by its tourist and package ids, or None if it doesn't exist."""
-    return db.get(Booking, (tourist_id, package_id))
+    statement = (
+        select(Booking)
+        .where(Booking.tourist_id == tourist_id, Booking.package_id == package_id)
+        .options(
+            joinedload(Booking.tourist).joinedload(Tourist.user),
+            joinedload(Booking.package),
+        )
+    )
+    return db.scalars(statement).first()
 
 
 def create_booking(db: Session, data: BookingCreate) -> Booking:
@@ -125,7 +136,7 @@ def _apply_resolved_date(booking: Booking, status: BookingStatus) -> None:
     """
     if status in (BookingStatus.REJECTED, BookingStatus.CANCELLED):
         booking.resolved_date = date.today()
-    elif status is BookingStatus.PENDING:
+    elif status in (BookingStatus.PENDING, BookingStatus.ASSIGNED):
         booking.resolved_date = None
 
 

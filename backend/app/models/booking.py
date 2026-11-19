@@ -46,3 +46,11 @@ class Booking(Base):
     preferred_itinerary: Mapped["Itinerary | None"] = relationship(
         foreign_keys=[preferred_itinerary_id]
     )
+
+    @property
+    def tourist_name(self) -> str:
+        return self.tourist.user.name
+
+    @property
+    def package_name(self) -> str:
+        return self.package.name

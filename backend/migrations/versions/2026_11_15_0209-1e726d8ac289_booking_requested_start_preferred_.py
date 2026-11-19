@@ -20,7 +20,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.alter_column('bookings', 'proposed_date', new_column_name='requested_start_date')
+    op.alter_column('bookings', 'proposed_date', new_column_name='requested_start_date',
+                    existing_type=sa.Date(), existing_nullable=True)
     op.add_column(
         'bookings',
         sa.Column(
@@ -37,4 +38,5 @@ def downgrade() -> None:
     """Downgrade schema."""
     op.drop_column('bookings', 'resolved_date')
     op.drop_column('bookings', 'preferred_itinerary_id')
-    op.alter_column('bookings', 'requested_start_date', new_column_name='proposed_date')
+    op.alter_column('bookings', 'requested_start_date', new_column_name='proposed_date',
+                    existing_type=sa.Date(), existing_nullable=True)
