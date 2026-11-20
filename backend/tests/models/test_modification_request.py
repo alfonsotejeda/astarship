@@ -15,8 +15,8 @@ from app.models.user.tourist import Tourist
 from app.models.user.user import User
 
 
-def _add_assignment_and_guide(db_session) -> tuple[Assignment, Guide]:
-    itinerary = Itinerary(creation_date=date(2026, 1, 1), activity_count=1)
+def _add_assignment_and_guide(db_session, owners) -> tuple[Assignment, Guide]:
+    itinerary = Itinerary(creation_date=date(2026, 1, 1), activity_count=1, **owners)
     tourist_user = User(name="Ada", email="ada@example.com", password_hash="x")
     tourist_user.tourist = Tourist(age=30)
     admin_user = User(name="Ana", email="ana@example.com", password_hash="x")
@@ -63,8 +63,8 @@ def test_result_is_optional():
     assert not ModificationRequest.__table__.c.description.nullable
 
 
-def test_defaults_to_requested_now(db_session):
-    assignment, guide = _add_assignment_and_guide(db_session)
+def test_defaults_to_requested_now(db_session, itinerary_owners):
+    assignment, guide = _add_assignment_and_guide(db_session, itinerary_owners)
     before = datetime.now()
     modification_request = ModificationRequest(
         itinerary_id=assignment.itinerary_id,
@@ -80,8 +80,8 @@ def test_defaults_to_requested_now(db_session):
     assert modification_request.result is None
 
 
-def test_unknown_status_is_rejected(db_session):
-    assignment, guide = _add_assignment_and_guide(db_session)
+def test_unknown_status_is_rejected(db_session, itinerary_owners):
+    assignment, guide = _add_assignment_and_guide(db_session, itinerary_owners)
     db_session.add(
         ModificationRequest(
             itinerary_id=assignment.itinerary_id,

@@ -1,0 +1,52 @@
+# Secuencias de actividades de la sala, para la restriccion del ejercicio 7.
+#
+# Subconjunto de YAML que el lector soporta, y nada mas:
+#   - mapas anidados por sangria de dos espacios
+#   - listas con guion
+#   - escalares sin comillas
+#   - comentarios de linea completa o al final de una linea
+#
+# Cada paso es "componente.accion" con un argumento opcional. Los nombres validos
+# los publica CatalogoAcciones, y se comprueban al cargar el archivo: un paso que
+# no exista hace fallar la carga entera, no la actividad a mitad de camino.
+
+actividades:
+
+  noche-de-cine:
+    pasos:
+      - luces.atenuar: 15
+      - pantalla.bajar
+      - proyector.encender
+      - proyector.entrada: dvd
+      - proyector.formato: 16:9
+      - amplificador.encender
+      - amplificador.entrada: dvd
+      - amplificador.envolvente: si
+      - amplificador.volumen: 6
+      - dvd.encender
+      - dvd.reproducir: El tercer hombre
+    deshacer:
+      - dvd.detener
+      - dvd.apagar
+      - amplificador.apagar
+      - proyector.apagar
+      - pantalla.subir
+      - luces.encender
+
+  tarde-de-consola:
+    pasos:
+      - luces.atenuar: 65
+      - pantalla.bajar
+      - proyector.encender
+      - proyector.entrada: consola
+      - amplificador.encender
+      - amplificador.entrada: consola
+      - amplificador.volumen: 9
+      - consola.encender
+      - consola.juego: Celeste
+    deshacer:
+      - consola.apagar
+      - amplificador.apagar
+      - proyector.apagar
+      - pantalla.subir
+      - luces.encender

@@ -6,10 +6,12 @@ import {
   ChevronRight,
   CircleCheck,
   Clock,
+  Compass,
   Copy,
   Download,
   GripVertical,
   Info,
+  Landmark,
   Layers,
   LogOut,
   MapPin,
@@ -59,6 +61,8 @@ export const ICONS = {
   grip: GripVertical,
   copy: Copy,
   logout: LogOut,
+  landmark: Landmark,
+  compass: Compass,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

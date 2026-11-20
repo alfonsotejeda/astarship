@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.models.modification_request import ModificationRequest
 from app.models.status import AssignmentStatus, status_enum
+from app.models.visit import Visit
 
 
 class Assignment(Base):
@@ -21,7 +22,7 @@ class Assignment(Base):
     tourist_id: Mapped[int] = mapped_column(
         ForeignKey("tourists.id", ondelete="CASCADE"), primary_key=True
     )
-    assignment_date: Mapped[date] = mapped_column(default=date.today)
+    assignment_date: Mapped[date] = mapped_column(default=date.today, primary_key=True)
 
     status: Mapped[AssignmentStatus] = mapped_column(
         status_enum(AssignmentStatus), default=AssignmentStatus.ASSIGNED
@@ -31,4 +32,9 @@ class Assignment(Base):
 
     modification_requests: Mapped[list[ModificationRequest]] = relationship(
         cascade="all, delete-orphan"
+    )
+    visits: Mapped[list["Visit"]] = relationship(
+        back_populates="assignment",
+        passive_deletes=True,
+        overlaps="itinerary_composition",
     )

@@ -1,15 +1,10 @@
 export type Role = "guide" | "manager" | "tourist" | "admin";
 
-export interface PackageAuthorization {
-  packageId: number;
-  canGenerate: boolean;
-  canValidate: boolean;
-}
-
+// Package permissions are not kept here: the API applies them to what it returns
 export interface User {
+  id: number;
   name: string;
   role: Role;
-  authorizations?: PackageAuthorization[];
 }
 
 export const ROLE_LABEL: Record<Role, string> = {
@@ -19,9 +14,11 @@ export const ROLE_LABEL: Record<Role, string> = {
   admin: "Administrador",
 };
 
+export const ALL_ROLES: Role[] = ["guide", "manager", "tourist", "admin"];
+
 export const HOME_BY_ROLE: Record<Role, string> = {
-  guide: "/actividades",
-  manager: "/itinerarios",
-  tourist: "/viaje/hoy",
-  admin: "/paquetes",
+  guide: "/activities",
+  manager: "/itineraries",
+  tourist: "/trip/today",
+  admin: "/packages",
 };

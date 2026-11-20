@@ -134,13 +134,13 @@ una deducción nuestra que conviene confirmar.
 |---|---|---|---|
 | RF-19 | Revisar y aprobar o rechazar un itinerario generado, registrando **fecha de validación**, **resultado** y **observaciones**. | Jefe de operaciones | "es quien revisa y aprueba el itinerario generado" + RC-3 |
 | RF-20 | Indicar la confección de otro itinerario bajo sus propios criterios. | Jefe de operaciones | "aunque también puede indicar la confección de otro bajo sus criterios" |
-| RF-21 | Distinguir el estado de un itinerario entre **generado pendiente de validación** y **validado**. | Sistema | Derivado de RF-19 (interpretación) |
+| RF-21 | Distinguir el estado de un itinerario entre **generado pendiente de validación**, **validado** (por un guía), **aprobado** (por el jefe de operaciones) y **rechazado**. | Sistema | Derivado de RF-19 (interpretación) |
 
 ### 3.5 Asignación y recorrido
 
 | ID | Requisito | Actor | Fuente |
 |---|---|---|---|
-| RF-22 | Asignar un itinerario a un turista. | Ver [PA-1](#pa-1-el-administrador-existe-como-actor-del-sistema) | "impedir la asignación doble de itinerarios a los turistas" |
+| RF-22 | Asignar un itinerario a un turista o a todos los miembros de un grupo de viaje. | Administrador ([PA-1](#pa-1-el-administrador-existe-como-actor-del-sistema)) | "impedir la asignación doble de itinerarios a los turistas" |
 | RF-23 | Impedir la asignación doble. | Administrador | Ídem. Ver [PA-3](#pa-3-qué-significa-asignación-doble) |
 | RF-24 | Consultar los itinerarios asignados. | Turista | "los turistas podrán acceder a los itinerarios que le son asignados" |
 | RF-25 | Registrar cada **visita** de un turista a una actividad de un itinerario recorrido. | Turista / Sistema | "el sistema debe garantizar el almacenamiento de cada visita registrada ante un itinerario recorrido" |
@@ -164,9 +164,11 @@ una deducción nuestra que conviene confirmar.
 | RF-33 | Recorrer la red para **proponer alternativas** cuando una actividad no pueda realizarse en el horario previsto. | Sistema | "el sistema debe recorrer dicha red para proponer alternativas cuando una actividad no pueda realizarse en el horario previsto" |
 
 > Esta red tiene tratamiento especial: ver [RNF-02](#4-requisitos-no-funcionales).
-> Para RF-33 (recorrer la red y proponer alternativas) se propone usar **A\*** como
-> algoritmo de búsqueda de ruta. Ver [PA-10](#pa-10-algoritmo-para-recorrer-la-red-de-atracciones)
-> para la heurística y el resto de decisiones pendientes.
+> Para RF-33 (recorrer la red y proponer alternativas) se usa **Dijkstra** con peso
+> intercambiable (tiempo o costo), detrás de una interfaz **Strategy** que permite sustituir
+> el algoritmo sin tocar el servicio ni el endpoint. Ver
+> [PA-10](#pa-10-algoritmo-para-recorrer-la-red-de-atracciones), ya cerrado, para la
+> justificación.
 
 ### 3.8 Reportes y exportación
 
@@ -244,7 +246,7 @@ Decisiones ya tomadas por el equipo y aprobadas por el profesor:
 - **Base de datos:** PostgreSQL 18, con SQLAlchemy y migraciones con Alembic.
 - **Frontend:** TypeScript + React (Vite).
 - **Entorno:** Docker y Docker Compose.
-- **Despliegue:** propuesto Vercel (frontend) + Render (API). Sin cerrar.
+- **Despliegue:** Vercel (frontend), Render (API) y Neon (base de datos).
 - **Caché:** Redis, si RNF-01 lo exige.
 
 ---
@@ -252,9 +254,14 @@ Decisiones ya tomadas por el equipo y aprobadas por el profesor:
 ## 8. Puntos abiertos
 
 Decisiones que el equipo todavía no ha cerrado y que bloquean partes del modelo. **Cada
-una hay que resolverla antes de escribir los modelos ORM.**
+una hay que resolverla antes de escribir los modelos ORM.** Los puntos ya cerrados se
+conservan aquí, marcados como tales, para dejar registro de la decisión y de su motivo.
 
 ### PA-1. ¿El administrador existe como actor del sistema?
+
+> ✅ **Cerrado.** Sí: se modela como subtipo `Admin` de `User`. Crea los paquetes
+> (`Package.ID_Admin`), valida las actividades nuevas (`ActivityValidation`) y ejecuta RF-22
+> (`Assignment.ID_Admin`). Se mantiene el punto como registro de la decisión.
 
 El enunciado le atribuye dos tareas (RF-06 y RF-23) pero no dice que se almacene ningún dato
 suyo, y ninguna de las seis consultas lo menciona. El equipo decidió el 21 de septiembre
@@ -267,6 +274,10 @@ la asignación la hace el sistema, el jefe de operaciones o un guía.
 
 ### PA-2. `Usuario` frente a `Persona` en el MERX
 
+> ✅ **Cerrado.** Se mantiene `User` con especialización total y disjunta en `Admin`,
+> `Guide`, `OperationsManager` y `Tourist`. El rol es el subtipo y no hay entidad de
+> permisos (#151, #152).
+
 El profesor indicó textualmente: *"User no existe en el Merx. En el Merx lo que existe es
 Persona, porque usuario es algo propio de la aplicación y no del modelo conceptual"*. También
 dijo que los permisos no se modelan en el MERX.
@@ -278,11 +289,18 @@ lugar de especializaciones, por extensibilidad.
 
 ### PA-3. ¿Qué significa "asignación doble"?
 
+> ✅ **Cerrado.** Asignación doble es asignar a un mismo turista dos itinerarios del mismo
+> paquete. La llave de `Assignment` solo impide repetir el mismo itinerario; el resto se
+> comprueba al asignar (#52).
+
 Caben dos lecturas: que a un turista se le asigne dos veces el mismo itinerario, o que se le
 asignen itinerarios solapados en el tiempo. **El enunciado no da fechas por paquete ni por
 itinerario**, así que la segunda lectura no se puede comprobar con los datos que pide guardar.
 
 ### PA-4. ¿El itinerario se asigna al turista o al grupo de viaje?
+
+> ✅ **Cerrado.** Se asigna al turista (`Assignment`); asignarlo a un grupo equivale a
+> asignarlo a cada uno de sus miembros.
 
 El enunciado dice "los itinerarios que le son asignados" (al turista), pero también habla de
 grupos de viaje que recorren juntos. Afecta a RF-22 y a RC-6.
@@ -295,10 +313,17 @@ dejarla escrita.
 
 ### PA-6. ¿Un turista pertenece a un grupo o a varios?
 
+> ✅ **Cerrado.** A varios: `Belongs` (Tourist — TravelGroup) es N:M y genera el esquema
+> `Membership(ID_Tourist, ID_TravelGroup)`.
+
 El enunciado dice "grupo de viaje" en singular pero "paquetes turísticos" en plural. Si un
 turista puede ir en varios paquetes, ¿tiene un grupo por paquete?
 
 ### PA-7. ¿Dónde vive la autorización del guía sobre el paquete?
+
+> ✅ **Cerrado.** `Authorization` (CanGenerate, CanValidate) es dato de negocio y vive en el
+> esquema. Los permisos de aplicación son fijos por rol y se comprueban en la aplicación,
+> sin entidad propia (#25, #151).
 
 RF-09 y RN-02 son datos del negocio que el enunciado pide guardar, pero el profesor dijo que
 los permisos no se modelan en el MERX. Hay que distinguir **autorización de negocio** (qué
@@ -319,28 +344,45 @@ son analíticas. Una salida intermedia: ORM para el CRUD, SQL a mano para las se
 
 ### PA-10. Algoritmo para recorrer la red de atracciones
 
+> ✅ **Cerrado.** Se usa **Dijkstra** con peso intercambiable, y **A\*** se conserva como
+> estrategia alternativa detrás del patrón Strategy. Se mantiene el punto como registro de
+> la decisión. La justificación completa está en la sección 3.5 del informe de diseño,
+> [`docs/Informe/informe.tex`](Informe/informe.tex).
+
 RF-33 exige recorrer la red de atracciones (RF-32) para proponer alternativas cuando una
-actividad no se pueda realizar en el horario previsto. **Propuesta: algoritmo A\*** para
-calcular la ruta alternativa de menor coste entre dos atracciones.
+actividad no se pueda realizar en el horario previsto.
 
-- **Peso de la arista:** el **tiempo** de conexión (RF-32), salvo que la alternativa se
-  busque explícitamente por costo monetario; en ese caso el peso es el **costo**.
-- **Heurística:** si la atracción almacena coordenadas geográficas, distancia en línea
-  recta (Haversine) entre el nodo y el destino, dividida por una velocidad media de
-  referencia — admisible mientras el peso de arista sea tiempo. **Si el peso de arista es
-  costo monetario, no hay heurística geométrica admisible conocida; en ese caso A\* se
-  degrada a Dijkstra (heurística 0).** Hay que decidir si se implementan ambos modos o solo
-  uno.
-- **Dónde vive:** no como tabla del esquema relacional (RNF-02). Candidato a un servicio de
-  backend independiente (p. ej. `services/attraction_network/`) con el grafo en memoria o en
-  Redis, aislado del ORM — lo que también lo hace candidato a contar como uno de los dos
-  patrones de diseño exigidos por RNF-05 (p. ej. Strategy para intercambiar la heurística o
-  el algoritmo).
+- **Algoritmo: Dijkstra.** La consulta es **de uno a varios, no de uno a uno**: el endpoint
+  busca alternativas, es decir, varios candidatos desde un mismo origen. Una sola expansión
+  de Dijkstra desde la atracción de origen da el peso mínimo hacia *todas* las candidatas
+  alcanzables; con A\* habría que lanzar una búsqueda por cada candidata.
+- **Peso de la arista:** el **tiempo** de conexión (RF-32), o el **costo** cuando la
+  alternativa se busque por costo monetario. El mismo algoritmo sirve para los dos criterios
+  —solo cambia la función de peso— y admite un corte por la ventana del horario.
+- **Por qué no A\* como algoritmo base:** su ventaja depende de una heurística fuerte, y
+  Haversine dividido entre la velocidad máxima es floja en cuanto las rutas tienen rodeos,
+  esperas o transbordos. Con peso por **costo** no hay heurística geométrica admisible, así
+  que h = 0 y A\* se comporta exactamente como Dijkstra: en uno de los dos criterios del
+  sistema la diferencia desaparece. La complejidad en el peor caso es la misma,
+  O((V + E) log V), y la red de un destino turístico tiene decenas o cientos de atracciones:
+  Dijkstra la recorre entera en microsegundos, de sobra para RNF-01. A\* solo mejora en la
+  práctica y en grafos grandes, y añade supuestos que hay que mantener (coordenadas
+  correctas y una velocidad máxima bien calculada; si alguno falla, puede devolver un camino
+  no óptimo).
+- **A\* se mantiene** como estrategia intercambiable, no se descarta: tendría ventaja real
+  si la red creciera mucho y la consulta fuera punto a punto — por ejemplo, calcular la ruta
+  concreta hasta la alternativa que el turista acabe eligiendo.
+- **Dónde vive:** no como tabla del esquema relacional (RNF-02). Servicio de backend
+  independiente (p. ej. `services/attraction_network/`) con el grafo en memoria o en Redis,
+  aislado del ORM. El patrón **Strategy** que encapsula el algoritmo y su criterio cuenta
+  como uno de los dos que exige RNF-05.
+- **Coordenadas:** Dijkstra **no** necesita `Latitude` ni `Longitude`. Se mantienen en
+  Attraction por utilidad de presentación y porque A\* las requiere como estrategia
+  alternativa, pero dejan de ser una dependencia del algoritmo base (afecta a
+  [PA-8](#pa-8-atributos-que-el-enunciado-no-define)).
 
-**Queda pendiente:** confirmar con el equipo si A\* es el algoritmo a usar (frente a
-Dijkstra simple u otra alternativa), si se soportan los dos pesos (tiempo y costo) o solo
-uno, y si las coordenadas geográficas de las atracciones se guardan como atributo (afecta a
-[PA-8](#pa-8-atributos-que-el-enunciado-no-define)).
+**Queda pendiente** elegir y justificar el **segundo** patrón de diseño que exige RNF-05:
+Strategy cubre solo uno de los dos.
 
 ---
 

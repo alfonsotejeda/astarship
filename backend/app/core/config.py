@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "change-me-in-production-with-32-bytes-or-more"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
+    bcrypt_rounds: int = 12
+    error_webhook_url: str | None = None
 
 
 @lru_cache

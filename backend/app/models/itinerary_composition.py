@@ -3,9 +3,10 @@
 from datetime import time
 
 from sqlalchemy import CheckConstraint, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.visit import Visit
 
 
 class ItineraryComposition(Base):
@@ -26,3 +27,9 @@ class ItineraryComposition(Base):
     order: Mapped[int]
     day: Mapped[int]
     start_time: Mapped[time]
+
+    visits: Mapped[list["Visit"]] = relationship(
+        back_populates="itinerary_composition",
+        passive_deletes=True,
+        overlaps="assignment,visits",
+    )

@@ -16,9 +16,10 @@ from app.services import travel_group as travel_group_service
 from app.services import user as user_service
 
 
-def _create_assignment(db_session, tourist_email="ada@example.com"):
+def _create_assignment(db_session, itinerary_owners, tourist_email="ada@example.com"):
     itinerary = itinerary_service.create_itinerary(
-        db_session, ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=2)
+        db_session,
+        ItineraryCreate(creation_date=date(2026, 1, 1), activity_count=2, **itinerary_owners),
     )
     tourist = user_service.create_user(
         db_session,
@@ -57,8 +58,8 @@ def _request(db_session, assignment, guide, **fields):
     )
 
 
-def test_create_modification_request_is_born_requested_now(db_session):
-    assignment = _create_assignment(db_session)
+def test_create_modification_request_is_born_requested_now(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners)
     guide = _create_guide(db_session)
     before = datetime.now()
 
@@ -73,8 +74,8 @@ def test_create_modification_request_is_born_requested_now(db_session):
     assert before <= modification_request.request_date <= datetime.now()
 
 
-def test_create_modification_request_keeps_the_given_date(db_session):
-    assignment = _create_assignment(db_session)
+def test_create_modification_request_keeps_the_given_date(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners)
     guide = _create_guide(db_session)
 
     modification_request = _request(
@@ -84,8 +85,8 @@ def test_create_modification_request_keeps_the_given_date(db_session):
     assert modification_request.request_date == datetime(2026, 5, 1, 10, 30)
 
 
-def test_get_modification_request_by_its_key(db_session):
-    assignment = _create_assignment(db_session)
+def test_get_modification_request_by_its_key(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners)
     guide = _create_guide(db_session)
     _request(db_session, assignment, guide, request_date=datetime(2026, 5, 1, 10, 30))
 
@@ -100,7 +101,7 @@ def test_get_modification_request_by_its_key(db_session):
     assert modification_request is not None
 
 
-def test_get_modification_request_returns_none_when_missing(db_session):
+def test_get_modification_request_returns_none_when_missing(db_session, itinerary_owners):
     assert (
         modification_request_service.get_modification_request(
             db_session, 999, 999, 999, datetime(2026, 5, 1)
@@ -109,9 +110,9 @@ def test_get_modification_request_returns_none_when_missing(db_session):
     )
 
 
-def test_list_modification_requests_only_returns_the_assignment_ones(db_session):
-    assignment = _create_assignment(db_session, "ada@example.com")
-    other = _create_assignment(db_session, "bob@example.com")
+def test_list_modification_requests_only_returns_the_assignment_ones(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners, "ada@example.com")
+    other = _create_assignment(db_session, itinerary_owners, "bob@example.com")
     guide = _create_guide(db_session)
     _request(db_session, assignment, guide, request_date=datetime(2026, 5, 1))
     _request(db_session, assignment, guide, request_date=datetime(2026, 5, 2))
@@ -127,8 +128,8 @@ def test_list_modification_requests_only_returns_the_assignment_ones(db_session)
     }
 
 
-def test_list_guide_modification_requests_only_returns_the_guide_ones(db_session):
-    assignment = _create_assignment(db_session)
+def test_list_guide_modification_requests_only_returns_the_guide_ones(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners)
     gus = _create_guide(db_session, "gus@example.com")
     eva = _create_guide(db_session, "eva@example.com")
     _request(db_session, assignment, gus, request_date=datetime(2026, 5, 1))
@@ -141,8 +142,8 @@ def test_list_guide_modification_requests_only_returns_the_guide_ones(db_session
     assert [r.request_date for r in modification_requests] == [datetime(2026, 5, 1)]
 
 
-def test_default_guide_is_the_travel_group_one(db_session):
-    assignment = _create_assignment(db_session)
+def test_default_guide_is_the_travel_group_one(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners)
     guide = _create_guide(db_session)
     _add_to_group(db_session, assignment.tourist_id, guide)
     _add_to_group(db_session, assignment.tourist_id, guide)
@@ -152,22 +153,22 @@ def test_default_guide_is_the_travel_group_one(db_session):
     )
 
 
-def test_default_guide_is_none_without_travel_group(db_session):
-    assignment = _create_assignment(db_session)
+def test_default_guide_is_none_without_travel_group(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners)
 
     assert modification_request_service.default_guide_id(db_session, assignment.tourist_id) is None
 
 
-def test_default_guide_is_none_when_groups_have_different_guides(db_session):
-    assignment = _create_assignment(db_session)
+def test_default_guide_is_none_when_groups_have_different_guides(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners)
     _add_to_group(db_session, assignment.tourist_id, _create_guide(db_session, "gus@example.com"))
     _add_to_group(db_session, assignment.tourist_id, _create_guide(db_session, "eva@example.com"))
 
     assert modification_request_service.default_guide_id(db_session, assignment.tourist_id) is None
 
 
-def test_update_modification_request_resolves_it(db_session):
-    assignment = _create_assignment(db_session)
+def test_update_modification_request_resolves_it(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners)
     guide = _create_guide(db_session)
     modification_request = _request(db_session, assignment, guide)
 
@@ -182,8 +183,8 @@ def test_update_modification_request_resolves_it(db_session):
     assert modification_request.description == "Swap it"
 
 
-def test_delete_modification_request_removes_it(db_session):
-    assignment = _create_assignment(db_session)
+def test_delete_modification_request_removes_it(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners)
     guide = _create_guide(db_session)
     modification_request = _request(db_session, assignment, guide)
 
@@ -197,8 +198,8 @@ def test_delete_modification_request_removes_it(db_session):
     )
 
 
-def test_deleting_the_assignment_removes_its_modification_requests(db_session):
-    assignment = _create_assignment(db_session)
+def test_deleting_the_assignment_removes_its_modification_requests(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners)
     guide = _create_guide(db_session)
     _request(db_session, assignment, guide)
 
@@ -207,8 +208,8 @@ def test_deleting_the_assignment_removes_its_modification_requests(db_session):
     assert modification_request_service.list_guide_modification_requests(db_session, guide.id) == []
 
 
-def test_deleting_the_guide_removes_its_modification_requests(db_session):
-    assignment = _create_assignment(db_session)
+def test_deleting_the_guide_removes_its_modification_requests(db_session, itinerary_owners):
+    assignment = _create_assignment(db_session, itinerary_owners)
     guide = _create_guide(db_session)
     _request(db_session, assignment, guide)
 

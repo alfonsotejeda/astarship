@@ -93,20 +93,24 @@ type ChartTooltipProps = Partial<TooltipContentProps> & {
   format: (value: number) => string;
   xLabel?: string;
   yLabel?: string;
+  // Scatter x values are numbers; the ticks turn them into labels such as Bajo / Medio / Alto
+  xTicks?: { value: number; label: string }[];
 };
 
 // Values and labels in ink; the swatch next to them carries the series color
-function ChartTooltip({ active, payload, label, kind, format, xLabel, yLabel }: ChartTooltipProps) {
+function ChartTooltip({ active, payload, label, kind, format, xLabel, yLabel, xTicks }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
 
   if (kind === "scatter") {
     const point = payload[0].payload as ChartDatum;
+    const xValue = Number(point.x);
+    const xText = xTicks?.find(tick => tick.value === xValue)?.label ?? format(xValue);
     return (
       <div className="chart-panel__tooltip">
         {point.name && <div className="chart-panel__tooltip-title">{point.name}</div>}
         <div className="chart-panel__tooltip-row">
           <span>{xLabel ?? "X"}</span>
-          <span className="chart-panel__tooltip-value">{format(Number(point.x))}</span>
+          <span className="chart-panel__tooltip-value">{xText}</span>
         </div>
         <div className="chart-panel__tooltip-row">
           <span>{yLabel ?? "Y"}</span>
@@ -182,7 +186,9 @@ export function ChartPanel({
   const tooltip = (
     <Tooltip
       cursor={kind === "scatter" ? { stroke: "var(--line-strong)", strokeDasharray: "4 4" } : { fill: "var(--surface-sunken)" }}
-      content={props => <ChartTooltip {...props} kind={kind} format={yFormat} xLabel={xLabel} yLabel={yLabel} />}
+      content={props => (
+        <ChartTooltip {...props} kind={kind} format={yFormat} xLabel={xLabel} yLabel={yLabel} xTicks={xTicks} />
+      )}
       isAnimationActive={false}
     />
   );

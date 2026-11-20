@@ -1,0 +1,157 @@
+.itineraries__columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.itineraries__main {
+  flex: 999 1 560px;
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.itineraries__side {
+  flex: 1 1 340px;
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  max-width: 420px;
+}
+
+.itineraries__code {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.itineraries__mono {
+  font: var(--type-data);
+}
+
+.itineraries__muted {
+  margin: 0;
+  font: var(--type-small);
+  color: var(--ink-muted);
+}
+
+.itineraries__creator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.itineraries__balance {
+  font-weight: 600;
+  color: var(--ok);
+}
+
+.itineraries__balance--bad {
+  color: var(--bad);
+}
+
+.itineraries__queue {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: var(--space-4);
+}
+
+.itineraries__card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  font: var(--type-small);
+}
+
+.itineraries__params {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.itineraries__param {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.itineraries__eyebrow {
+  font: var(--type-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.itineraries__param-value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.itineraries__categories {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.itineraries__history {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.itineraries__history-item {
+  display: grid;
+  gap: var(--space-1);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.itineraries__history-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.itineraries__history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.itineraries__history-link {
+  font: var(--type-data);
+  color: var(--ink);
+}
+
+.itineraries__history-link:hover {
+  color: var(--route);
+}
+
+.itineraries__toast {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 10;
+}
+
+@media (max-width: 480px) {
+  .itineraries__side {
+    max-width: none;
+  }
+
+  /* Above the mobile tab bar */
+  .itineraries__toast {
+    left: var(--space-4);
+    right: var(--space-4);
+    bottom: 88px;
+  }
+}

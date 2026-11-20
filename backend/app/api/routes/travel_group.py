@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import require_admin
 from app.db.session import get_db
 from app.schemas.travel_group import TravelGroupCreate, TravelGroupRead, TravelGroupUpdate
 from app.services import travel_group as travel_group_service
@@ -39,7 +40,12 @@ def get_travel_group(travel_group_id: int, db: Session = Depends(get_db)) -> Tra
     return _get_travel_group_or_404(db, travel_group_id)
 
 
-@router.post("", response_model=TravelGroupRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=TravelGroupRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
+)
 def create_travel_group(
     data: TravelGroupCreate, db: Session = Depends(get_db)
 ) -> TravelGroupRead:
@@ -48,7 +54,9 @@ def create_travel_group(
     return travel_group_service.create_travel_group(db, data)
 
 
-@router.patch("/{travel_group_id}", response_model=TravelGroupRead)
+@router.patch(
+    "/{travel_group_id}", response_model=TravelGroupRead, dependencies=[Depends(require_admin)]
+)
 def update_travel_group(
     travel_group_id: int, data: TravelGroupUpdate, db: Session = Depends(get_db)
 ) -> TravelGroupRead:
@@ -59,7 +67,11 @@ def update_travel_group(
     return travel_group_service.update_travel_group(db, travel_group, data)
 
 
-@router.delete("/{travel_group_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{travel_group_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin)],
+)
 def delete_travel_group(travel_group_id: int, db: Session = Depends(get_db)) -> None:
     """Delete a travel group."""
     travel_group = _get_travel_group_or_404(db, travel_group_id)
