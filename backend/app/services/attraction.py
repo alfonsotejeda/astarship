@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.models.activity import Activity
 from app.models.attraction import Attraction
-from app.schemas.attraction import AttractionCreate, AttractionUpdate
+from app.schemas.attraction import AttractionConnection, AttractionCreate, AttractionUpdate
+from app.services.attraction_network import store as network_store
 
 
 def list_attractions(db: Session) -> list[Attraction]:
@@ -18,11 +19,31 @@ def get_attraction(db: Session, attraction_id: int) -> Attraction | None:
     return db.get(Attraction, attraction_id)
 
 
+def connections_of(db: Session, attraction_id: int) -> list[AttractionConnection]:
+    """Return the connections of an attraction in the network, quickest first."""
+    network = network_store.get_network(db)
+    connections = []
+    for edge in network.edges_from(attraction_id):
+        travel = edge.travel
+        connections.append(
+            AttractionConnection(
+                attraction_id=edge.target,
+                name=network.node(edge.target).name,
+                meters=round(travel.meters),
+                minutes=max(1, round(travel.seconds / 60)),
+                cost=round(travel.cost, 2),
+                mode=travel.mode,
+            )
+        )
+    return connections
+
+
 def create_attraction(db: Session, data: AttractionCreate) -> Attraction:
     """Create and persist a new attraction."""
     attraction = Attraction(**data.model_dump())
     db.add(attraction)
     db.commit()
+    network_store.invalidate()
     db.refresh(attraction)
     return attraction
 
@@ -32,6 +53,7 @@ def update_attraction(db: Session, attraction: Attraction, data: AttractionUpdat
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(attraction, field, value)
     db.commit()
+    network_store.invalidate()
     db.refresh(attraction)
     return attraction
 
@@ -42,6 +64,7 @@ def delete_attraction(db: Session, attraction: Attraction) -> None:
         raise ValueError("Attraction still has activities")
     db.delete(attraction)
     db.commit()
+    network_store.invalidate()
 
 
 def activities_by_attraction(db: Session, attraction_id: int) -> list[Activity]:
