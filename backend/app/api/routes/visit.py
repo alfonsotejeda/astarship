@@ -1,5 +1,7 @@
 """Visit routes."""
 
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -60,20 +62,34 @@ def list_visit_by_itinerary(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
 
 
-@router.get("/assignment_rating/{itinerary_id}/{tourist_id}", response_model=float | None)
-def get_assignment_rating(itinerary_id: int, tourist_id: int, db: Session = Depends(get_db)):
+@router.get("/by_dates/{first_date}/{second_date}", response_model=list[VisitRead]) 
+def list_by_dates(first_date: date, second_date: date, db: Session = Depends(get_db)
+                  ) -> list[VisitRead]:
+    """List the visits whose assignment date is between two dates (inclusive)."""
+    try:
+        return visit_sv.visit_between_dates(db, first_date, second_date)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)
+                            ) from error
+
+
+@router.get("/assignment_rating/{itinerary_id}/{tourist_id}/{assignment_date}",
+            response_model=float | None)
+def get_assignment_rating(  itinerary_id: int, tourist_id: int,
+                            assignment_date: date, db: Session = Depends(get_db)):
     """Average rating of the done visits of an assignment (null if there are no ratings)."""
     try:
-        return visit_sv.assignment_rating(db, itinerary_id, tourist_id)
+        return visit_sv.assignment_rating(db, itinerary_id, tourist_id, assignment_date)
     except LookupError as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=str(error)) from error
 
 
-@router.get("/assignment_progress/{itinerary_id}/{tourist_id}")
-def get_assignment_progress(itinerary_id: int, tourist_id: int, db: Session = Depends(get_db)):
+@router.get("/assignment_progress/{itinerary_id}/{tourist_id}/{assignment_date}")
+def get_assignment_progress(itinerary_id: int, tourist_id: int,
+                            assignment_date: date, db: Session = Depends(get_db)):
     """Done and skipped counts of an assignment and the activities still without a visit."""
     try:
-        return visit_sv.assignment_progress(db, itinerary_id, tourist_id)
+        return visit_sv.assignment_progress(db, itinerary_id, tourist_id, assignment_date)
     except LookupError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
 
@@ -93,37 +109,43 @@ def activity_visit_stats(db: Session = Depends(get_db)):
     return visit_sv.activity_visit_stats(db)
 
 
-@router.get("/{itinerary_id}/{tourist_id}", response_model=list[VisitRead])
-def list_visit_by_assignment(itinerary_id: int, tourist_id: int, db: Session = Depends(get_db)):
+@router.get("/{itinerary_id}/{tourist_id}/{assignment_date}", response_model=list[VisitRead])
+def list_visit_by_assignment(itinerary_id: int, tourist_id: int,
+                            assignment_date: date, db: Session = Depends(get_db)):
     """List the visits of a tourist within an itinerary assignment."""
     try:
-        return visit_sv.visit_by_assignment(db, itinerary_id, tourist_id)
+        return visit_sv.visit_by_assignment(db, itinerary_id, tourist_id, assignment_date)
     except LookupError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
 
 
-@router.get("/{itinerary_id}/{tourist_id}/{activity_id}", response_model=VisitRead)
+@router.get("/{itinerary_id}/{tourist_id}/{assignment_date}/{activity_id}",
+            response_model=VisitRead)
 def get_visit(
-    itinerary_id: int, tourist_id: int, activity_id: int, db: Session = Depends(get_db)
+    itinerary_id: int, tourist_id: int, assignment_date: date,
+    activity_id: int, db: Session = Depends(get_db)
 ) -> VisitRead:
     """Get a visit by its primary key."""
-    visit = visit_sv.get_visit(db, itinerary_id, tourist_id, activity_id)
+    visit = visit_sv.get_visit(db, itinerary_id, tourist_id, assignment_date, activity_id)
     if visit is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Visit not found")
     return visit
 
 
-@router.patch("/{itinerary_id}/{tourist_id}/{activity_id}", response_model=VisitRead)
+@router.patch("/{itinerary_id}/{tourist_id}/{assignment_date}/{activity_id}",
+            response_model=VisitRead)
 def update_visit(
     itinerary_id: int,
     tourist_id: int,
+    assignment_date: date,
     activity_id: int,
     data: VisitUpdate,
     db: Session = Depends(get_db),
 ):
     """Partially update the status, rating or comment of a visit."""
     try:
-        return visit_sv.update_visit(db, itinerary_id, tourist_id, activity_id, data)
+        return visit_sv.update_visit(db, itinerary_id, tourist_id,
+                                    assignment_date, activity_id, data)
     except LookupError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
     except ValueError as error:
@@ -131,14 +153,15 @@ def update_visit(
 
 
 @router.delete(
-    "/{itinerary_id}/{tourist_id}/{activity_id}",
+    "/{itinerary_id}/{tourist_id}/{assignment_date}/{activity_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_visit(
-    itinerary_id: int, tourist_id: int, activity_id: int, db: Session = Depends(get_db)
+    itinerary_id: int, tourist_id: int,
+    assignment_date: date, activity_id: int, db: Session = Depends(get_db)
 ) -> None:
     """Delete a visit."""
     try:
-        visit_sv.delete_visit(db, itinerary_id, tourist_id, activity_id)
+        visit_sv.delete_visit(db, itinerary_id, tourist_id, assignment_date,activity_id)
     except LookupError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error

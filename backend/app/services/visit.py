@@ -1,6 +1,8 @@
 """Visit Service."""
 
-from sqlalchemy import and_, case, func, select
+from datetime import date
+
+from sqlalchemy import and_, between, case, func, select
 from sqlalchemy.orm import Session
 
 from app.models.activity import Activity
@@ -12,11 +14,11 @@ from app.models.visit import Visit
 from app.schemas.visit import VisitCreated, VisitStatus, VisitUpdate
 
 
-def _check_assignment(db: Session, itinerary_id: int, tourist_id: int):
+def _check_assignment(db: Session, itinerary_id: int, tourist_id: int, assignment_date: date):
     """Check that the assignment exists."""
-    assignment = db.get(Assignment, (itinerary_id, tourist_id))
+    assignment = db.get(Assignment, (itinerary_id, tourist_id, assignment_date))
     if assignment is None:
-        raise LookupError(" Assignment not found")
+        raise LookupError("Assignment not found")
 
 
 def _check_itinerary_composition(db: Session, itinerary_id: int, activity_id: int):
@@ -26,20 +28,21 @@ def _check_itinerary_composition(db: Session, itinerary_id: int, activity_id: in
         raise LookupError("Itinerary Composition not found")
 
 
-
 def _check_rating(status: str, rating: int | None):
     """Ensure a completed activity has a rating."""
     if status == "done" and rating is None:
         raise ValueError("A done visit needs a rating")
 
 
-
 def create_visit(db: Session, data: VisitCreated) -> Visit:
     """Create a visit."""
-    _check_assignment(db, data.itinerary_id, data.tourist_id)
+    _check_assignment(db, data.itinerary_id, data.tourist_id, data.assignment_date)
     _check_itinerary_composition(db, data.itinerary_id, data.activity_id)
 
-    if db.get(Visit, (data.itinerary_id, data.tourist_id, data.activity_id)) is not None:
+    if (
+        db.get(Visit, (data.itinerary_id, data.tourist_id, data.assignment_date, data.activity_id))
+        is not None
+    ):
         raise ValueError("Visit already registered")  # -> Debemos de cambiar esto
     _check_rating(data.status, data.rating)
 
@@ -50,28 +53,37 @@ def create_visit(db: Session, data: VisitCreated) -> Visit:
     return visit
 
 
-def get_visit(db: Session, itinerary_id: int, tourist_id: int, activity_id: int) -> Visit | None:
+def get_visit(
+    db: Session, itinerary_id: int, tourist_id: int, assignment_date: date, activity_id: int
+) -> Visit | None:
     """Get a visit by its id."""
-    return db.get(Visit, (itinerary_id, tourist_id, activity_id))
+    return db.get(Visit, (itinerary_id, tourist_id, assignment_date, activity_id))
 
 
-
-def visit_by_assignment(db: Session, itinerary_id: int, tourist_id: int) -> list[Visit]:
+def visit_by_assignment(
+    db: Session, itinerary_id: int, tourist_id: int, assignment_date: date
+) -> list[Visit]:
     """List a tourist's visits within an itinerary assignment."""
-    _check_assignment(db, itinerary_id, tourist_id)
+    _check_assignment(db, itinerary_id, tourist_id, assignment_date)
     stmt = (
         select(Visit)
-        .where(Visit.tourist_id == tourist_id, Visit.itinerary_id == itinerary_id)
+        .where(
+            Visit.tourist_id == tourist_id,
+            Visit.itinerary_id == itinerary_id,
+            Visit.assignment_date == assignment_date,
+        )
         .order_by(Visit.activity_id)
     )
     return db.scalars(stmt).all()
 
 
 def update_visit(
-    db: Session, itinerary_id: int, tourist_id: int, activity_id: int, data: VisitUpdate
+    db: Session, itinerary_id: int,
+    tourist_id: int, assignment_date: date,
+    activity_id: int, data: VisitUpdate
 ) -> Visit:
     """Apply a partial update to a visit, keeping the done-needs-rating rule."""
-    visit = get_visit(db, itinerary_id, tourist_id, activity_id)
+    visit = get_visit(db, itinerary_id, tourist_id, assignment_date, activity_id)
     if visit is None:
         raise LookupError("Visit not found")
 
@@ -87,15 +99,15 @@ def update_visit(
     return visit
 
 
-
-def delete_visit(db: Session, itinerary_id: int, tourist_id: int, activity_id: int) -> None:
+def delete_visit(
+    db: Session, itinerary_id: int, tourist_id: int, assignment_date: date, activity_id: int
+) -> None:
     """Delete a visit."""
-    visit = get_visit(db, itinerary_id, tourist_id, activity_id)
+    visit = get_visit(db, itinerary_id, tourist_id, assignment_date, activity_id)
     if visit is None:
         raise LookupError("Visit not found")
     db.delete(visit)
     db.commit()
-
 
 
 def visit_by_activity(
@@ -108,7 +120,7 @@ def visit_by_activity(
     stmt = select(Visit).where(Visit.activity_id == activity_id)
     if status is not None:
         stmt = stmt.where(Visit.status == status)
-    stmt = stmt.order_by(Visit.itinerary_id, Visit.tourist_id)
+    stmt = stmt.order_by(Visit.itinerary_id, Visit.tourist_id, Visit.assignment_date)
     return db.scalars(stmt).all()
 
 
@@ -121,7 +133,7 @@ def visit_by_tourist(
     stmt = select(Visit).where(Visit.tourist_id == tourist_id)
     if status is not None:
         stmt = stmt.where(Visit.status == status)
-    stmt = stmt.order_by(Visit.itinerary_id, Visit.activity_id)
+    stmt = stmt.order_by(Visit.itinerary_id, Visit.assignment_date, Visit.activity_id)
     return db.scalars(stmt).all()
 
 
@@ -132,19 +144,36 @@ def visits_by_itinerary(db: Session, itinerary_id: int, status: VisitStatus | No
     stmt = select(Visit).where(Visit.itinerary_id == itinerary_id)
     if status is not None:
         stmt = stmt.where(Visit.status == status)
-    stmt = stmt.order_by(Visit.tourist_id, Visit.activity_id)
+    stmt = stmt.order_by(Visit.tourist_id, Visit.assignment_date, Visit.activity_id)
     return db.scalars(stmt).all()
 
 
+def visit_between_dates(
+    db: Session, first_assignment_date: date, second_assignment_date: date
+) -> list[Visit]:
+    """Return all visits between the specified dates."""
+    if first_assignment_date > second_assignment_date:
+        raise ValueError("The first date must be on or before the second date")
+    stmt = select(Visit).where(
+        between(Visit.assignment_date, first_assignment_date, second_assignment_date)
+    ).order_by(Visit.assignment_date, Visit.itinerary_id, Visit.tourist_id, Visit.activity_id)
+    return list(db.scalars(stmt).all())
 
-def assignment_rating(db: Session, itinerary_id: int, tourist_id: int) -> float | None:
+
+def assignment_rating(
+    db: Session, itinerary_id: int, tourist_id: int, assignment_date: date
+) -> float | None:
     """Return the average rating for a tourist's completed visits in an itinerary."""
-    _check_assignment(db, itinerary_id, tourist_id)
+    _check_assignment(db, itinerary_id, tourist_id, assignment_date)
     stmt = select(func.avg(Visit.rating)).where(
-        Visit.itinerary_id == itinerary_id, Visit.tourist_id == tourist_id, Visit.status == "done"
+        Visit.itinerary_id == itinerary_id,
+        Visit.tourist_id == tourist_id,
+        Visit.assignment_date == assignment_date,
+        Visit.status == "done",
     )
     average = db.scalar(stmt)
     return None if average is None else round(float(average), 2)
+
 
 def activity_satisfaction(db: Session, activity_id: int) -> tuple[float | None, int]:
     """Return the average rating of an activity and how many ratings it has.
@@ -159,7 +188,6 @@ def activity_satisfaction(db: Session, activity_id: int) -> tuple[float | None, 
     average, total = db.execute(stmt).one()
     rating = None if average is None else round(float(average), 2)
     return rating, total
-
 
 
 def activity_visit_stats(db: Session) -> list[dict]:
@@ -198,10 +226,10 @@ def activity_visit_stats(db: Session) -> list[dict]:
     return stats
 
 
-
-def assignment_progress(db: Session, itinerary_id: int, tourist_id: int):
+def assignment_progress(db: Session, itinerary_id: int,
+                        tourist_id: int, assignment_date: date) -> dict:
     """Return done and skipped visit counts and activity IDs with no visit."""
-    _check_assignment(db, itinerary_id, tourist_id)
+    _check_assignment(db, itinerary_id, tourist_id, assignment_date)
 
     stmt = (
         select(ItineraryComposition, Visit)
@@ -212,6 +240,7 @@ def assignment_progress(db: Session, itinerary_id: int, tourist_id: int):
                 Visit.itinerary_id == itinerary_id,
                 Visit.activity_id == ItineraryComposition.activity_id,
                 Visit.tourist_id == tourist_id,
+                Visit.assignment_date == assignment_date,
             ),
         )
         .where(ItineraryComposition.itinerary_id == itinerary_id)
