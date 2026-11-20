@@ -1,5 +1,6 @@
 """Visit schema."""
 
+from datetime import date
 from typing import Literal, Self
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -15,6 +16,7 @@ class VisitCreated(BaseModel):
     itinerary_id: int
     tourist_id: int
     activity_id: int
+    assignment_date: date
     status: VisitStatus
     comment: str | None = Field(default=None, max_length=255)
     rating: int | None = Field(default=None, ge=1, le=5)
@@ -48,6 +50,7 @@ class VisitRead(ORMSchema):
 
     itinerary_id: int
     tourist_id: int
+    assignment_date: date
     activity_id: int
     status: str
     comment: str | None

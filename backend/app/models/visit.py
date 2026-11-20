@@ -1,5 +1,5 @@
 """Visit model."""
-
+from datetime import date
 from typing import TYPE_CHECKING
 
 from sqlalchemy import CheckConstraint, ForeignKeyConstraint, String
@@ -19,6 +19,7 @@ class Visit(Base):
 
     itinerary_id: Mapped[int] = mapped_column(primary_key=True)
     tourist_id: Mapped[int] = mapped_column(primary_key=True)
+    assignment_date: Mapped[date] = mapped_column(primary_key=True)
     activity_id: Mapped[int] = mapped_column(primary_key=True)
     comment: Mapped[str | None] = mapped_column(String(255), nullable=True)
     rating: Mapped[int | None] = mapped_column(nullable=True)
@@ -26,8 +27,8 @@ class Visit(Base):
 
     __table_args__ = (
         ForeignKeyConstraint(
-            ["itinerary_id", "tourist_id"],
-            ["assignments.itinerary_id", "assignments.tourist_id"],
+            ["itinerary_id", "tourist_id", "assignment_date"],
+            ["assignments.itinerary_id", "assignments.tourist_id", "assignments.assignment_date"],
             ondelete="CASCADE",
             onupdate="CASCADE",
         ),
@@ -38,7 +39,7 @@ class Visit(Base):
             onupdate="CASCADE",
         ),
         CheckConstraint("status IN ('done', 'skipped')", name="check_visit_status"),
-        CheckConstraint("rating  BETWEEN 1 AND 5", name="check_visit_rating"),
+        CheckConstraint("rating BETWEEN 1 AND 5", name="check_visit_rating"),
         CheckConstraint(
             "status <> 'done' OR rating IS NOT NULL", name="check_visit_rating_required_if_done"
         ),
