@@ -1,6 +1,6 @@
 """ModificationRequest service."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -12,13 +12,14 @@ from app.schemas.modification_request import ModificationRequestCreate, Modifica
 
 
 def list_modification_requests(
-    db: Session, itinerary_id: int, tourist_id: int
+    db: Session, itinerary_id: int, tourist_id: int, assignment_date: date
 ) -> list[ModificationRequest]:
     """Return the modification requests of an assignment."""
     statement = select(ModificationRequest).where(
         ModificationRequest.itinerary_id == itinerary_id,
         ModificationRequest.tourist_id == tourist_id,
-    )
+        ModificationRequest.assignment_date==assignment_date,
+    ).order_by(ModificationRequest.request_date)
     return list(db.scalars(statement))
 
 
@@ -29,10 +30,11 @@ def list_guide_modification_requests(db: Session, guide_id: int) -> list[Modific
 
 
 def get_modification_request(
-    db: Session, itinerary_id: int, tourist_id: int, guide_id: int, request_date: datetime
+    db: Session, itinerary_id: int, tourist_id: int, assignment_date: date, guide_id: int,
+    request_date: datetime
 ) -> ModificationRequest | None:
     """Return a modification request by its key, or None if it doesn't exist."""
-    return db.get(ModificationRequest, (itinerary_id, tourist_id, guide_id, request_date))
+    return db.get(ModificationRequest, (itinerary_id, tourist_id, assignment_date, guide_id,  request_date))
 
 
 def default_guide_id(db: Session, tourist_id: int) -> int | None:

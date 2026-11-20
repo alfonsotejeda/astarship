@@ -1,6 +1,6 @@
 """ModificationRequest schema."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +13,8 @@ class ModificationRequestCreate(BaseModel):
 
     description: str = Field(min_length=1)
     guide_id: int | None = None
-    request_date: datetime | None = None
+    assignment_date: date
+    request_date: datetime = Field(default_factory=datetime.now)
 
 
 class ModificationRequestUpdate(BaseModel):
@@ -30,7 +31,8 @@ class ModificationRequestRead(ORMSchema):
     itinerary_id: int
     tourist_id: int
     guide_id: int
-    request_date: datetime
+    assignment_date: date
     description: str
     status: ModificationRequestStatus
     result: str | None
+    request_date: datetime
