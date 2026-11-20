@@ -218,7 +218,7 @@ function DuplicateCard({ pair, categories, isBusy, onMerge, onDismiss }: Duplica
       value: activity => activity.effort_level,
       render: activity => <EffortMeter level={toEffortLevel(activity.effort_level)} />,
     },
-    { label: "Duración", value: activity => formatDuration(activity.duration_minutes) },
+    { label: "Duración", value: activity => formatDuration(activity.duration) },
     { label: "Usos", value: activity => activity.uses },
     {
       label: "Estado",

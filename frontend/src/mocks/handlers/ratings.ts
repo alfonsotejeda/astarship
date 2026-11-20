@@ -63,7 +63,7 @@ function guideRatings(userId: number): ActivityRating[] {
           effort_level: activity.effort_level,
           rating: visit.rating as number,
           comment: visit.comment ?? null,
-          is_mine: activity.user_id === userId,
+          is_mine: activity.guide_id === userId,
         },
       ];
     });
