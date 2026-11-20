@@ -10,6 +10,7 @@ def _visit(scenario, **overrides):
     values = {
         "itinerary_id": scenario["itinerary_id"],
         "tourist_id": scenario["tourist_id"],
+        "assignment_date": scenario["assignment_date"],
         "activity_id": scenario["activity_ids"][0],
         "status": "done",
         "rating": 5,
@@ -22,10 +23,11 @@ def test_table_name():
     assert Visit.__tablename__ == "visits"
 
 
-def test_primary_key_is_itinerary_tourist_and_activity():
+def test_primary_key_includes_the_assignment_date():
     assert {c.name for c in Visit.__table__.primary_key} == {
         "itinerary_id",
         "tourist_id",
+        "assignment_date",
         "activity_id",
     }
 
@@ -38,8 +40,12 @@ def test_foreign_keys_are_the_two_composite_ones():
 
     assert fks == {
         (
-            ("itinerary_id", "tourist_id"),
-            ("assignments.itinerary_id", "assignments.tourist_id"),
+            ("itinerary_id", "tourist_id", "assignment_date"),
+            (
+                "assignments.itinerary_id",
+                "assignments.tourist_id",
+                "assignments.assignment_date",
+            ),
         ),
         (
             ("itinerary_id", "activity_id"),
@@ -55,7 +61,8 @@ def test_foreign_keys_cascade_delete_and_update():
 
 
 @pytest.mark.parametrize(
-    "column, nullable", [("status", False), ("rating", True), ("comment", True)]
+    "column, nullable",
+    [("assignment_date", False), ("status", False), ("rating", True), ("comment", True)],
 )
 def test_nullability(column, nullable):
     assert Visit.__table__.c[column].nullable is nullable
@@ -66,7 +73,7 @@ def test_a_done_visit_with_rating_is_stored(db_session, visit_scenario):
     db_session.add(visit)
     db_session.flush()
 
-    key = (visit.itinerary_id, visit.tourist_id, visit.activity_id)
+    key = (visit.itinerary_id, visit.tourist_id, visit.assignment_date, visit.activity_id)
     assert db_session.get(Visit, key) is visit
 
 
@@ -107,6 +114,7 @@ def test_relationships_point_to_the_assignment_and_the_composition(db_session, v
     db_session.flush()
 
     assert visit.assignment.tourist_id == visit_scenario["tourist_id"]
+    assert visit.assignment.assignment_date == visit_scenario["assignment_date"]
     assert visit.itinerary_composition.activity_id == visit_scenario["activity_ids"][0]
     assert visit in visit.assignment.visits
     assert visit in visit.itinerary_composition.visits
