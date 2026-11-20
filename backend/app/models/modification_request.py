@@ -1,6 +1,6 @@
 """ModificationRequest model."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import ForeignKey, ForeignKeyConstraint, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -15,14 +15,15 @@ class ModificationRequest(Base):
     __tablename__ = "modification_requests"
     __table_args__ = (
         ForeignKeyConstraint(
-            ["itinerary_id", "tourist_id"],
-            ["assignments.itinerary_id", "assignments.tourist_id"],
+            ["itinerary_id", "tourist_id", "assignment_date"],
+            ["assignments.itinerary_id", "assignments.tourist_id", "assignments.assignment_date"],
             ondelete="CASCADE",
         ),
     )
 
     itinerary_id: Mapped[int] = mapped_column(primary_key=True)
     tourist_id: Mapped[int] = mapped_column(primary_key=True)
+    assignment_date: Mapped[date] = mapped_column(primary_key=True)
     guide_id: Mapped[int] = mapped_column(
         ForeignKey("guides.id", ondelete="CASCADE"), primary_key=True
     )
