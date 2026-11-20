@@ -1,8 +1,15 @@
 """Tests for the distance and tariff of the attraction network."""
 
+import math
+
 import pytest
 
-from app.services.attraction_network.tariff import Tariff, TravelMode, distance_m
+from app.services.attraction_network.tariff import (
+    EARTH_RADIUS_M,
+    Tariff,
+    TravelMode,
+    distance_m,
+)
 
 
 def test_distance_between_the_same_point_is_zero():
@@ -19,6 +26,17 @@ def test_distance_is_symmetric():
     back = distance_m(23.1352, -82.3590, 23.1404, -82.35)
 
     assert there == pytest.approx(back)
+
+
+def test_distance_between_almost_opposite_points_is_half_the_earth():
+    # Rounding makes sqrt(h) 1.0000000000000002 for these two points, and asin fails above 1
+    half_the_earth = math.pi * EARTH_RADIUS_M
+
+    distance = distance_m(
+        65.45160237952763, -78.44521025235821, -65.45160249658095, 101.5547905576211
+    )
+
+    assert distance == pytest.approx(half_the_earth)
 
 
 def test_short_distance_is_walked_for_free_at_walking_speed():
