@@ -66,7 +66,7 @@ export function ActivityDrawer({
   const [typeCode, setTypeCode] = useState(activity?.activity_type_code ?? TYPE_OPTIONS[0].value);
   const [categoryId, setCategoryId] = useState(String(activity?.category_id ?? categories[0]?.id ?? ""));
   const [effort, setEffort] = useState(String(activity?.effort_level ?? 1));
-  const [duration, setDuration] = useState(String(activity?.duration_minutes ?? 60));
+  const [duration, setDuration] = useState(String(activity?.duration ?? 60));
   const [showErrors, setShowErrors] = useState(false);
   const [observations, setObservations] = useState("");
   const [observationsError, setObservationsError] = useState<string>();
@@ -75,7 +75,7 @@ export function ActivityDrawer({
   const isNew = activity === null;
   const isAdmin = user.role === "admin";
   // RN-01
-  const canEdit = isNew || (!isAdmin && activity.user_id === user.id);
+  const canEdit = isNew || (!isAdmin && activity.guide_id === user.id);
   const canValidate = isAdmin && activity?.status === "pending";
   const minutes = Number(duration);
   const durationError = !Number.isInteger(minutes) || minutes <= 0 ? "Escribe la duración en minutos." : undefined;
@@ -172,7 +172,7 @@ export function ActivityDrawer({
       {similar && (
         <Alert tone="warn" title="Posible duplicado">
           Ya existe «{similar.name}» en la misma atracción,{" "}
-          {similar.user_id === user.id ? "descrita por ti" : `de ${similar.author_name}`}. Revísala antes de guardar.
+          {similar.guide_id === user.id ? "descrita por ti" : `de ${similar.author_name}`}. Revísala antes de guardar.
         </Alert>
       )}
 
