@@ -5,7 +5,15 @@ from sqlalchemy.orm import Session
 
 from app.models.activity import Activity
 from app.models.attraction import Attraction
-from app.schemas.attraction import AttractionConnection, AttractionCreate, AttractionUpdate
+from app.schemas.activity import ActivityRead
+from app.schemas.attraction import (
+    AttractionConnection,
+    AttractionCreate,
+    AttractionDetail,
+    AttractionRead,
+    AttractionSummary,
+    AttractionUpdate,
+)
 from app.services.attraction_network import store as network_store
 
 
@@ -17,6 +25,27 @@ def list_attractions(db: Session) -> list[Attraction]:
 def get_attraction(db: Session, attraction_id: int) -> Attraction | None:
     """Return an attraction by id, or None if it doesn't exist."""
     return db.get(Attraction, attraction_id)
+
+
+def list_summaries(db: Session) -> list[AttractionSummary]:
+    """Return every attraction with its number of activities, ordered by id."""
+    return [
+        AttractionSummary(
+            **AttractionRead.model_validate(attraction).model_dump(), activity_count=count
+        )
+        for attraction, count in activities_count_by_attractions(db)
+    ]
+
+
+def get_detail(db: Session, attraction: Attraction) -> AttractionDetail:
+    """Return the attraction with its activities and its connections in the network."""
+    activities = activities_by_attraction(db, attraction.id)
+    return AttractionDetail(
+        **AttractionRead.model_validate(attraction).model_dump(),
+        activity_count=len(activities),
+        activities=[ActivityRead.model_validate(activity) for activity in activities],
+        connections=connections_of(db, attraction.id),
+    )
 
 
 def connections_of(db: Session, attraction_id: int) -> list[AttractionConnection]:

@@ -10,6 +10,7 @@ from app.schemas.attraction import (
     AttractionCreate,
     AttractionDetail,
     AttractionRead,
+    AttractionSummary,
     AttractionUpdate,
 )
 from app.services import attraction as attraction_service
@@ -25,10 +26,10 @@ def _get_attraction_or_404(db: Session, attraction_id: int):
     return attraction
 
 
-@router.get("", response_model=list[AttractionRead])
-def list_attractions(db: Session = Depends(get_db)) -> list[AttractionRead]:
-    """List all attractions."""
-    return attraction_service.list_attractions(db)
+@router.get("", response_model=list[AttractionSummary])
+def list_attractions(db: Session = Depends(get_db)) -> list[AttractionSummary]:
+    """List all attractions with their number of activities."""
+    return attraction_service.list_summaries(db)
 
 
 @router.get("/count_activities_by_attraction", response_model=list[tuple[AttractionRead, int]])
@@ -48,12 +49,8 @@ def get_activities_by_attraction(attraction_id: int, db: Session = Depends(get_d
 
 @router.get("/{attraction_id}", response_model=AttractionDetail)
 def get_attraction(attraction_id: int, db: Session = Depends(get_db)) -> AttractionDetail:
-    """Get a single attraction by id, with its connections in the network."""
-    attraction = AttractionRead.model_validate(_get_attraction_or_404(db, attraction_id))
-    return AttractionDetail(
-        **attraction.model_dump(),
-        connections=attraction_service.connections_of(db, attraction_id),
-    )
+    """Get a single attraction by id, with its activities and its connections in the network."""
+    return attraction_service.get_detail(db, _get_attraction_or_404(db, attraction_id))
 
 
 @router.post(
