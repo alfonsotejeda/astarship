@@ -8,7 +8,13 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import require_role
 from app.db.session import get_db
 from app.models.user.user import UserRole
-from app.schemas.report import Rc1Report, Rc1SortColumn, SortOrder
+from app.schemas.report import (
+    Rc1Report,
+    Rc1SortColumn,
+    Rc4Report,
+    Rc4SortColumn,
+    SortOrder,
+)
 from app.services import report as report_service
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -40,6 +46,22 @@ def rc1_generated_itineraries(
 ) -> Rc1Report:
     """RC-1: itineraries generated for a package, with creator, creation date and parameters."""
     _check_date_range(date_from, date_to)
-    return report_service.rc1_generated_itineraries(
-        db, package_id, date_from, date_to, sort, order
-    )
+    return report_service.rc1_generated_itineraries(db, package_id, date_from, date_to, sort, order)
+
+
+@router.get(
+    "/rc4",
+    response_model=Rc4Report,
+    dependencies=[
+        Depends(require_role(UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.GUIDE))
+    ],
+)
+def rc4_tourist_experience(
+    itinerary_id: int | None = None,
+    group_id: int | None = None,
+    sort: Rc4SortColumn = Rc4SortColumn.EFFORT,
+    order: SortOrder = SortOrder.ASC,
+    db: Session = Depends(get_db),
+) -> Rc4Report:
+    """RC-4: tourist experience of an itinerary's activities, by effort level."""
+    return report_service.rc4_tourist_experience(db, itinerary_id, group_id, sort, order)

@@ -11,7 +11,7 @@ from app.schemas.itinerary import ItineraryCreate
 from app.schemas.package import PackageCreate
 from app.schemas.proportion_category import ProportionCategoryCreate
 from app.schemas.proportion_type import ProportionTypeCreate
-from app.schemas.report import Rc1SortColumn, SortOrder
+from app.schemas.report import EffortLevel, Rc1SortColumn, Rc4SortColumn, SortOrder
 from app.schemas.user import GuideCreate
 from app.services import activity_type as activity_type_service
 from app.services import category as category_service
@@ -154,3 +154,294 @@ def test_rc1_is_empty_without_itineraries(db_session):
 
     assert report.rows == []
     assert report.chart == []
+
+
+def test_rc4_groups_visits_by_activity_with_experience_rates(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(db_session)
+
+    assert [(row.id, row.effort, row.visits) for row in report.rows] == [
+        (rc4_data["activities"]["Canyon"], EffortLevel.BAJO, 3),
+        (rc4_data["activities"]["Museum"], EffortLevel.MEDIO, 3),
+        (rc4_data["activities"]["Peak"], EffortLevel.ALTO, 2),
+    ]
+    canyon, museum, peak = report.rows
+    assert (canyon.completed, canyon.rating, canyon.satisfaction, canyon.abandonment) == (
+        3,
+        pytest.approx(14 / 3),
+        pytest.approx(100),
+        0,
+    )
+    assert (museum.completed, museum.rating, museum.satisfaction, museum.abandonment) == (
+        1,
+        3,
+        0,
+        pytest.approx(200 / 3),
+    )
+    assert (peak.completed, peak.rating, peak.satisfaction, peak.abandonment) == (
+        1,
+        2,
+        0,
+        50,
+    )
+
+
+def test_rc4_chart_has_one_point_per_effort_band(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(db_session)
+
+    assert [(point.effort, point.label) for point in report.chart] == [
+        (EffortLevel.BAJO, "Bajo"),
+        (EffortLevel.MEDIO, "Medio"),
+        (EffortLevel.ALTO, "Alto"),
+    ]
+    assert (report.chart[0].satisfaction, report.chart[0].abandonment) == (
+        pytest.approx(100),
+        0,
+    )
+    assert (report.chart[1].satisfaction, report.chart[1].abandonment) == (
+        0,
+        pytest.approx(200 / 3),
+    )
+    assert (report.chart[2].satisfaction, report.chart[2].abandonment) == (0, 50)
+
+
+def test_rc4_summary_totals_the_whole_report(db_session, rc4_data):
+    summary = report_service.rc4_tourist_experience(db_session).summary
+
+    assert (summary.visits, summary.completed, summary.skipped, summary.rated) == (8, 5, 3, 5)
+    assert summary.tourists == 3
+    assert summary.rating == pytest.approx(19 / 5)
+    assert summary.satisfaction == pytest.approx(3 / 8 * 100)
+    assert summary.abandonment == pytest.approx(3 / 8 * 100)
+
+
+def test_rc4_returns_filter_options(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(db_session)
+
+    assert [(item.id, item.package_name) for item in report.itineraries] == [
+        (rc4_data["itineraries"][1], "Andes"),
+        (rc4_data["itineraries"][0], "Andes"),
+    ]
+    assert [(item.id, item.name) for item in report.groups] == [
+        (rc4_data["groups"]["alpha"], "Alpha"),
+        (rc4_data["groups"]["beta"], "Beta"),
+    ]
+
+
+def test_rc4_filters_by_itinerary(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(
+        db_session, itinerary_id=rc4_data["itineraries"][0]
+    )
+
+    assert [row.visits for row in report.rows] == [2, 2, 2]
+    assert report.summary.visits == 6
+    assert report.summary.tourists == 2
+
+
+def test_rc4_filters_by_group(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(db_session, group_id=rc4_data["groups"]["beta"])
+
+    assert [(row.id, row.visits) for row in report.rows] == [
+        (rc4_data["activities"]["Canyon"], 1),
+        (rc4_data["activities"]["Museum"], 1),
+    ]
+    assert report.summary.tourists == 1
+
+
+def test_rc4_combines_both_filters(db_session, rc4_data):
+    report = report_service.rc4_tourist_experience(
+        db_session,
+        itinerary_id=rc4_data["itineraries"][0],
+        group_id=rc4_data["groups"]["beta"],
+    )
+
+    assert report.rows == []
+    assert report.summary.visits == 0
+    assert report.summary.tourists == 0
+
+
+@pytest.mark.parametrize(
+    ("sort", "order", "expected"),
+    [
+        (Rc4SortColumn.ACTIVITY_ID, SortOrder.DESC, ["Peak", "Museum", "Canyon"]),
+        (Rc4SortColumn.ACTIVITY_NAME, SortOrder.DESC, ["Peak", "Museum", "Canyon"]),
+        (Rc4SortColumn.EFFORT, SortOrder.DESC, ["Peak", "Museum", "Canyon"]),
+        (Rc4SortColumn.VISITS, SortOrder.ASC, ["Peak", "Canyon", "Museum"]),
+        (Rc4SortColumn.COMPLETED, SortOrder.DESC, ["Canyon", "Museum", "Peak"]),
+        (Rc4SortColumn.RATING, SortOrder.ASC, ["Peak", "Museum", "Canyon"]),
+        (Rc4SortColumn.SATISFACTION, SortOrder.DESC, ["Canyon", "Museum", "Peak"]),
+        (Rc4SortColumn.ABANDONMENT, SortOrder.DESC, ["Museum", "Peak", "Canyon"]),
+    ],
+)
+def test_rc4_sorts_by_any_column(db_session, rc4_data, sort, order, expected):
+    by_name = {name: activity_id for name, activity_id in rc4_data["activities"].items()}
+
+    report = report_service.rc4_tourist_experience(db_session, sort=sort, order=order)
+
+    assert [row.id for row in report.rows] == [by_name[name] for name in expected]
+
+
+def test_rc4_is_empty_without_visits(db_session, itinerary_owners):
+    report = report_service.rc4_tourist_experience(db_session)
+
+    assert report.rows == []
+    assert [point.label for point in report.chart] == ["Bajo", "Medio", "Alto"]
+    assert all(point.satisfaction == point.abandonment == 0 for point in report.chart)
+    assert (report.summary.visits, report.summary.tourists, report.summary.rating) == (0, 0, None)
+    assert report.itineraries == []
+    assert report.groups == []
+
+
+def test_rc4_sorts_rating_desc_with_nulls_last(db_session, rc4_data):
+    from datetime import time
+
+    from app.models.activity import Activity
+    from app.models.itinerary_composition import ItineraryComposition
+    from app.models.status import VisitStatus
+    from app.models.visit import Visit
+
+    ref = db_session.get(Activity, rc4_data["activities"]["Peak"])
+    unrated = Activity(
+        name="Anchor",
+        effort_level=1,
+        duration=60,
+        activity_type_code=ref.activity_type_code,
+        category_id=ref.category_id,
+        guide_id=ref.guide_id,
+        attraction_id=ref.attraction_id,
+    )
+    db_session.add(unrated)
+    db_session.flush()
+    db_session.add(
+        ItineraryComposition(
+            itinerary_id=rc4_data["itineraries"][0],
+            activity_id=unrated.id,
+            order=10,
+            day=1,
+            start_time=time(12, 0),
+        )
+    )
+    db_session.flush()
+    db_session.add(
+        Visit(
+            itinerary_id=rc4_data["itineraries"][0],
+            tourist_id=rc4_data["tourists"]["Ada"],
+            activity_id=unrated.id,
+            status=VisitStatus.SKIPPED,
+        )
+    )
+    db_session.commit()
+
+    report = report_service.rc4_tourist_experience(
+        db_session, sort=Rc4SortColumn.RATING, order=SortOrder.DESC
+    )
+
+    assert report.rows[-1].activity_name == "Anchor"
+    assert report.rows[-1].rating is None
+    assert all(row.rating is not None for row in report.rows[:-1])
+
+
+def test_rc4_sorts_activity_name_case_insensitively(db_session, rc4_data):
+    from datetime import time
+
+    from app.models.activity import Activity
+    from app.models.itinerary_composition import ItineraryComposition
+    from app.models.status import VisitStatus
+    from app.models.visit import Visit
+
+    ref = db_session.get(Activity, rc4_data["activities"]["Peak"])
+    for index, name in enumerate(("albatross", "Bravo"), start=20):
+        activity = Activity(
+            name=name,
+            effort_level=1,
+            duration=60,
+            activity_type_code=ref.activity_type_code,
+            category_id=ref.category_id,
+            guide_id=ref.guide_id,
+            attraction_id=ref.attraction_id,
+        )
+        db_session.add(activity)
+        db_session.flush()
+        db_session.add(
+            ItineraryComposition(
+                itinerary_id=rc4_data["itineraries"][0],
+                activity_id=activity.id,
+                order=index,
+                day=1,
+                start_time=time(12, index),
+            )
+        )
+        db_session.flush()
+        db_session.add(
+            Visit(
+                itinerary_id=rc4_data["itineraries"][0],
+                tourist_id=rc4_data["tourists"]["Ada"],
+                activity_id=activity.id,
+                status=VisitStatus.DONE,
+                rating=3,
+            )
+        )
+    db_session.commit()
+
+    report = report_service.rc4_tourist_experience(
+        db_session, sort=Rc4SortColumn.ACTIVITY_NAME, order=SortOrder.ASC
+    )
+
+    names = [row.activity_name for row in report.rows]
+    assert names.index("albatross") < names.index("Bravo")
+
+
+def test_rc4_sorts_group_options_case_insensitively(db_session, rc4_data, itinerary_owners):
+    from app.models.assignment import Assignment
+    from app.models.membership import Membership
+    from app.models.status import VisitStatus
+    from app.models.travel_group import TravelGroup
+    from app.models.visit import Visit
+    from app.schemas.user import TouristCreate
+
+    admin_id = package_service.get_package(db_session, itinerary_owners["package_id"]).admin_id
+    guide_id = itinerary_owners["guide_id"]
+    group = TravelGroup(name="aardvark", guide_id=guide_id)
+    db_session.add(group)
+    db_session.flush()
+    tourist = user_service.create_user(
+        db_session,
+        TouristCreate(
+            name="Zoe",
+            role="tourist",
+            email="zoe-rc4@example.com",
+            password="x",
+            age=29,
+        ),
+    )
+    db_session.add(Membership(tourist_id=tourist.id, travel_group_id=group.id))
+    db_session.add(
+        Assignment(
+            itinerary_id=rc4_data["itineraries"][0], tourist_id=tourist.id, admin_id=admin_id
+        )
+    )
+    db_session.add(
+        Visit(
+            itinerary_id=rc4_data["itineraries"][0],
+            tourist_id=tourist.id,
+            activity_id=rc4_data["activities"]["Canyon"],
+            status=VisitStatus.DONE,
+            rating=4,
+        )
+    )
+    db_session.commit()
+
+    report = report_service.rc4_tourist_experience(db_session)
+
+    names = [group.name for group in report.groups]
+    assert names.index("aardvark") < names.index("Alpha")
+
+
+def test_rc4_group_options_query_is_valid_for_postgresql():
+    """DISTINCT with an ORDER BY expression outside the select list fails on PostgreSQL."""
+    from sqlalchemy.dialects import postgresql
+
+    sql = str(report_service._rc4_group_options_statement().compile(dialect=postgresql.dialect()))
+
+    assert "GROUP BY" in sql
+    assert "DISTINCT" not in sql
+    assert "ORDER BY lower(" in sql
