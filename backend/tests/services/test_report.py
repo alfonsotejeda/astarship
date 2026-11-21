@@ -434,3 +434,14 @@ def test_rc4_sorts_group_options_case_insensitively(db_session, rc4_data, itiner
 
     names = [group.name for group in report.groups]
     assert names.index("aardvark") < names.index("Alpha")
+
+
+def test_rc4_group_options_query_is_valid_for_postgresql():
+    """DISTINCT with an ORDER BY expression outside the select list fails on PostgreSQL."""
+    from sqlalchemy.dialects import postgresql
+
+    sql = str(report_service._rc4_group_options_statement().compile(dialect=postgresql.dialect()))
+
+    assert "GROUP BY" in sql
+    assert "DISTINCT" not in sql
+    assert "ORDER BY lower(" in sql
