@@ -3,11 +3,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.deps.auth import require_admin
 from app.db.session import get_db
+from app.models.user.user import User
+from app.schemas.activity import ActivityRead
 from app.schemas.activity_validation import ActivityValidationCreate, ActivityValidationRead
 from app.services import activity as activity_service
 from app.services import activity_validation as validation_service
-from app.services import user as user_service
 
 router = APIRouter(
     prefix="/activities/{activity_id}/validations", tags=["activity-validations"]
@@ -31,12 +33,14 @@ def list_validations(
     return validation_service.list_validations(db, activity_id)
 
 
-@router.post("", response_model=ActivityValidationRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ActivityRead, status_code=status.HTTP_201_CREATED)
 def create_validation(
-    activity_id: int, data: ActivityValidationCreate, db: Session = Depends(get_db)
-) -> ActivityValidationRead:
-    """Validate an activity; its status becomes approved or rejected."""
+    activity_id: int,
+    data: ActivityValidationCreate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+) -> ActivityRead:
+    """Validate an activity as the logged-in admin and return it with its new status."""
     activity = _get_activity_or_404(db, activity_id)
-    if user_service.get_admin(db, data.admin_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
-    return validation_service.create_validation(db, activity, data)
+    validation_service.create_validation(db, activity, admin.id, data)
+    return activity

@@ -33,14 +33,14 @@ def admin_has_validations(db: Session, admin_id: int) -> bool:
 
 
 def create_validation(
-    db: Session, activity: Activity, data: ActivityValidationCreate
+    db: Session, activity: Activity, admin_id: int, data: ActivityValidationCreate
 ) -> ActivityValidation:
-    """Record a validation and move the activity to the status its result decides.
+    """Record the admin's validation and move the activity to the status its result decides.
 
     Both changes are committed together, so an activity never changes status without a
     validation to explain it. The latest validation determines the activity's status.
     """
-    validation = ActivityValidation(activity_id=activity.id, **data.model_dump())
+    validation = ActivityValidation(activity_id=activity.id, admin_id=admin_id, **data.model_dump())
     db.add(validation)
     activity.status = _STATUS_BY_RESULT[data.result]
     db.commit()

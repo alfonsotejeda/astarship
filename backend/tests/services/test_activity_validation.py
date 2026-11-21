@@ -17,7 +17,8 @@ def _validate(db_session, activity, admin, result=ValidationResult.APPROVED, **f
     return validation_service.create_validation(
         db_session,
         activity,
-        ActivityValidationCreate(admin_id=admin.id, result=result, **fields),
+        admin.id,
+        ActivityValidationCreate(result=result, **fields),
     )
 
 

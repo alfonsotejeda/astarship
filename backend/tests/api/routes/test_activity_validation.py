@@ -1,91 +1,103 @@
 """Tests for the activity validation routes."""
 
 
-def _create_admin(client, email="ana@example.com") -> int:
+def _create_admin(client, email="ana@example.com", name="Ana") -> int:
     return client.post(
         "/api/users",
-        json={"name": "Ana", "role": "admin", "email": email, "password": "x"},
+        json={"name": name, "role": "admin", "email": email, "password": "x"},
     ).json()["id"]
 
 
-def _validate(client, activity_id, admin_id, result="approved", **fields):
-    return client.post(
-        f"/api/activities/{activity_id}/validations",
-        json={"admin_id": admin_id, "result": result, **fields},
-    )
+def _validate(client, as_user, activity_id, reviewer_id, result="approved", **fields):
+    with as_user(reviewer_id):
+        return client.post(
+            f"/api/activities/{activity_id}/validations", json={"result": result, **fields}
+        )
 
 
-def test_create_validation_returns_201(client, insert_activity):
+def test_create_validation_returns_the_reviewed_activity(client, as_user, insert_activity):
     activity_id = insert_activity().id
     admin_id = _create_admin(client)
 
-    response = _validate(client, activity_id, admin_id, observations="Not a duplicate")
+    response = _validate(client, as_user, activity_id, admin_id, observations="Not a duplicate")
 
     assert response.status_code == 201
     body = response.json()
-    assert body["activity_id"] == activity_id
-    assert body["admin_id"] == admin_id
-    assert body["result"] == "approved"
-    assert body["observations"] == "Not a duplicate"
-    assert body["validation_date"]
+    assert body["id"] == activity_id
+    assert body["status"] == "approved"
+    assert body["last_validation"]["reviewer_name"] == "Ana"
+    assert body["last_validation"]["result"] == "approved"
+    assert body["last_validation"]["observations"] == "Not a duplicate"
 
 
-def test_create_validation_observations_are_optional(client, insert_activity):
+def test_create_validation_observations_are_optional(client, as_user, insert_activity):
     activity_id = insert_activity().id
     admin_id = _create_admin(client)
 
-    response = _validate(client, activity_id, admin_id)
+    response = _validate(client, as_user, activity_id, admin_id)
 
     assert response.status_code == 201
-    assert response.json()["observations"] is None
+    assert response.json()["last_validation"]["observations"] is None
 
 
-def test_approving_sets_the_activity_status_to_approved(client, insert_activity):
+def test_validation_is_recorded_for_the_logged_in_admin(client, as_user, insert_activity):
+    activity_id = insert_activity().id
+    ana = _create_admin(client)
+    bea = _create_admin(client, email="bea@example.com", name="Bea")
+
+    # Ana tries to sign the review as Bea: the admin in the body is ignored
+    response = _validate(client, as_user, activity_id, ana, admin_id=bea)
+
+    assert response.json()["last_validation"]["reviewer_name"] == "Ana"
+
+
+def test_approving_sets_the_activity_status_to_approved(client, as_user, insert_activity):
     activity_id = insert_activity().id
     admin_id = _create_admin(client)
 
-    _validate(client, activity_id, admin_id, "approved")
+    _validate(client, as_user, activity_id, admin_id, "approved")
 
     assert client.get(f"/api/activities/{activity_id}").json()["status"] == "approved"
 
 
-def test_rejecting_sets_the_activity_status_to_rejected(client, insert_activity):
+def test_rejecting_sets_the_activity_status_to_rejected(client, as_user, insert_activity):
     activity_id = insert_activity().id
     admin_id = _create_admin(client)
 
-    _validate(client, activity_id, admin_id, "rejected", observations="Duplicate of #3")
+    _validate(client, as_user, activity_id, admin_id, "rejected", observations="Duplicate of #3")
 
     assert client.get(f"/api/activities/{activity_id}").json()["status"] == "rejected"
 
 
-def test_latest_validation_decides_the_activity_status(client, insert_activity):
+def test_latest_validation_decides_the_activity_status(client, as_user, insert_activity):
     activity_id = insert_activity().id
     admin_id = _create_admin(client)
-    _validate(client, activity_id, admin_id, "rejected")
+    _validate(client, as_user, activity_id, admin_id, "rejected")
 
-    _validate(client, activity_id, admin_id, "approved")
+    _validate(client, as_user, activity_id, admin_id, "approved")
 
     assert client.get(f"/api/activities/{activity_id}").json()["status"] == "approved"
 
 
-def test_create_validation_returns_404_when_activity_missing(client):
+def test_create_validation_returns_404_when_activity_missing(client, as_user):
     admin_id = _create_admin(client)
 
-    response = _validate(client, 999999, admin_id)
+    response = _validate(client, as_user, 999999, admin_id)
 
     assert response.status_code == 404
 
 
-def test_create_validation_returns_404_when_admin_missing(client, insert_activity):
+def test_create_validation_returns_401_without_login(anonymous_client, insert_activity):
     activity_id = insert_activity().id
 
-    response = _validate(client, activity_id, 999999)
+    response = anonymous_client.post(
+        f"/api/activities/{activity_id}/validations", json={"result": "approved"}
+    )
 
-    assert response.status_code == 404
-    assert client.get(f"/api/activities/{activity_id}").json()["status"] == "pending"
+    assert response.status_code == 401
 
 
-def test_create_validation_returns_404_when_user_is_not_an_admin(client, insert_activity):
+def test_create_validation_returns_403_when_user_is_not_an_admin(client, as_user, insert_activity):
     activity_id = insert_activity().id
     tourist_id = client.post(
         "/api/users",
@@ -98,16 +110,17 @@ def test_create_validation_returns_404_when_user_is_not_an_admin(client, insert_
         },
     ).json()["id"]
 
-    response = _validate(client, activity_id, tourist_id)
+    response = _validate(client, as_user, activity_id, tourist_id)
 
-    assert response.status_code == 404
+    assert response.status_code == 403
+    assert client.get(f"/api/activities/{activity_id}").json()["status"] == "pending"
 
 
-def test_create_validation_returns_422_for_unknown_result(client, insert_activity):
+def test_create_validation_returns_422_for_unknown_result(client, as_user, insert_activity):
     activity_id = insert_activity().id
     admin_id = _create_admin(client)
 
-    response = _validate(client, activity_id, admin_id, "pending")
+    response = _validate(client, as_user, activity_id, admin_id, "pending")
 
     assert response.status_code == 422
     assert client.get(f"/api/activities/{activity_id}").json()["status"] == "pending"
@@ -122,11 +135,11 @@ def test_list_validations_returns_empty_list_for_a_new_activity(client, insert_a
     assert response.json() == []
 
 
-def test_list_validations_returns_the_most_recent_first(client, insert_activity):
+def test_list_validations_returns_the_most_recent_first(client, as_user, insert_activity):
     activity_id = insert_activity().id
     admin_id = _create_admin(client)
-    _validate(client, activity_id, admin_id, "rejected")
-    _validate(client, activity_id, admin_id, "approved")
+    _validate(client, as_user, activity_id, admin_id, "rejected")
+    _validate(client, as_user, activity_id, admin_id, "approved")
 
     response = client.get(f"/api/activities/{activity_id}/validations")
 
@@ -134,12 +147,12 @@ def test_list_validations_returns_the_most_recent_first(client, insert_activity)
     assert [v["result"] for v in response.json()] == ["approved", "rejected"]
 
 
-def test_list_validations_only_returns_those_of_the_activity(client, insert_activity):
+def test_list_validations_only_returns_those_of_the_activity(client, as_user, insert_activity):
     first = insert_activity("Hiking").id
     second = insert_activity("Museum").id
     admin_id = _create_admin(client)
-    _validate(client, first, admin_id)
-    _validate(client, second, admin_id, "rejected")
+    _validate(client, as_user, first, admin_id)
+    _validate(client, as_user, second, admin_id, "rejected")
 
     response = client.get(f"/api/activities/{first}/validations")
 
@@ -152,10 +165,10 @@ def test_list_validations_returns_404_when_activity_missing(client):
     assert response.status_code == 404
 
 
-def test_deleting_an_activity_removes_its_validations(client, insert_activity):
+def test_deleting_an_activity_removes_its_validations(client, as_user, insert_activity):
     activity_id = insert_activity().id
     admin_id = _create_admin(client)
-    _validate(client, activity_id, admin_id)
+    _validate(client, as_user, activity_id, admin_id)
 
     assert client.delete(f"/api/activities/{activity_id}").status_code == 204
     assert client.delete(f"/api/users/{admin_id}").status_code == 204

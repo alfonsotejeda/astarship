@@ -121,7 +121,7 @@ def test_create_composition_returns_409_when_activity_is_pending(
 
 
 def test_create_composition_returns_409_when_activity_is_rejected(
-    client, create_itinerary, create_activity
+    client, as_user, create_itinerary, create_activity
 ):
     itinerary_id = create_itinerary()
     activity_id = create_activity(approved=False)
@@ -129,10 +129,8 @@ def test_create_composition_returns_409_when_activity_is_rejected(
         "/api/users",
         json={"name": "Ana", "role": "admin", "email": "ana@example.com", "password": "x"},
     ).json()["id"]
-    client.post(
-        f"/api/activities/{activity_id}/validations",
-        json={"admin_id": admin_id, "result": "rejected"},
-    )
+    with as_user(admin_id):
+        client.post(f"/api/activities/{activity_id}/validations", json={"result": "rejected"})
 
     response = client.post(
         f"/api/itineraries/{itinerary_id}/activities/{activity_id}", json=COMPOSITION

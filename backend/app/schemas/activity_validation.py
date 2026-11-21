@@ -9,9 +9,8 @@ from app.schemas.base import ORMSchema
 
 
 class ActivityValidationCreate(BaseModel):
-    """Fields required to validate an activity; the date is set by the server."""
+    """Fields required to validate an activity; the admin and the date are set by the server."""
 
-    admin_id: int
     result: ValidationResult
     observations: str | None = None
 

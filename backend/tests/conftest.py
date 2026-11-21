@@ -134,7 +134,7 @@ def itinerary_owners(db_session: Session) -> dict[str, int]:
 
 
 @pytest.fixture
-def approve_activity(client: TestClient):
+def approve_activity(client: TestClient, as_user):
     """Return a function that approves an activity through the validation endpoint."""
     reviewer: dict[str, int] = {}
 
@@ -149,10 +149,10 @@ def approve_activity(client: TestClient):
                     "password": "x",
                 },
             ).json()["id"]
-        response = client.post(
-            f"/api/activities/{activity_id}/validations",
-            json={"admin_id": reviewer["id"], "result": "approved"},
-        )
+        with as_user(reviewer["id"]):
+            response = client.post(
+                f"/api/activities/{activity_id}/validations", json={"result": "approved"}
+            )
         assert response.status_code == 201
 
     return approve
