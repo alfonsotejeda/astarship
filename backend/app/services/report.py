@@ -213,6 +213,17 @@ def _rc4_filter(
     return statement
 
 
+def _rc4_group_options_statement() -> Select:
+    """Build the group options with GROUP BY so PostgreSQL accepts the case-insensitive ORDER BY."""
+    return (
+        select(TravelGroup.id, TravelGroup.name)
+        .join(Membership, Membership.travel_group_id == TravelGroup.id)
+        .join(Visit, Visit.tourist_id == Membership.tourist_id)
+        .group_by(TravelGroup.id, TravelGroup.name)
+        .order_by(func.lower(TravelGroup.name), TravelGroup.id)
+    )
+
+
 def rc4_tourist_experience(
     db: Session,
     itinerary_id: int | None = None,
@@ -359,13 +370,7 @@ def rc4_tourist_experience(
         Rc4Itinerary(id=itinerary_id, package_name=package_name)
         for itinerary_id, package_name in db.execute(itineraries_statement)
     ]
-    groups_statement = (
-        select(TravelGroup.id, TravelGroup.name)
-        .join(Membership, Membership.travel_group_id == TravelGroup.id)
-        .join(Visit, Visit.tourist_id == Membership.tourist_id)
-        .distinct()
-        .order_by(func.lower(TravelGroup.name), TravelGroup.id)
-    )
+    groups_statement = _rc4_group_options_statement()
     groups = [Rc4Group(id=group_id, name=name) for group_id, name in db.execute(groups_statement)]
     return Rc4Report(
         rows=rows,
