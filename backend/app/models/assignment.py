@@ -22,7 +22,7 @@ class Assignment(Base):
     tourist_id: Mapped[int] = mapped_column(
         ForeignKey("tourists.id", ondelete="CASCADE"), primary_key=True
     )
-    assignment_date: Mapped[date] = mapped_column(default=date.today)
+    assignment_date: Mapped[date] = mapped_column(default=date.today, primary_key=True)
 
     status: Mapped[AssignmentStatus] = mapped_column(
         status_enum(AssignmentStatus), default=AssignmentStatus.ASSIGNED
