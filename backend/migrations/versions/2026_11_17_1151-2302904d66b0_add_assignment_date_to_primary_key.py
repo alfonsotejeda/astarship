@@ -1,7 +1,7 @@
 """add assignment date to primary key
 
-Revision ID: bd6f59ff1f1a
-Revises: a6d2f8c41e93
+Revision ID: 2302904d66b0
+Revises: bd6f59ff1f1a
 Create Date: 2026-11-17 11:51:38.177487
 
 """
