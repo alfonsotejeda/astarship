@@ -1,9 +1,10 @@
 """Tests for the activity service."""
 
 import pytest
+from sqlalchemy import event
 
 from app.models.status import ReviewStatus
-from app.schemas.activity import ActivityCreate, ActivityUpdate
+from app.schemas.activity import ActivityCreate, ActivityRead, ActivityUpdate
 from app.schemas.activity_type import ActivityTypeCreate
 from app.schemas.attraction import AttractionCreate
 from app.schemas.category import CategoryCreate
@@ -221,3 +222,36 @@ def test_activities_by_type_returns_only_that_type_ordered_by_name(db_session, r
 def test_activities_by_type_raises_when_type_is_missing(db_session, admin_viewer):
     with pytest.raises(LookupError, match="Activity Type"):
         activity_service.activities_by_type(db_session, "MISSING", admin_viewer)
+
+
+def _queries_to_read_activities(db_session, viewer) -> int:
+    """Count the SQL queries of listing the activities as the API returns them."""
+    engine = db_session.get_bind()
+    queries = []
+
+    def record(*args):
+        queries.append(args[2])
+
+    event.listen(engine, "before_cursor_execute", record)
+    try:
+        db_session.expire_all()  # forget what is loaded, as a new request would
+        for activity in activity_service.list_activities(db_session, viewer):
+            ActivityRead.model_validate(activity)
+    finally:
+        event.remove(engine, "before_cursor_execute", record)
+    return len(queries)
+
+
+def test_reading_activities_takes_the_same_queries_however_many_there_are(
+    db_session, insert_activity, admin_viewer
+):
+    insert_activity("A")
+    insert_activity("B")
+    db_session.commit()
+    with_two = _queries_to_read_activities(db_session, admin_viewer)
+
+    insert_activity("C")
+    insert_activity("D")
+    db_session.commit()
+
+    assert _queries_to_read_activities(db_session, admin_viewer) == with_two
