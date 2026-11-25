@@ -19,6 +19,7 @@ from app.api.routes import (
     itinerary_approval,
     itinerary_composition,
     itinerary_validation,
+    me,
     membership,
     modification_request,
     package,
@@ -61,3 +62,4 @@ api_router.include_router(itinerary_validation.router, dependencies=authenticate
 api_router.include_router(itinerary_approval.router, dependencies=authenticated)
 api_router.include_router(report.router, dependencies=authenticated)
 api_router.include_router(visit.router, dependencies=authenticated)
+api_router.include_router(me.router)
