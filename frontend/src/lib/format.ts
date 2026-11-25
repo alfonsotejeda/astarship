@@ -64,3 +64,9 @@ export function formatDuration(totalMinutes: number): string {
 export function formatDecimal(value: number, digits = 1): string {
   return value.toFixed(digits).replace(".", ",");
 }
+
+// "850 m" under a kilometre, "1,2 km" from there on
+export function formatDistance(meters: number): string {
+  if (meters < 1000) return `${meters} m`;
+  return `${formatDecimal(meters / 1000)} km`;
+}
