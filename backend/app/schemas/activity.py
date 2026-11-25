@@ -23,14 +23,13 @@ class ActivityCreate(BaseModel):
 
 
 class ActivityUpdate(BaseModel):
-    """Fields allowed when updating an activity; its status only changes by validation."""
+    """Fields the author may change; neither the author nor the status are edited here."""
 
     name: str | None = None
     effort_level: int | None = None
     duration: int | None = Field(default=None, ge=1)
     activity_type_code: str | None = None
     category_id: int | None = None
-    guide_id: int | None = None
     attraction_id: int | None = None
 
     @field_validator(
@@ -39,7 +38,6 @@ class ActivityUpdate(BaseModel):
         "duration",
         "activity_type_code",
         "category_id",
-        "guide_id",
         "attraction_id",
     )
     @classmethod

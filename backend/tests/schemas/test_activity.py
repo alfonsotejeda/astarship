@@ -55,7 +55,7 @@ def test_update_rejects_non_positive_duration():
 
 
 @pytest.mark.parametrize(
-    "field", ["name", "duration", "activity_type_code", "category_id", "guide_id", "attraction_id"]
+    "field", ["name", "duration", "activity_type_code", "category_id", "attraction_id"]
 )
 def test_update_rejects_explicit_null(field):
     with pytest.raises(ValidationError):

@@ -262,7 +262,7 @@ def test_update_activity_with_unknown_reference_returns_404(client, as_guide, re
     assert text in response.json()["detail"]
 
 
-@pytest.mark.parametrize("field", ["category_id", "guide_id", "attraction_id"])
+@pytest.mark.parametrize("field", ["category_id", "attraction_id"])
 def test_update_activity_with_null_foreign_key_returns_422(client, as_guide, refs, field):
     created = _create(client, as_guide, refs).json()
 
@@ -280,6 +280,49 @@ def test_update_activity_to_a_taken_name_returns_409(client, as_guide, refs):
         response = client.patch(f"/api/activities/{other['id']}", json={"name": "Taken"})
 
     assert response.status_code == 409
+
+
+def test_update_activity_returns_403_for_a_guide_who_did_not_describe_it(
+    client, as_guide, as_user, refs, other_guide_id, approve_activity
+):
+    created = _create(client, as_guide, refs).json()
+    approve_activity(created["id"])  # Olga can see it now, but it is still Gil's
+
+    with as_user(other_guide_id):
+        response = client.patch(f"/api/activities/{created['id']}", json={"name": "Mine"})
+
+    assert response.status_code == 403
+
+
+def test_update_activity_hides_a_pending_activity_of_another_guide(
+    client, as_guide, as_user, refs, other_guide_id
+):
+    created = _create(client, as_guide, refs).json()
+
+    with as_user(other_guide_id):
+        response = client.patch(f"/api/activities/{created['id']}", json={"name": "Mine"})
+
+    assert response.status_code == 404
+
+
+def test_update_activity_returns_403_for_admin(client, as_guide, refs):
+    created = _create(client, as_guide, refs).json()
+
+    response = client.patch(f"/api/activities/{created['id']}", json={"name": "New"})
+
+    assert response.status_code == 403
+
+
+def test_update_activity_cannot_hand_it_to_another_guide(client, as_guide, refs, other_guide_id):
+    created = _create(client, as_guide, refs).json()
+
+    with as_guide():
+        response = client.patch(
+            f"/api/activities/{created['id']}", json={"guide_id": other_guide_id}
+        )
+
+    assert response.status_code == 200
+    assert response.json()["guide_id"] == refs["guide_id"]
 
 
 def test_delete_activity_removes_it(client, as_guide, refs):

@@ -120,7 +120,6 @@ def update_activity(db: Session, activity: Activity, data: ActivityUpdate) -> Ac
     validate_activity_data(
         db,
         category_id=data.category_id,
-        guide_id=data.guide_id,
         activity_type_code=data.activity_type_code,
         attraction_id=data.attraction_id,
     )
@@ -133,6 +132,9 @@ def update_activity(db: Session, activity: Activity, data: ActivityUpdate) -> Ac
         )
     for field, value in changes.items():
         setattr(activity, field, value)
+    # Once corrected, a rejected activity goes back to the administrator
+    if activity.status is ReviewStatus.REJECTED:
+        activity.status = ReviewStatus.PENDING
     db.commit()
     db.refresh(activity)
     return activity

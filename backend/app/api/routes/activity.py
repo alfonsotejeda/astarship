@@ -57,12 +57,22 @@ def create_activity(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
 
 
-@router.patch("/{activity_id}", response_model=ActivityRead, dependencies=[Depends(require_guide)])
+@router.patch("/{activity_id}", response_model=ActivityRead)
 def update_activity(
-    activity_id: int, data: ActivityUpdate, db: Session = Depends(get_db)
+    activity_id: int,
+    data: ActivityUpdate,
+    db: Session = Depends(get_db),
+    guide: User = Depends(require_guide),
 ) -> ActivityRead:
-    """Update an existing activity."""
-    activity = _get_activity_or_404(db, activity_id)
+    """Update an activity; only the guide who described it can (RN-01)."""
+    activity = activity_service.get_visible_activity(db, activity_id, guide)
+    if activity is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activity not found")
+    if activity.guide_id != guide.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the guide who described this activity can edit it",
+        )
     try:
         return activity_service.update_activity(db, activity, data)
     except LookupError as error:

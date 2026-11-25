@@ -188,6 +188,26 @@ def test_update_activity_keeping_its_own_name_is_allowed(db_session, refs):
     assert updated.effort_level == 5
 
 
+def test_corrected_rejected_activity_goes_back_to_pending(db_session, refs):
+    activity = _create(db_session, refs)
+    activity.status = ReviewStatus.REJECTED
+    db_session.commit()
+
+    updated = activity_service.update_activity(db_session, activity, ActivityUpdate(duration=45))
+
+    assert updated.status is ReviewStatus.PENDING
+
+
+def test_update_activity_keeps_an_approved_activity_approved(db_session, refs):
+    activity = _create(db_session, refs)
+    activity.status = ReviewStatus.APPROVED
+    db_session.commit()
+
+    updated = activity_service.update_activity(db_session, activity, ActivityUpdate(duration=45))
+
+    assert updated.status is ReviewStatus.APPROVED
+
+
 def test_delete_activity_removes_it(db_session, refs):
     activity = _create(db_session, refs, name="Temp", effort_level=1, duration=60)
 
