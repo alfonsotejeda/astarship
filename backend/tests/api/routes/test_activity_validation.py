@@ -1,5 +1,7 @@
 """Tests for the activity validation routes."""
 
+import pytest
+
 
 def _create_admin(client, email="ana@example.com", name="Ana") -> int:
     return client.post(
@@ -13,6 +15,13 @@ def _validate(client, as_user, activity_id, reviewer_id, result="approved", **fi
         return client.post(
             f"/api/activities/{activity_id}/validations", json={"result": result, **fields}
         )
+
+
+def _correct(client, as_user, activity):
+    """The guide who described the activity edits it, so it goes back to pending."""
+    with as_user(activity.guide_id):
+        response = client.patch(f"/api/activities/{activity.id}", json={"duration": 90})
+    assert response.json()["status"] == "pending"
 
 
 def test_create_validation_returns_the_reviewed_activity(client, as_user, insert_activity):
@@ -69,14 +78,30 @@ def test_rejecting_sets_the_activity_status_to_rejected(client, as_user, insert_
     assert client.get(f"/api/activities/{activity_id}").json()["status"] == "rejected"
 
 
-def test_latest_validation_decides_the_activity_status(client, as_user, insert_activity):
+def test_corrected_activity_can_be_approved_after_a_rejection(client, as_user, insert_activity):
+    activity = insert_activity()
+    admin_id = _create_admin(client)
+    _validate(client, as_user, activity.id, admin_id, "rejected", observations="No meeting point")
+    _correct(client, as_user, activity)
+
+    response = _validate(client, as_user, activity.id, admin_id, "approved")
+
+    assert response.status_code == 201
+    assert client.get(f"/api/activities/{activity.id}").json()["status"] == "approved"
+
+
+@pytest.mark.parametrize("first", ["approved", "rejected"])
+def test_create_validation_returns_409_when_activity_is_not_pending(
+    client, as_user, insert_activity, first
+):
     activity_id = insert_activity().id
     admin_id = _create_admin(client)
-    _validate(client, as_user, activity_id, admin_id, "rejected")
+    _validate(client, as_user, activity_id, admin_id, first)
 
-    _validate(client, as_user, activity_id, admin_id, "approved")
+    response = _validate(client, as_user, activity_id, admin_id, "approved")
 
-    assert client.get(f"/api/activities/{activity_id}").json()["status"] == "approved"
+    assert response.status_code == 409
+    assert len(client.get(f"/api/activities/{activity_id}/validations").json()) == 1
 
 
 def test_create_validation_returns_404_when_activity_missing(client, as_user):
@@ -136,12 +161,13 @@ def test_list_validations_returns_empty_list_for_a_new_activity(client, insert_a
 
 
 def test_list_validations_returns_the_most_recent_first(client, as_user, insert_activity):
-    activity_id = insert_activity().id
+    activity = insert_activity()
     admin_id = _create_admin(client)
-    _validate(client, as_user, activity_id, admin_id, "rejected")
-    _validate(client, as_user, activity_id, admin_id, "approved")
+    _validate(client, as_user, activity.id, admin_id, "rejected")
+    _correct(client, as_user, activity)
+    _validate(client, as_user, activity.id, admin_id, "approved")
 
-    response = client.get(f"/api/activities/{activity_id}/validations")
+    response = client.get(f"/api/activities/{activity.id}/validations")
 
     assert response.status_code == 200
     assert [v["result"] for v in response.json()] == ["approved", "rejected"]

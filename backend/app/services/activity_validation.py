@@ -38,8 +38,11 @@ def create_validation(
     """Record the admin's validation and move the activity to the status its result decides.
 
     Both changes are committed together, so an activity never changes status without a
-    validation to explain it. The latest validation determines the activity's status.
+    validation to explain it. Only a pending activity can be reviewed: a rejected one comes
+    back once its guide corrects it.
     """
+    if activity.status is not ReviewStatus.PENDING:
+        raise ValueError("Only a pending activity can be validated.")
     validation = ActivityValidation(activity_id=activity.id, admin_id=admin_id, **data.model_dump())
     db.add(validation)
     activity.status = _STATUS_BY_RESULT[data.result]

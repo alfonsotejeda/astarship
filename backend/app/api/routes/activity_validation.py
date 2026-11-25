@@ -42,5 +42,8 @@ def create_validation(
 ) -> ActivityRead:
     """Validate an activity as the logged-in admin and return it with its new status."""
     activity = _get_activity_or_404(db, activity_id)
-    validation_service.create_validation(db, activity, admin.id, data)
+    try:
+        validation_service.create_validation(db, activity, admin.id, data)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
     return activity
