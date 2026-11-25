@@ -9,14 +9,16 @@ from app.schemas.base import ORMSchema
 
 
 class ActivityCreate(BaseModel):
-    """Fields required to create an activity; it is always born pending."""
+    """Fields required to create an activity; the author is the guide in the token.
+
+    It is always born pending.
+    """
 
     name: str
     effort_level: int
     duration: int = Field(ge=1)
     activity_type_code: str
     category_id: int
-    guide_id: int
     attraction_id: int
 
 

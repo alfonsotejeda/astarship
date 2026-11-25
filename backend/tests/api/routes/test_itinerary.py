@@ -55,8 +55,9 @@ def _create_activity(
             duration=duration,
             activity_type_code=type_code,
             category_id=category_id,
-            **authors,
+            attraction_id=authors["attraction_id"],
         ),
+        authors["guide_id"],
     )
     if approved:
         activity.status = ReviewStatus.APPROVED

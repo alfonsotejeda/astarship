@@ -40,11 +40,13 @@ def refs(db_session):
 
 
 def _add_activity(db_session, refs, attraction, name):
+    fields = {k: v for k, v in refs.items() if k != "guide_id"}
     return activity_service.create_activity(
         db_session,
         ActivityCreate(
-            name=name, effort_level=3, duration=90, attraction_id=attraction.id, **refs
+            name=name, effort_level=3, duration=90, attraction_id=attraction.id, **fields
         ),
+        refs["guide_id"],
     )
 
 

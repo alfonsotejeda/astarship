@@ -96,18 +96,18 @@ def get_visible_activity(db: Session, activity_id: int, viewer: User) -> Activit
     return db.scalars(statement).first()
 
 
-def create_activity(db: Session, data: ActivityCreate) -> Activity:
-    """Create and persist a new activity."""
+def create_activity(db: Session, data: ActivityCreate, guide_id: int) -> Activity:
+    """Create and persist a new activity described by the given guide."""
     validate_activity_data(
         db,
         category_id=data.category_id,
-        guide_id=data.guide_id,
+        guide_id=guide_id,
         activity_type_code=data.activity_type_code,
         attraction_id=data.attraction_id,
     )
 
     validate_unique_name(db, data.name, data.attraction_id)
-    activity = Activity(**data.model_dump())
+    activity = Activity(**data.model_dump(), guide_id=guide_id)
     db.add(activity)
     db.commit()
     db.refresh(activity)

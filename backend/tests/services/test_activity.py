@@ -44,8 +44,9 @@ def refs(db_session):
 
 
 def _create(db_session, refs, name="Hiking", **overrides):
-    data = ActivityCreate(**{"name": name, "effort_level": 3, "duration": 90, **refs, **overrides})
-    return activity_service.create_activity(db_session, data)
+    fields = {"name": name, "effort_level": 3, "duration": 90, **refs, **overrides}
+    guide_id = fields.pop("guide_id")
+    return activity_service.create_activity(db_session, ActivityCreate(**fields), guide_id)
 
 
 def test_create_activity_persists_it(db_session, refs):

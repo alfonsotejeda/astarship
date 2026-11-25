@@ -54,11 +54,12 @@ def as_guide(as_user, guide_id):
 
 
 def _create(client, as_guide, refs, name="Hiking", effort_level=3, duration=90, **overrides):
+    # The body the frontend sends: the author comes from the token, not from here
     payload = {
         "name": name,
         "effort_level": effort_level,
         "duration": duration,
-        **refs,
+        **{field: value for field, value in refs.items() if field != "guide_id"},
         **overrides,
     }
     with as_guide():
@@ -99,9 +100,7 @@ def test_create_activity_returns_422_for_non_positive_duration(client, as_guide,
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize(
-    "missing", ["activity_type_code", "category_id", "guide_id", "attraction_id"]
-)
+@pytest.mark.parametrize("missing", ["activity_type_code", "category_id", "attraction_id"])
 def test_create_activity_without_a_foreign_key_returns_422(client, as_guide, refs, missing):
     payload = {"name": "Hiking", "effort_level": 3, "duration": 90}
     payload.update({k: v for k, v in refs.items() if k != missing})
@@ -120,11 +119,19 @@ def test_create_activity_returns_403_for_non_guide(client, refs):
     assert response.status_code == 403
 
 
+def test_create_activity_author_is_the_logged_in_guide(client, as_guide, refs, other_guide_id):
+    # Gil tries to describe it in Olga's name: the guide in the body is ignored
+    response = _create(client, as_guide, refs, guide_id=other_guide_id)
+
+    assert response.status_code == 201
+    assert response.json()["guide_id"] == refs["guide_id"]
+    assert response.json()["author_name"] == "Gil"
+
+
 @pytest.mark.parametrize(
     "field, value, text",
     [
         ("category_id", 999999, "Category"),
-        ("guide_id", 999999, "Guide"),
         ("activity_type_code", "MISSING", "Activity Type"),
         ("attraction_id", 999999, "Attraction"),
     ],

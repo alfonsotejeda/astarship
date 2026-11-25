@@ -42,16 +42,15 @@ def get_activity(
     return activity
 
 
-@router.post(
-    "",
-    response_model=ActivityRead,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_guide)],
-)
-def create_activity(data: ActivityCreate, db: Session = Depends(get_db)) -> ActivityRead:
-    """Create a new activity."""
+@router.post("", response_model=ActivityRead, status_code=status.HTTP_201_CREATED)
+def create_activity(
+    data: ActivityCreate,
+    db: Session = Depends(get_db),
+    guide: User = Depends(require_guide),
+) -> ActivityRead:
+    """Create a new activity whose author is the logged-in guide."""
     try:
-        return activity_service.create_activity(db, data)
+        return activity_service.create_activity(db, data, guide.id)
     except LookupError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
     except ValueError as error:

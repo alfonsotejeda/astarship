@@ -101,7 +101,7 @@ export function ActivityDrawer({
       activity_type_code: typeCode,
       category_id: Number(categoryId),
       effort_level: Number(effort),
-      duration_minutes: minutes,
+      duration: minutes,
     });
   }
 
