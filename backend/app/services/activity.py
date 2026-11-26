@@ -1,16 +1,33 @@
 """Activity service."""
 
-from sqlalchemy import ColumnElement, or_, select, true
-from sqlalchemy.orm import Session
+from sqlalchemy import ColumnElement, Select, or_, select, true
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.activity import Activity
 from app.models.activity_type import ActivityType
+from app.models.activity_validation import ActivityValidation
 from app.models.attraction import Attraction
 from app.models.category import Category
 from app.models.status import ReviewStatus
+from app.models.user.admin import Admin
 from app.models.user.guide import Guide
 from app.models.user.user import User, UserRole
 from app.schemas.activity import ActivityCreate, ActivityUpdate
+
+
+def select_for_read() -> Select[tuple[Activity]]:
+    """Return a SELECT of activities that also brings everything ActivityRead shows.
+
+    Without it each activity would fetch its attraction, author and last reviewer in queries
+    of its own (N+1). selectinload fetches each of them once for all the activities.
+    """
+    return select(Activity).options(
+        selectinload(Activity.attraction),
+        selectinload(Activity.guide).selectinload(Guide.user),
+        selectinload(Activity.validations)
+        .selectinload(ActivityValidation.admin)
+        .selectinload(Admin.user),
+    )
 
 
 def visible_to(viewer: User) -> ColumnElement[bool]:
@@ -62,7 +79,7 @@ def list_activities(
     db: Session, viewer: User, status: ReviewStatus | None = None
 ) -> list[Activity]:
     """Return the activities the user can see, optionally only those with the given status."""
-    statement = select(Activity).where(visible_to(viewer))
+    statement = select_for_read().where(visible_to(viewer))
     if status is not None:
         statement = statement.where(Activity.status == status)
     return list(db.scalars(statement))
@@ -75,7 +92,7 @@ def get_activity(db: Session, activity_id: int) -> Activity | None:
 
 def get_visible_activity(db: Session, activity_id: int, viewer: User) -> Activity | None:
     """Return an activity by id, or None if it doesn't exist or the user can't see it."""
-    statement = select(Activity).where(Activity.id == activity_id, visible_to(viewer))
+    statement = select_for_read().where(Activity.id == activity_id, visible_to(viewer))
     return db.scalars(statement).first()
 
 
@@ -131,7 +148,7 @@ def activities_by_type(db: Session, activity_type_code: str, viewer: User) -> li
     """Return the activities of a specific type that the user can see."""
     validate_activity_data(db, activity_type_code=activity_type_code)
     statement = (
-        select(Activity)
+        select_for_read()
         .where(Activity.activity_type_code == activity_type_code, visible_to(viewer))
         .order_by(Activity.name)
     )

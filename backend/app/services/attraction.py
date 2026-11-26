@@ -15,7 +15,7 @@ from app.schemas.attraction import (
     AttractionSummary,
     AttractionUpdate,
 )
-from app.services.activity import visible_to
+from app.services.activity import select_for_read, visible_to
 from app.services.attraction_network import store as network_store
 
 
@@ -103,7 +103,7 @@ def activities_by_attraction(db: Session, attraction_id: int, viewer: User) -> l
     if db.get(Attraction, attraction_id) is None:
         raise LookupError("Attraction not found")
     statement = (
-        select(Activity)
+        select_for_read()
         .where(Activity.attraction_id == attraction_id, visible_to(viewer))
         .order_by(Activity.name)
     )
