@@ -46,6 +46,31 @@ def _create_booking(client, tourist_id, package_id, booking_date="2026-10-01", *
     return client.post("/api/bookings", json=payload)
 
 
+def _create_guide(client, email="guide@example.com"):
+    return client.post(
+        "/api/users",
+        json={
+            "name": "Gil",
+            "role": "guide",
+            "email": email,
+            "password": "s3cret",
+            "specialty": "History",
+        },
+    ).json()
+
+
+def _create_operations_manager(client, email="manager@example.com"):
+    return client.post(
+        "/api/users",
+        json={
+            "name": "Omar",
+            "role": "operations_manager",
+            "email": email,
+            "password": "s3cret",
+        },
+    ).json()
+
+
 def test_create_booking_returns_201_and_pair(client):
     tourist = _create_tourist(client)
     package = _create_package(client)
@@ -373,3 +398,150 @@ def test_create_booking_conflict_leaves_session_usable(client, db_session, monke
         ).status_code
         == 201
     )
+
+
+def test_create_booking_with_unknown_itinerary_returns_404(client):
+    tourist = _create_tourist(client, email="itinerary@example.com")
+    package = _create_package(client, name="Itinerary", destination="Roma")
+
+    response = _create_booking(client, tourist["id"], package["id"], itinerary_id=999999)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Itinerary not found"
+
+
+def test_list_bookings_requires_authentication(anonymous_client):
+    assert anonymous_client.get("/api/bookings").status_code == 401
+
+
+def test_list_bookings_requires_admin(client, as_user):
+    tourist = _create_tourist(client, email="list-owner@example.com")
+
+    with as_user(tourist["id"]):
+        assert client.get("/api/bookings").status_code == 403
+
+
+def test_get_booking_is_visible_to_admin_and_owner_only(client, as_user):
+    owner = _create_tourist(client, email="visible-owner@example.com")
+    stranger = _create_tourist(client, email="visible-stranger@example.com")
+    package = _create_package(client, name="Visible", destination="Roma")
+    _create_booking(client, owner["id"], package["id"])
+    url = f"/api/bookings/{owner['id']}/{package['id']}"
+
+    with as_user(owner["id"]):
+        assert client.get(url).status_code == 200
+    with as_user(stranger["id"]):
+        assert client.get(url).status_code == 403
+    assert client.get(url).status_code == 200
+
+
+def test_booking_routes_reject_guides_and_operations_managers(client, as_user):
+    guide = _create_guide(client)
+    manager = _create_operations_manager(client)
+    tourist = _create_tourist(client, email="staff@example.com")
+    package = _create_package(client, name="Staff", destination="Roma")
+    _create_booking(client, tourist["id"], package["id"])
+    url = f"/api/bookings/{tourist['id']}/{package['id']}"
+
+    for user_id in (guide["id"], manager["id"]):
+        with as_user(user_id):
+            assert client.get("/api/bookings").status_code == 403
+            assert client.get(url).status_code == 403
+            assert (
+                client.post(
+                    "/api/bookings",
+                    json={
+                        "tourist_id": tourist["id"],
+                        "package_id": package["id"],
+                        "booking_date": "2026-10-02",
+                    },
+                ).status_code
+                == 403
+            )
+            assert client.patch(url, json={"status": "cancelled"}).status_code == 403
+            assert client.delete(url).status_code == 403
+
+
+def test_tourist_can_create_only_their_own_booking(client, as_user):
+    owner = _create_tourist(client, email="create-owner@example.com")
+    stranger = _create_tourist(client, email="create-stranger@example.com")
+    package = _create_package(client, name="Create", destination="Roma")
+
+    with as_user(owner["id"]):
+        assert _create_booking(client, owner["id"], package["id"]).status_code == 201
+        assert _create_booking(client, stranger["id"], package["id"]).status_code == 403
+
+
+def test_tourist_cannot_assign_itinerary_when_creating(
+    client, as_user, db_session, itinerary_owners
+):
+    tourist = _create_tourist(client, email="create-itinerary@example.com")
+    package = _create_package(client, name="Create itinerary", destination="Lima")
+    itinerary = itinerary_service.create_itinerary(
+        db_session,
+        ItineraryCreate(creation_date=date(2026, 10, 1), activity_count=2, **itinerary_owners),
+    )
+
+    with as_user(tourist["id"]):
+        response = _create_booking(client, tourist["id"], package["id"], itinerary_id=itinerary.id)
+        assert response.status_code == 403
+        assert (
+            _create_booking(client, tourist["id"], package["id"], status="assigned").status_code
+            == 403
+        )
+        assert (
+            _create_booking(
+                client, tourist["id"], package["id"], status="rejected", rejection_reason="No"
+            ).status_code
+            == 403
+        )
+
+
+def test_tourist_can_cancel_own_booking_but_not_others(client, as_user):
+    owner = _create_tourist(client, email="cancel-owner@example.com")
+    stranger = _create_tourist(client, email="cancel-stranger@example.com")
+    package = _create_package(client, name="Cancel", destination="Roma")
+    _create_booking(client, owner["id"], package["id"])
+    url = f"/api/bookings/{owner['id']}/{package['id']}"
+
+    with as_user(owner["id"]):
+        response = client.patch(url, json={"status": "cancelled"})
+        assert response.status_code == 200
+        assert response.json()["status"] == "cancelled"
+    with as_user(stranger["id"]):
+        assert client.patch(url, json={"status": "cancelled"}).status_code == 403
+
+
+def test_tourist_cannot_assign_itinerary_when_updating(
+    client, as_user, db_session, itinerary_owners
+):
+    tourist = _create_tourist(client, email="update-itinerary@example.com")
+    package = _create_package(client, name="Update itinerary", destination="Lima")
+    itinerary = itinerary_service.create_itinerary(
+        db_session,
+        ItineraryCreate(creation_date=date(2026, 10, 1), activity_count=2, **itinerary_owners),
+    )
+    _create_booking(client, tourist["id"], package["id"])
+    url = f"/api/bookings/{tourist['id']}/{package['id']}"
+
+    with as_user(tourist["id"]):
+        assert client.patch(url, json={"itinerary_id": itinerary.id}).status_code == 403
+        assert client.patch(url, json={"status": "assigned"}).status_code == 403
+        assert (
+            client.patch(url, json={"status": "rejected", "rejection_reason": "No"}).status_code
+            == 403
+        )
+
+
+def test_tourist_can_delete_own_booking_but_not_others(client, as_user):
+    owner = _create_tourist(client, email="delete-owner@example.com")
+    stranger = _create_tourist(client, email="delete-stranger@example.com")
+    package = _create_package(client, name="Delete", destination="Roma")
+    _create_booking(client, owner["id"], package["id"])
+    url = f"/api/bookings/{owner['id']}/{package['id']}"
+
+    with as_user(stranger["id"]):
+        assert client.delete(url).status_code == 403
+    with as_user(owner["id"]):
+        assert client.delete(url).status_code == 204
+    assert client.get(url).status_code == 404

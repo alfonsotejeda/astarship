@@ -63,3 +63,27 @@ def test_get_tourist_packages_empty_when_no_bookings(client):
 
     assert response.status_code == 200
     assert response.json() == []
+
+
+def test_get_tourist_packages_allows_admin_and_owner_only(client, as_user):
+    owner = _create_tourist(client, email="packages-owner@example.com")
+    stranger = _create_tourist(client, email="packages-stranger@example.com")
+    guide = client.post(
+        "/api/users",
+        json={
+            "name": "Gil",
+            "role": "guide",
+            "email": "packages-guide@example.com",
+            "password": "s3cret",
+            "specialty": "History",
+        },
+    ).json()
+    url = f"/api/tourists/{owner['id']}/packages"
+
+    with as_user(owner["id"]):
+        assert client.get(url).status_code == 200
+    with as_user(stranger["id"]):
+        assert client.get(url).status_code == 403
+    with as_user(guide["id"]):
+        assert client.get(url).status_code == 403
+    assert client.get(url).status_code == 200
