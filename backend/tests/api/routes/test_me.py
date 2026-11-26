@@ -1,9 +1,11 @@
 """Tests for the authenticated tourist routes."""
 
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 
 from app.models.assignment import Assignment
 from app.models.itinerary_composition import ItineraryComposition
+from app.schemas.itinerary import ItineraryCreate
+from app.services import itinerary as itinerary_service
 
 
 def test_today_returns_active_trip_and_visit_status(
@@ -68,3 +70,63 @@ def test_today_rejects_non_tourist_user(client):
     response = client.get("/api/me/today")
 
     assert response.status_code == 403
+
+
+def test_today_prefers_the_most_recent_overlapping_trip(
+    client, as_user, db_session, visit_scenario, itinerary_owners
+):
+    """With two trips active today, the one that started last wins."""
+    tourist_id = visit_scenario["tourist_id"]
+    today = date.today()
+
+    # Older trip: its third day falls on today.
+    first_activity, second_activity = (
+        db_session.get(
+            ItineraryComposition,
+            (visit_scenario["itinerary_id"], activity_id),
+        )
+        for activity_id in visit_scenario["activity_ids"]
+    )
+    first_activity.day = 1
+    second_activity.day = 3
+    db_session.add(
+        Assignment(
+            itinerary_id=visit_scenario["itinerary_id"],
+            tourist_id=tourist_id,
+            assignment_date=today - timedelta(days=2),
+            admin_id=visit_scenario["admin_id"],
+        )
+    )
+
+    # Newer trip: it starts today.
+    recent_itinerary = itinerary_service.create_itinerary(
+        db_session,
+        ItineraryCreate(creation_date=today, activity_count=1, **itinerary_owners),
+    )
+    db_session.add(
+        ItineraryComposition(
+            itinerary_id=recent_itinerary.id,
+            activity_id=visit_scenario["activity_ids"][0],
+            order=1,
+            day=1,
+            start_time=time(9, 0),
+        )
+    )
+    db_session.add(
+        Assignment(
+            itinerary_id=recent_itinerary.id,
+            tourist_id=tourist_id,
+            assignment_date=today,
+            admin_id=visit_scenario["admin_id"],
+        )
+    )
+    db_session.commit()
+
+    with as_user(tourist_id):
+        response = client.get("/api/me/today")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["itinerary_id"] == recent_itinerary.id
+    assert body["day"] == 1
+    assert body["days"][0]["date"] == today.isoformat()
