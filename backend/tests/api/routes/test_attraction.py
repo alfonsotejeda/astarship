@@ -70,7 +70,33 @@ def test_get_attraction_returns_it(client):
     response = client.get(f"/api/attractions/{created['id']}")
 
     assert response.status_code == 200
-    assert response.json() == {**created, "connections": []}
+    assert response.json() == {
+        **created,
+        "activity_count": 0,
+        "activities": [],
+        "connections": [],
+    }
+
+
+def test_list_attractions_counts_their_activities(client, insert_activity):
+    activity = insert_activity()
+    insert_activity("Climbing")
+    client.post("/api/attractions", json=PAYLOAD)
+
+    counts = {a["id"]: a["activity_count"] for a in client.get("/api/attractions").json()}
+
+    assert counts[activity.attraction_id] == 2
+    assert 0 in counts.values()
+
+
+def test_get_attraction_includes_its_activities(client, insert_activity):
+    activity = insert_activity()
+
+    body = client.get(f"/api/attractions/{activity.attraction_id}").json()
+
+    assert body["activity_count"] == 1
+    assert [a["id"] for a in body["activities"]] == [activity.id]
+    assert body["activities"][0]["name"] == "Hiking"
 
 
 def test_get_attraction_includes_its_connections_quickest_first(client):
