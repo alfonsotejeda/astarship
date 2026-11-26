@@ -75,9 +75,9 @@ def test_delete_activity_type_with_activities_raises(db_session):
             duration=90,
             activity_type_code="HIKE",
             category_id=category.id,
-            guide_id=guide.id,
             attraction_id=attraction.id,
         ),
+        guide.id,
     )
 
     with pytest.raises(ValueError, match="existing activities"):

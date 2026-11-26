@@ -61,9 +61,9 @@ def _create_activity(db_session, name="Museum"):
             duration=60,
             activity_type_code=activity_type.code,
             category_id=category.id,
-            guide_id=guide.id,
             attraction_id=attraction.id,
         ),
+        guide.id,
     )
 
 

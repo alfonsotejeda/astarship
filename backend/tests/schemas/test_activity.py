@@ -5,7 +5,7 @@ from pydantic import ValidationError
 
 from app.schemas.activity import ActivityCreate, ActivityUpdate
 
-REFS = {"activity_type_code": "HIKE", "category_id": 1, "guide_id": 2, "attraction_id": 3}
+REFS = {"activity_type_code": "HIKE", "category_id": 1, "attraction_id": 3}
 
 
 def test_create_requires_required_fields():
@@ -23,7 +23,6 @@ def test_create_accepts_valid_data():
 
     assert activity.name == "Hiking"
     assert activity.duration == 90
-    assert activity.guide_id == 2
     assert activity.attraction_id == 3
 
 
@@ -56,7 +55,7 @@ def test_update_rejects_non_positive_duration():
 
 
 @pytest.mark.parametrize(
-    "field", ["name", "duration", "activity_type_code", "category_id", "guide_id", "attraction_id"]
+    "field", ["name", "duration", "activity_type_code", "category_id", "attraction_id"]
 )
 def test_update_rejects_explicit_null(field):
     with pytest.raises(ValidationError):

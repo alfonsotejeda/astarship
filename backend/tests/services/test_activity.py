@@ -44,8 +44,9 @@ def refs(db_session):
 
 
 def _create(db_session, refs, name="Hiking", **overrides):
-    data = ActivityCreate(**{"name": name, "effort_level": 3, "duration": 90, **refs, **overrides})
-    return activity_service.create_activity(db_session, data)
+    fields = {"name": name, "effort_level": 3, "duration": 90, **refs, **overrides}
+    guide_id = fields.pop("guide_id")
+    return activity_service.create_activity(db_session, ActivityCreate(**fields), guide_id)
 
 
 def test_create_activity_persists_it(db_session, refs):
@@ -185,6 +186,26 @@ def test_update_activity_keeping_its_own_name_is_allowed(db_session, refs):
     )
 
     assert updated.effort_level == 5
+
+
+def test_corrected_rejected_activity_goes_back_to_pending(db_session, refs):
+    activity = _create(db_session, refs)
+    activity.status = ReviewStatus.REJECTED
+    db_session.commit()
+
+    updated = activity_service.update_activity(db_session, activity, ActivityUpdate(duration=45))
+
+    assert updated.status is ReviewStatus.PENDING
+
+
+def test_update_activity_keeps_an_approved_activity_approved(db_session, refs):
+    activity = _create(db_session, refs)
+    activity.status = ReviewStatus.APPROVED
+    db_session.commit()
+
+    updated = activity_service.update_activity(db_session, activity, ActivityUpdate(duration=45))
+
+    assert updated.status is ReviewStatus.APPROVED
 
 
 def test_delete_activity_removes_it(db_session, refs):

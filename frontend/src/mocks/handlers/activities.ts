@@ -75,7 +75,7 @@ function checkForm(form: Partial<ActivityForm>) {
   if (!activityTypes.some(item => item.code === form.activity_type_code)) throw new ApiError(422, "Elige un tipo.");
   if (!categories.some(item => item.id === form.category_id)) throw new ApiError(422, "Elige una categoría.");
   if (![1, 2, 3].includes(form.effort_level ?? 0)) throw new ApiError(422, "Elige el esfuerzo físico.");
-  if (!form.duration_minutes || form.duration_minutes <= 0) {
+  if (!form.duration || form.duration <= 0) {
     throw new ApiError(422, "La duración tiene que ser mayor que cero.");
   }
 }
@@ -116,7 +116,7 @@ function fields(form: ActivityForm) {
     activity_type_code: form.activity_type_code,
     category_id: form.category_id,
     effort_level: form.effort_level,
-    duration: form.duration_minutes,
+    duration: form.duration,
   };
 }
 

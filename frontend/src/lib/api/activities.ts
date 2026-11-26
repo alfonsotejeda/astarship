@@ -39,7 +39,7 @@ export interface ActivityForm {
   activity_type_code: string;
   category_id: number;
   effort_level: number;
-  duration_minutes: number;
+  duration: number;
 }
 
 export interface ActivityValidationRequest {
