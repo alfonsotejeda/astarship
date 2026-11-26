@@ -12,6 +12,7 @@ from app.services import activity_type as activity_type_service
 from app.services import attraction as attraction_service
 from app.services import category as category_service
 from app.services import user as user_service
+from app.services.attraction_network import store as network_store
 
 
 def _data(name="Malecón") -> AttractionCreate:
@@ -134,3 +135,30 @@ def test_activities_count_includes_attractions_without_activities(db_session, re
 
 def test_activities_count_is_empty_without_attractions(db_session):
     assert attraction_service.activities_count_by_attractions(db_session) == []
+
+
+def test_new_attraction_joins_the_network(db_session):
+    network_store.get_network(db_session)
+
+    attraction = attraction_service.create_attraction(db_session, _data())
+
+    assert network_store.get_network(db_session).node(attraction.id) is not None
+
+
+def test_moved_attraction_moves_in_the_network(db_session):
+    attraction = attraction_service.create_attraction(db_session, _data())
+    network_store.get_network(db_session)
+
+    attraction_service.update_attraction(db_session, attraction, AttractionUpdate(latitude=23.2))
+
+    assert network_store.get_network(db_session).node(attraction.id).latitude == 23.2
+
+
+def test_deleted_attraction_leaves_the_network(db_session):
+    attraction = attraction_service.create_attraction(db_session, _data())
+    attraction_id = attraction.id
+    network_store.get_network(db_session)
+
+    attraction_service.delete_attraction(db_session, attraction)
+
+    assert network_store.get_network(db_session).node(attraction_id) is None

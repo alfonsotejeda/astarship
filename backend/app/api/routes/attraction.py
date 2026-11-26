@@ -6,7 +6,12 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import require_admin
 from app.db.session import get_db
 from app.schemas.activity import ActivityRead
-from app.schemas.attraction import AttractionCreate, AttractionRead, AttractionUpdate
+from app.schemas.attraction import (
+    AttractionCreate,
+    AttractionDetail,
+    AttractionRead,
+    AttractionUpdate,
+)
 from app.services import attraction as attraction_service
 
 router = APIRouter(prefix="/attractions", tags=["attractions"])
@@ -41,10 +46,14 @@ def get_activities_by_attraction(attraction_id: int, db: Session = Depends(get_d
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
 
 
-@router.get("/{attraction_id}", response_model=AttractionRead)
-def get_attraction(attraction_id: int, db: Session = Depends(get_db)) -> AttractionRead:
-    """Get a single attraction by id."""
-    return _get_attraction_or_404(db, attraction_id)
+@router.get("/{attraction_id}", response_model=AttractionDetail)
+def get_attraction(attraction_id: int, db: Session = Depends(get_db)) -> AttractionDetail:
+    """Get a single attraction by id, with its connections in the network."""
+    attraction = AttractionRead.model_validate(_get_attraction_or_404(db, attraction_id))
+    return AttractionDetail(
+        **attraction.model_dump(),
+        connections=attraction_service.connections_of(db, attraction_id),
+    )
 
 
 @router.post(

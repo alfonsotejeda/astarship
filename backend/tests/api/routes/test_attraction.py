@@ -70,7 +70,29 @@ def test_get_attraction_returns_it(client):
     response = client.get(f"/api/attractions/{created['id']}")
 
     assert response.status_code == 200
-    assert response.json() == created
+    assert response.json() == {**created, "connections": []}
+
+
+def test_get_attraction_includes_its_connections_quickest_first(client):
+    plaza = client.post("/api/attractions", json={**PAYLOAD, "latitude": 23.1400}).json()
+    near = client.post("/api/attractions", json={**PAYLOAD, "latitude": 23.1445}).json()  # 500 m
+    far = client.post("/api/attractions", json={**PAYLOAD, "latitude": 23.1760}).json()  # 4 km
+
+    response = client.get(f"/api/attractions/{plaza['id']}")
+
+    walk, taxi = response.json()["connections"]
+    assert walk == {
+        "attraction_id": near["id"],
+        "name": "Malecón",
+        "meters": 500,
+        "minutes": 8,
+        "cost": 0,
+        "mode": "walk",
+    }
+    assert taxi["attraction_id"] == far["id"]
+    assert taxi["mode"] == "taxi"
+    assert taxi["minutes"] == 18  # 6 min waiting + 4 km at 20 km/h
+    assert taxi["cost"] == round(taxi["cost"], 2)
 
 
 def test_get_attraction_returns_404_when_missing(client):
