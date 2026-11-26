@@ -17,6 +17,7 @@ import type { AttractionDetail as Detail, AttractionForm } from "@/lib/api/attra
 import { useCategories } from "@/lib/api/catalogs";
 import { ApiError } from "@/lib/api/client";
 import { attractionPoint, TRAVEL_MODE_LABEL } from "@/lib/attraction";
+import { formatDistance } from "@/lib/format";
 import { AttractionDrawer } from "./AttractionDrawer";
 
 const BREADCRUMB = { label: "Atracciones", to: "/attractions" };
@@ -170,7 +171,7 @@ function DetailContent({ attraction }: { attraction: Detail }) {
           </Panel>
 
           {/* RF-32: the network these come from is kept outside the relational schema */}
-          <Panel title="Cómo llegar desde aquí" subtitle="Atracciones conectadas, con su tiempo y su coste.">
+          <Panel title="Cómo llegar desde aquí" subtitle="Atracciones conectadas, con su distancia, su tiempo y su coste.">
             {attraction.connections.length === 0 ? (
               <p className="attractions__muted">No tiene conexiones con otras atracciones.</p>
             ) : (
@@ -181,7 +182,7 @@ function DetailContent({ attraction }: { attraction: Detail }) {
                       {connection.name}
                     </Link>
                     <span className="attractions__muted">
-                      {connection.minutes} min · {TRAVEL_MODE_LABEL[connection.mode].toLowerCase()} · {costText(connection.cost)}
+                      {formatDistance(connection.meters)} · {connection.minutes} min · {TRAVEL_MODE_LABEL[connection.mode].toLowerCase()} · {costText(connection.cost)}
                     </span>
                   </li>
                 ))}

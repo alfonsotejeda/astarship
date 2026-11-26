@@ -57,6 +57,7 @@ function connections(record: AttractionRecord): AttractionConnection[] {
       return {
         attraction_id: item.id,
         name: item.name,
+        meters: Math.round(km * 1000),
         minutes: walk ? Math.max(3, Math.round(km * 14)) : Math.round(6 + km * 3),
         cost: walk ? 0 : Math.round(2 + km * 1.5),
         mode: walk ? ("walk" as const) : ("taxi" as const),

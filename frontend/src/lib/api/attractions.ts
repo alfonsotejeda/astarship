@@ -17,6 +17,7 @@ export interface Attraction {
 export interface AttractionConnection {
   attraction_id: number;
   name: string;
+  meters: number;
   minutes: number;
   cost: number;
   mode: TravelMode;
