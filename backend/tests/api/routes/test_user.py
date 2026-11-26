@@ -120,16 +120,14 @@ def test_delete_admin_with_packages_returns_409(client):
     assert client.get(f"/api/users/{admin['id']}").status_code == 200
 
 
-def test_delete_admin_with_validations_returns_409(client, insert_activity):
+def test_delete_admin_with_validations_returns_409(client, as_user, insert_activity):
     admin = client.post(
         "/api/users",
         json={"name": "Ada", "role": "admin", "email": "ada@example.com", "password": "x"},
     ).json()
     activity_id = insert_activity().id
-    client.post(
-        f"/api/activities/{activity_id}/validations",
-        json={"admin_id": admin["id"], "result": "approved"},
-    )
+    with as_user(admin["id"]):
+        client.post(f"/api/activities/{activity_id}/validations", json={"result": "approved"})
 
     response = client.delete(f"/api/users/{admin['id']}")
 

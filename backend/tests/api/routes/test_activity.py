@@ -1,8 +1,13 @@
 """Tests for the activity routes."""
 
-from datetime import date
+from datetime import UTC, date, datetime
 
 import pytest
+
+from app.models.activity_validation import ActivityValidation
+from app.models.status import ValidationResult
+from app.schemas.user import AdminCreate
+from app.services import user as user_service
 
 
 @pytest.fixture
@@ -315,3 +320,58 @@ def test_activities_by_type_returns_404_when_type_is_missing(client):
     response = client.get("/api/activities/by_type/MISSING")
 
     assert response.status_code == 404
+
+
+@pytest.fixture
+def review(db_session):
+    """Return a function that stores an administrator's review of an activity on a given day.
+
+    It writes straight to the database instead of using the validation route, so these
+    tests don't depend on how that route identifies the administrator (#267).
+    """
+
+    def store(activity, reviewer, day, result, observations=None):
+        admin = user_service.create_user(
+            db_session,
+            AdminCreate(
+                name=reviewer, role="admin", email=f"{reviewer.lower()}@example.com", password="x"
+            ),
+        )
+        db_session.add(
+            ActivityValidation(
+                activity_id=activity.id,
+                admin_id=admin.id,
+                validation_date=datetime(2026, 11, day, tzinfo=UTC),
+                result=result,
+                observations=observations,
+            )
+        )
+        db_session.commit()
+
+    return store
+
+
+def test_get_activity_returns_its_latest_validation(client, insert_activity, review):
+    activity = insert_activity()
+    # The newest is stored in the middle: neither the first nor the last added is the answer
+    review(activity, "Ana", 1, ValidationResult.REJECTED, "Duplicate of the castle tour")
+    review(activity, "Bea", 3, ValidationResult.APPROVED)
+    review(activity, "Carla", 2, ValidationResult.REJECTED, "Missing the meeting point")
+
+    last = client.get(f"/api/activities/{activity.id}").json()["last_validation"]
+
+    assert last["reviewer_name"] == "Bea"
+    assert last["result"] == "approved"
+    assert last["observations"] is None
+    assert last["validation_date"].startswith("2026-11-03")
+
+
+def test_rejected_activity_shows_why_it_was_rejected(client, insert_activity, review):
+    activity = insert_activity()
+    review(activity, "Ana", 1, ValidationResult.REJECTED, "Duplicate of the castle tour")
+
+    last = client.get(f"/api/activities/{activity.id}").json()["last_validation"]
+
+    assert last["reviewer_name"] == "Ana"
+    assert last["result"] == "rejected"
+    assert last["observations"] == "Duplicate of the castle tour"

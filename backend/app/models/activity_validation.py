@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, ForeignKey, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.models.status import ValidationResult, status_enum
@@ -31,3 +31,6 @@ class ActivityValidation(Base):
 
     result: Mapped[ValidationResult] = mapped_column(status_enum(ValidationResult, name="result"))
     observations: Mapped[str | None] = mapped_column(Text)
+
+    # Who reviewed it, to show the reviewer's name next to the result
+    admin = relationship("Admin")

@@ -53,3 +53,8 @@ class Activity(Base):
     activity_type = relationship("ActivityType", back_populates="activities")
     guide = relationship("Guide", back_populates="activities")
     attraction = relationship("Attraction", back_populates="activities")
+
+    @property
+    def last_validation(self) -> ActivityValidation | None:
+        """The administrator's most recent review, or None if it was never reviewed."""
+        return max(self.validations, key=lambda v: v.validation_date, default=None)
