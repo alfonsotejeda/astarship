@@ -44,9 +44,13 @@ def list_packages(
     return package_service.list_packages(db, status)
 
 
-@router.get("/{package_id}/tourists", response_model=list[TouristRead])
+@router.get(
+    "/{package_id}/tourists",
+    response_model=list[TouristRead],
+    dependencies=[Depends(require_admin)],
+)
 def get_package_tourists(package_id: int, db: Session = Depends(get_db)) -> list[TouristRead]:
-    """List all tourists booked into a package."""
+    """List all tourists booked into a package; admins only."""
     package = _get_package_or_404(db, package_id)
     return booking_service.get_tourists_for_package(db, package.id)
 
