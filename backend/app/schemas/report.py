@@ -18,9 +18,9 @@ class SortOrder(StrEnum):
 class EffortLevel(StrEnum):
     """Effort band shown in the reports, derived from the activity's numeric level."""
 
-    BAJO = "bajo"
-    MEDIO = "medio"
-    ALTO = "alto"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 
 class Rc1SortColumn(StrEnum):
