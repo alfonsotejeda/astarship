@@ -30,9 +30,6 @@
         "username": "astarship",
         "password": "astarship"
       }
-    ],
-    "chat.tools.terminal.autoApprove": {
-      "uv": true
-    }
+    ]
   }
 }
