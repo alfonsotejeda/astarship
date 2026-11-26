@@ -23,7 +23,7 @@ function visibleActivities(attractionId: number, userId: number) {
   return activities.filter(
     item =>
       item.attraction_id === attractionId &&
-      (item.status === "approved" || item.user_id === userId || role(userId) === "admin"),
+      (item.status === "approved" || item.guide_id === userId || role(userId) === "admin"),
   );
 }
 

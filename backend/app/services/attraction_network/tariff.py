@@ -65,4 +65,5 @@ def distance_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     d_lat = radians(lat2 - lat1)
     d_lon = radians(lon2 - lon1)
     h = sin(d_lat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(d_lon / 2) ** 2
-    return 2 * EARTH_RADIUS_M * asin(sqrt(h))
+    # Between almost opposite points rounding can leave h a hair above 1, where asin fails
+    return 2 * EARTH_RADIUS_M * asin(min(1.0, sqrt(h)))

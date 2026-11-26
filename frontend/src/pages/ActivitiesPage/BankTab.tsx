@@ -195,7 +195,7 @@ function ActivitiesTable({ user, activities, categories, selectedId, onSelect }:
 
   const isAdmin = user.role === "admin";
   const categoryName = (id: number | null) => categories.find(category => category.id === id)?.name ?? "";
-  const isMine = (activity: Activity) => !isAdmin && activity.user_id === user.id;
+  const isMine = (activity: Activity) => !isAdmin && activity.guide_id === user.id;
   const text = query.trim().toLowerCase();
 
   const rows = activities.filter(
@@ -288,11 +288,11 @@ function ActivitiesTable({ user, activities, categories, selectedId, onSelect }:
       exportValue: activity => effortLabel(activity.effort_level),
     },
     {
-      key: "duration_minutes",
+      key: "duration",
       label: "Duración",
       align: "right",
-      render: activity => <span className="activities__mono">{formatDuration(activity.duration_minutes)}</span>,
-      exportValue: activity => formatDuration(activity.duration_minutes),
+      render: activity => <span className="activities__mono">{formatDuration(activity.duration)}</span>,
+      exportValue: activity => formatDuration(activity.duration),
     },
     {
       key: "author_name",

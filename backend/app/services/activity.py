@@ -1,6 +1,6 @@
 """Activity service."""
 
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, or_, select, true
 from sqlalchemy.orm import Session
 
 from app.models.activity import Activity
@@ -9,7 +9,21 @@ from app.models.attraction import Attraction
 from app.models.category import Category
 from app.models.status import ReviewStatus
 from app.models.user.guide import Guide
+from app.models.user.user import User, UserRole
 from app.schemas.activity import ActivityCreate, ActivityUpdate
+
+
+def visible_to(viewer: User) -> ColumnElement[bool]:
+    """Return the SQL condition of the activities a user can see (RNF-10).
+
+    Everyone sees the approved ones, a guide also their own in any status, an admin all of them.
+    """
+    if viewer.role is UserRole.ADMIN:
+        return true()
+    approved = Activity.status == ReviewStatus.APPROVED
+    if viewer.role is UserRole.GUIDE:
+        return or_(approved, Activity.guide_id == viewer.id)
+    return approved
 
 
 def validate_activity_data(
@@ -44,9 +58,11 @@ def validate_unique_name(
         raise ValueError("Activity name already exists in this attraction.")
 
 
-def list_activities(db: Session, status: ReviewStatus | None = None) -> list[Activity]:
-    """Return all activities, optionally only those with the given status."""
-    statement = select(Activity)
+def list_activities(
+    db: Session, viewer: User, status: ReviewStatus | None = None
+) -> list[Activity]:
+    """Return the activities the user can see, optionally only those with the given status."""
+    statement = select(Activity).where(visible_to(viewer))
     if status is not None:
         statement = statement.where(Activity.status == status)
     return list(db.scalars(statement))
@@ -55,6 +71,12 @@ def list_activities(db: Session, status: ReviewStatus | None = None) -> list[Act
 def get_activity(db: Session, activity_id: int) -> Activity | None:
     """Return an activity by id, or None if it doesn't exist."""
     return db.get(Activity, activity_id)
+
+
+def get_visible_activity(db: Session, activity_id: int, viewer: User) -> Activity | None:
+    """Return an activity by id, or None if it doesn't exist or the user can't see it."""
+    statement = select(Activity).where(Activity.id == activity_id, visible_to(viewer))
+    return db.scalars(statement).first()
 
 
 def create_activity(db: Session, data: ActivityCreate) -> Activity:
@@ -105,12 +127,12 @@ def delete_activity(db: Session, activity: Activity) -> None:
     db.commit()
 
 
-def activities_by_type(db: Session, activity_type_code: str) -> list[Activity]:
-    """Return all activities of a specific type."""
+def activities_by_type(db: Session, activity_type_code: str, viewer: User) -> list[Activity]:
+    """Return the activities of a specific type that the user can see."""
     validate_activity_data(db, activity_type_code=activity_type_code)
     statement = (
         select(Activity)
-        .where(Activity.activity_type_code == activity_type_code)
+        .where(Activity.activity_type_code == activity_type_code, visible_to(viewer))
         .order_by(Activity.name)
     )
     return list(db.scalars(statement))

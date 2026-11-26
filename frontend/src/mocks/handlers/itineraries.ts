@@ -76,7 +76,7 @@ export function toDays(record: ItineraryRecord): ItineraryDay[] {
         attraction_name: item.attraction_name,
         activity_type_code: item.activity_type_code,
         effort_level: item.effort_level,
-        duration_minutes: item.duration_minutes,
+        duration_minutes: item.duration,
       };
     }),
   }));

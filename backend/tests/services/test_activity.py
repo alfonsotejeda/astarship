@@ -70,20 +70,24 @@ def test_create_activity_persists_it(db_session, refs):
         ("attraction_id", 999, "Attraction"),
     ],
 )
-def test_create_activity_with_unknown_reference_raises(db_session, refs, field, value, message):
+def test_create_activity_with_unknown_reference_raises(
+    db_session, refs, admin_viewer, field, value, message
+):
     with pytest.raises(LookupError, match=message):
         _create(db_session, refs, **{field: value})
 
-    assert activity_service.list_activities(db_session) == []
+    assert activity_service.list_activities(db_session, admin_viewer) == []
 
 
-def test_create_activity_rejects_repeated_name_in_the_same_attraction(db_session, refs):
+def test_create_activity_rejects_repeated_name_in_the_same_attraction(
+    db_session, refs, admin_viewer
+):
     _create(db_session, refs, name="Tour")
 
     with pytest.raises(ValueError, match="already exists"):
         _create(db_session, refs, name="Tour")
 
-    assert len(activity_service.list_activities(db_session)) == 1
+    assert len(activity_service.list_activities(db_session, admin_viewer)) == 1
 
 
 def test_create_activity_allows_same_name_in_another_attraction(db_session, refs):
@@ -190,18 +194,18 @@ def test_delete_activity_removes_it(db_session, refs):
     assert activity_service.get_activity(db_session, activity.id) is None
 
 
-def test_list_activities_filters_by_status(db_session, refs):
+def test_list_activities_filters_by_status(db_session, refs, admin_viewer):
     approved = _create(db_session, refs, name="A")
     _create(db_session, refs, name="B")
     approved.status = ReviewStatus.APPROVED
     db_session.commit()
 
-    result = activity_service.list_activities(db_session, ReviewStatus.APPROVED)
+    result = activity_service.list_activities(db_session, admin_viewer, ReviewStatus.APPROVED)
 
     assert [a.id for a in result] == [approved.id]
 
 
-def test_activities_by_type_returns_only_that_type_ordered_by_name(db_session, refs):
+def test_activities_by_type_returns_only_that_type_ordered_by_name(db_session, refs, admin_viewer):
     _create(db_session, refs, name="Beta")
     _create(db_session, refs, name="Alpha")
     activity_type_service.create_activity_type(
@@ -209,11 +213,11 @@ def test_activities_by_type_returns_only_that_type_ordered_by_name(db_session, r
     )
     _create(db_session, refs, name="Louvre", activity_type_code="MUSEUM")
 
-    result = activity_service.activities_by_type(db_session, "HIKE")
+    result = activity_service.activities_by_type(db_session, "HIKE", admin_viewer)
 
     assert [a.name for a in result] == ["Alpha", "Beta"]
 
 
-def test_activities_by_type_raises_when_type_is_missing(db_session):
+def test_activities_by_type_raises_when_type_is_missing(db_session, admin_viewer):
     with pytest.raises(LookupError, match="Activity Type"):
-        activity_service.activities_by_type(db_session, "MISSING")
+        activity_service.activities_by_type(db_session, "MISSING", admin_viewer)

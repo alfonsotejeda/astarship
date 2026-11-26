@@ -51,7 +51,7 @@ export function toActivity(record: ActivityRecord): Activity {
   return {
     ...record,
     attraction_name: attractions.find(item => item.id === record.attraction_id)?.name ?? null,
-    author_name: users.find(item => item.id === record.user_id)?.name ?? null,
+    author_name: users.find(item => item.id === record.guide_id)?.name ?? null,
     uses: uses(record.id),
     last_validation: lastValidation(record.id),
   };
@@ -66,7 +66,7 @@ function inPackage(activity: ActivityRecord, packageId: number) {
 
 // RNF-10: everyone sees the approved ones; a guide also sees their own, the admin all of them
 function isVisible(record: ActivityRecord, userId: number) {
-  return record.status === "approved" || record.user_id === userId || role(userId) === "admin";
+  return record.status === "approved" || record.guide_id === userId || role(userId) === "admin";
 }
 
 function checkForm(form: Partial<ActivityForm>) {
@@ -116,7 +116,7 @@ function fields(form: ActivityForm) {
     activity_type_code: form.activity_type_code,
     category_id: form.category_id,
     effort_level: form.effort_level,
-    duration_minutes: form.duration_minutes,
+    duration: form.duration_minutes,
   };
 }
 
@@ -131,7 +131,7 @@ function create(form: Partial<ActivityForm>, userId: number) {
     ...fields(form as ActivityForm),
     status: "pending",
     creation_date: today(),
-    user_id: userId,
+    guide_id: userId,
   };
   activities.push(record);
   openPairs(record);
@@ -147,7 +147,7 @@ function findVisible(id: string, userId: number) {
 function update(id: string, form: Partial<ActivityForm>, userId: number) {
   const record = findVisible(id, userId);
   // RN-01
-  if (record.user_id !== userId) throw new ApiError(403, "Solo puedes editar las actividades que describiste tú.");
+  if (record.guide_id !== userId) throw new ApiError(403, "Solo puedes editar las actividades que describiste tú.");
   checkForm(form);
   checkUnique(form as ActivityForm, record.id);
 

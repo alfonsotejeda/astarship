@@ -21,12 +21,12 @@ export interface Activity {
   creation_date: string;
   activity_type_code: string | null;
   category_id: number | null;
-  user_id: number | null;
+  guide_id: number | null;
   attraction_id: number | null;
   // Expanded for display: Attraction, Duration and the author (pantallas.md §2)
   attraction_name: string | null;
   author_name: string | null;
-  duration_minutes: number;
+  duration: number;
   // Times it appears in approved itineraries
   uses: number;
   // The administrator's last review of a new activity (#156)

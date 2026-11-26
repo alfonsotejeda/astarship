@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasPath, BaseModel, Field, field_validator
 
 from app.models.status import ReviewStatus
 from app.schemas.base import ORMSchema
@@ -49,7 +49,7 @@ class ActivityUpdate(BaseModel):
 
 
 class ActivityRead(ORMSchema):
-    """Activity fields returned by the API."""
+    """Activity fields returned by the API, with the names the screens show next to the ids."""
 
     id: int
     name: str
@@ -61,3 +61,7 @@ class ActivityRead(ORMSchema):
     category_id: int
     guide_id: int
     attraction_id: int
+    attraction_name: str = Field(validation_alias=AliasPath("attraction", "name"))
+    author_name: str = Field(validation_alias=AliasPath("guide", "user", "name"))
+    uses: int = 0  # times in approved itineraries, still to be counted (RC-2, #56)
+    last_validation: None = None  # the administrator's last review, still to be added (#267)

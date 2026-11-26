@@ -99,6 +99,18 @@ def test_get_attraction_includes_its_activities(client, insert_activity):
     assert body["activities"][0]["name"] == "Hiking"
 
 
+def test_get_attraction_hides_the_activities_the_user_cannot_see(
+    client, as_user, guide_id, insert_activity
+):
+    activity = insert_activity()  # pending, and written by another guide
+
+    with as_user(guide_id):
+        body = client.get(f"/api/attractions/{activity.attraction_id}").json()
+
+    assert body["activity_count"] == 0
+    assert body["activities"] == []
+
+
 def test_get_attraction_includes_its_connections_quickest_first(client):
     plaza = client.post("/api/attractions", json={**PAYLOAD, "latitude": 23.1400}).json()
     near = client.post("/api/attractions", json={**PAYLOAD, "latitude": 23.1445}).json()  # 500 m

@@ -39,7 +39,7 @@ export function toRowActivity(activity: Activity, category: string | undefined):
     type: toActivityType(activity.activity_type_code),
     category,
     effort: toEffortLevel(activity.effort_level),
-    duration: formatDuration(activity.duration_minutes),
+    duration: formatDuration(activity.duration),
   };
 }
 
