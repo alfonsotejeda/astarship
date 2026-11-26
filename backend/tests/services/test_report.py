@@ -160,9 +160,9 @@ def test_rc2_counts_uses_of_approved_itineraries_only(db_session, rc2_data):
     report = report_service.rc2_most_used_activities(db_session)
 
     assert [(row.activity_name, row.effort, row.uses, row.percentage) for row in report.rows] == [
-        ("Peak", EffortLevel.ALTO, 3, pytest.approx(3 / 7 * 100)),
-        ("Forest", EffortLevel.MEDIO, 2, pytest.approx(2 / 7 * 100)),
-        ("River", EffortLevel.BAJO, 2, pytest.approx(2 / 7 * 100)),
+        ("Peak", EffortLevel.HIGH, 3, pytest.approx(3 / 7 * 100)),
+        ("Forest", EffortLevel.MEDIUM, 2, pytest.approx(2 / 7 * 100)),
+        ("River", EffortLevel.LOW, 2, pytest.approx(2 / 7 * 100)),
     ]
 
 
@@ -235,7 +235,7 @@ def test_rc2_filters_by_date_range(db_session, rc2_data):
 def test_rc2_chart_stacks_uses_by_category_and_effort(db_session, rc2_data):
     report = report_service.rc2_most_used_activities(db_session)
 
-    assert [(point.category, point.bajo, point.medio, point.alto) for point in report.chart] == [
+    assert [(point.category, point.low, point.medium, point.high) for point in report.chart] == [
         ("Hiking routes", 0, 2, 3),
         ("Water", 2, 0, 0),
     ]
@@ -244,7 +244,7 @@ def test_rc2_chart_stacks_uses_by_category_and_effort(db_session, rc2_data):
 def test_rc2_chart_uses_the_same_filters(db_session, rc2_data):
     report = report_service.rc2_most_used_activities(db_session, package_id=rc2_data["alps_id"])
 
-    assert [(point.category, point.bajo, point.medio, point.alto) for point in report.chart] == [
+    assert [(point.category, point.low, point.medium, point.high) for point in report.chart] == [
         ("Water", 1, 0, 0)
     ]
 

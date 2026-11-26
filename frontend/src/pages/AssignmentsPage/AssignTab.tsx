@@ -19,7 +19,7 @@ import type { Package } from "@/lib/api/packages";
 import { useGroupTourists, useTravelGroups } from "@/lib/api/people";
 import type { GroupTourist, TravelGroup } from "@/lib/api/people";
 import { formatDate, formatItineraryCode } from "@/lib/format";
-import { itineraryStatus, proportionText, toEffortCount } from "@/lib/itinerary";
+import { itineraryStatus, proportionText } from "@/lib/itinerary";
 import { itineraryLabel, touristCount } from "./shared";
 
 export function AssignTab() {
@@ -192,7 +192,7 @@ function AssignContent({ packages, itineraries, groups }: AssignContentProps) {
                   date: formatDate(itinerary.submitted_date ?? itinerary.creation_date),
                   days: itinerary.days,
                   activities: itinerary.activity_count,
-                  effort: toEffortCount(itinerary.effort),
+                  effort: itinerary.effort,
                   params: proportionText(itinerary.proportion_types),
                 }}
                 onClick={() => navigate(`/itineraries/${itinerary.id}`)}

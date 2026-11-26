@@ -4,9 +4,9 @@ import { EffortMeter } from "@/components/EffortMeter/EffortMeter";
 import { Panel } from "@/components/Panel/Panel";
 
 const ROWS = [
-  { name: "Catedral de La Habana", type: "visita", effort: "bajo" },
-  { name: "Ruta por el Malecón", type: "excursion", effort: "medio" },
-  { name: "Taller de tabaco", type: "taller", effort: "bajo" },
+  { name: "Catedral de La Habana", type: "visita", effort: "low" },
+  { name: "Ruta por el Malecón", type: "excursion", effort: "medium" },
+  { name: "Taller de tabaco", type: "taller", effort: "low" },
 ] as const;
 
 const rowStyle = {

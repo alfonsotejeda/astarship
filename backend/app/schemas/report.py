@@ -114,9 +114,9 @@ class Rc2ChartPoint(BaseModel):
 
     category_id: int
     category: str
-    bajo: int
-    medio: int
-    alto: int
+    low: int
+    medium: int
+    high: int
 
 
 class Rc2Summary(BaseModel):

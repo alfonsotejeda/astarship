@@ -1,12 +1,12 @@
 import type { HTMLAttributes } from "react";
 import "./EffortMeter.css";
 
-export type EffortLevel = "bajo" | "medio" | "alto";
+export type EffortLevel = "low" | "medium" | "high";
 
 const LEVELS: Record<EffortLevel, { bars: number; label: string }> = {
-  bajo: { bars: 1, label: "Bajo" },
-  medio: { bars: 2, label: "Medio" },
-  alto: { bars: 3, label: "Alto" },
+  low: { bars: 1, label: "Bajo" },
+  medium: { bars: 2, label: "Medio" },
+  high: { bars: 3, label: "Alto" },
 };
 
 type EffortMeterProps = HTMLAttributes<HTMLSpanElement> & {

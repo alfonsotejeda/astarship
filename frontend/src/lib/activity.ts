@@ -19,7 +19,7 @@ export const EFFORT_OPTIONS = [
   { value: "3", label: "Alto" },
 ];
 
-export const EFFORT_LABEL: Record<EffortLevel, string> = { bajo: "Bajo", medio: "Medio", alto: "Alto" };
+export const EFFORT_LABEL: Record<EffortLevel, string> = { low: "Bajo", medium: "Medio", high: "Alto" };
 
 export function typeLabel(code: string | null) {
   return TYPE_OPTIONS.find(option => option.value === code)?.label ?? "";

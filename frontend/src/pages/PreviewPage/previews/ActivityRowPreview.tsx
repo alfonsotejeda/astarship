@@ -5,10 +5,10 @@ import { Button } from "@/components/Button/Button";
 import { Panel } from "@/components/Panel/Panel";
 
 const ACTIVITIES: Activity[] = [
-  { id: 1, name: "Castillo de la Real Fuerza", attraction: "Plaza de Armas", author: "Laura Pérez", type: "visita", category: "Patrimonio", effort: "bajo", duration: "1 h" },
-  { id: 2, name: "Subida al Morro", attraction: "Castillo del Morro", author: "Ernesto Díaz", type: "excursion", category: "Patrimonio", effort: "alto", duration: "2 h" },
-  { id: 3, name: "Recorrido por la Plaza Vieja", attraction: "Plaza Vieja", author: "Yanet Rodríguez", type: "excursion", category: "Patrimonio", effort: "medio", duration: "1 h 30 min" },
-  { id: 4, name: "Taller de cocina criolla", attraction: "Paladar El Patio", author: "Laura Pérez", type: "taller", category: "Gastronomía", effort: "bajo", duration: "1 h 30 min" },
+  { id: 1, name: "Castillo de la Real Fuerza", attraction: "Plaza de Armas", author: "Laura Pérez", type: "visita", category: "Patrimonio", effort: "low", duration: "1 h" },
+  { id: 2, name: "Subida al Morro", attraction: "Castillo del Morro", author: "Ernesto Díaz", type: "excursion", category: "Patrimonio", effort: "high", duration: "2 h" },
+  { id: 3, name: "Recorrido por la Plaza Vieja", attraction: "Plaza Vieja", author: "Yanet Rodríguez", type: "excursion", category: "Patrimonio", effort: "medium", duration: "1 h 30 min" },
+  { id: 4, name: "Taller de cocina criolla", attraction: "Paladar El Patio", author: "Laura Pérez", type: "taller", category: "Gastronomía", effort: "low", duration: "1 h 30 min" },
 ];
 
 const sectionStyle = { maxWidth: 720 };

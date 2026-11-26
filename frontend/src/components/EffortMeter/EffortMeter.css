@@ -39,14 +39,14 @@
   height: 14px;
 }
 
-.effort-meter--bajo .effort-meter__bar--on {
+.effort-meter--low .effort-meter__bar--on {
   background: var(--effort-low);
 }
 
-.effort-meter--medio .effort-meter__bar--on {
+.effort-meter--medium .effort-meter__bar--on {
   background: var(--effort-medium);
 }
 
-.effort-meter--alto .effort-meter__bar--on {
+.effort-meter--high .effort-meter__bar--on {
   background: var(--effort-high);
 }

@@ -6,26 +6,26 @@ export function EffortMeterPreview() {
       <section className="preview-section">
         <h2>Con palabra</h2>
         <div className="preview-row">
-          <EffortMeter level="bajo" />
-          <EffortMeter level="medio" />
-          <EffortMeter level="alto" />
+          <EffortMeter level="low" />
+          <EffortMeter level="medium" />
+          <EffortMeter level="high" />
         </div>
       </section>
 
       <section className="preview-section">
         <h2>Sin palabra (celdas estrechas)</h2>
         <div className="preview-row">
-          <EffortMeter level="bajo" showLabel={false} />
-          <EffortMeter level="medio" showLabel={false} />
-          <EffortMeter level="alto" showLabel={false} />
+          <EffortMeter level="low" showLabel={false} />
+          <EffortMeter level="medium" showLabel={false} />
+          <EffortMeter level="high" showLabel={false} />
         </div>
       </section>
 
       <section className="preview-section">
         <h2>Enfocable</h2>
         <div className="preview-row">
-          <EffortMeter level="medio" tabIndex={0} />
-          <EffortMeter level="alto" showLabel={false} tabIndex={0} />
+          <EffortMeter level="medium" tabIndex={0} />
+          <EffortMeter level="high" showLabel={false} tabIndex={0} />
         </div>
       </section>
     </>

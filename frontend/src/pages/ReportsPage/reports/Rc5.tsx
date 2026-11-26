@@ -26,9 +26,9 @@ const TYPE_SERIES: ChartSeries[] = [
 ];
 
 const EFFORT_SERIES: ChartSeries[] = [
-  { key: "bajo", label: "Bajo", color: "effort-low" },
-  { key: "medio", label: "Medio", color: "effort-medium" },
-  { key: "alto", label: "Alto", color: "effort-high" },
+  { key: "low", label: "Bajo", color: "effort-low" },
+  { key: "medium", label: "Medio", color: "effort-medium" },
+  { key: "high", label: "Alto", color: "effort-high" },
 ];
 
 function rangeText({ date_from, date_to }: Rc5Filters) {
@@ -121,9 +121,9 @@ export function Rc5() {
   }));
   const effortChart: ChartDatum[] = (report.data?.effort_chart ?? []).map(point => ({
     package: point.package_name,
-    bajo: point.bajo,
-    medio: point.medio,
-    alto: point.alto,
+    low: point.low,
+    medium: point.medium,
+    high: point.high,
   }));
 
   function setFilter(key: keyof Rc5Filters, value: string) {

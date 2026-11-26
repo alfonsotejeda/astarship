@@ -1,11 +1,9 @@
-import type { EffortCount } from "@/components/ItineraryCard/EffortSplit";
 import type { RouteStop } from "@/components/RouteTimeline/RouteTimeline";
 import type { AssignmentStatus, ReviewStatus } from "@/components/StatusPill/StatusPill";
 import { EFFORT_LABEL } from "@/lib/activity";
 import { toActivityType, toEffortLevel } from "@/lib/api/activities";
 import type {
   CriterionKey,
-  EffortCounts,
   ItineraryCriterion,
   ItineraryDay,
   ItineraryDetail,
@@ -36,10 +34,6 @@ export const CRITERION_LABEL: Record<CriterionKey, string> = {
 // «Asignado» is derived: an approved itinerary with an assignment
 export function itineraryStatus(item: { status: ItineraryStatus; assigned: boolean }): ReviewStatus | AssignmentStatus {
   return item.assigned ? "asignado" : ITINERARY_STATUS[item.status];
-}
-
-export function toEffortCount(effort: EffortCounts): EffortCount {
-  return { bajo: effort.low, medio: effort.medium, alto: effort.high };
 }
 
 export function proportionText(proportion: ProportionType[]) {

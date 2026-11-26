@@ -20,15 +20,15 @@ import type { ReportTable } from "../ReportTemplate";
 
 const NO_FILTERS: Rc6Filters = { package_id: "", date_from: "", date_to: "" };
 
-const EFFORT_ORDER: Record<EffortLevel, number> = { bajo: 1, medio: 2, alto: 3 };
-const EFFORT_LABEL: Record<EffortLevel, string> = { bajo: "Bajo", medio: "Medio", alto: "Alto" };
+const EFFORT_ORDER: Record<EffortLevel, number> = { low: 1, medium: 2, high: 3 };
+const EFFORT_LABEL: Record<EffortLevel, string> = { low: "Bajo", medium: "Medio", high: "Alto" };
 
 const PACKAGE_COLORS = ["destination", "origin", "workshop", "route", "effort-low", "effort-medium"];
 
 const EFFORT_SERIES: ChartSeries[] = [
-  { key: "bajo", label: "Bajo", color: "effort-low" },
-  { key: "medio", label: "Medio", color: "effort-medium" },
-  { key: "alto", label: "Alto", color: "effort-high" },
+  { key: "low", label: "Bajo", color: "effort-low" },
+  { key: "medium", label: "Medio", color: "effort-medium" },
+  { key: "high", label: "Alto", color: "effort-high" },
 ];
 
 const X_TICKS = [
@@ -225,15 +225,15 @@ export function Rc6() {
 
   const packageData: ChartDatum[] = packagePoints.map(point => ({
     package: point.package_name,
-    bajo: point.bajo ?? undefined,
-    medio: point.medio ?? undefined,
-    alto: point.alto ?? undefined,
+    low: point.low ?? undefined,
+    medium: point.medium ?? undefined,
+    high: point.high ?? undefined,
   }));
   const packageTableColumns: Column<ChartDatum>[] = [
     { key: "package", label: "Paquete" },
-    ratingColumn("bajo", "Bajo"),
-    ratingColumn("medio", "Medio"),
-    ratingColumn("alto", "Alto"),
+    ratingColumn("low", "Bajo"),
+    ratingColumn("medium", "Medio"),
+    ratingColumn("high", "Alto"),
   ];
 
   const effortText = effortSummary

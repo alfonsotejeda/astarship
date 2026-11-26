@@ -5,9 +5,9 @@ import { ItineraryCard } from "@/components/ItineraryCard/ItineraryCard";
 import type { ItinerarySummary } from "@/components/ItineraryCard/ItineraryCard";
 
 const ITINERARIES: ItinerarySummary[] = [
-  { id: "IT-0151", package: "La Habana colonial", status: "validado", creator: "Laura Pérez", date: "10 oct 2026", days: 5, activities: 14, effort: { bajo: 7, medio: 5, alto: 2 }, params: "40 / 35 / 25 %" },
-  { id: "IT-0139", package: "Viñales natural", status: "rechazado", creator: "Ernesto Díaz", date: "5 oct 2026", days: 3, activities: 10, effort: { bajo: 2, medio: 3, alto: 5 }, params: "20 / 60 / 20 %" },
-  { id: "IT-0128", package: "Trinidad y Topes", status: "asignado", creator: "Yanet Rodríguez", date: "27 sep 2026", days: 1, activities: 4, effort: { bajo: 3, medio: 1, alto: 0 } },
+  { id: "IT-0151", package: "La Habana colonial", status: "validado", creator: "Laura Pérez", date: "10 oct 2026", days: 5, activities: 14, effort: { low: 7, medium: 5, high: 2 }, params: "40 / 35 / 25 %" },
+  { id: "IT-0139", package: "Viñales natural", status: "rechazado", creator: "Ernesto Díaz", date: "5 oct 2026", days: 3, activities: 10, effort: { low: 2, medium: 3, high: 5 }, params: "20 / 60 / 20 %" },
+  { id: "IT-0128", package: "Trinidad y Topes", status: "asignado", creator: "Yanet Rodríguez", date: "27 sep 2026", days: 1, activities: 4, effort: { low: 3, medium: 1, high: 0 } },
 ];
 
 const gridStyle = {
@@ -46,9 +46,9 @@ export function ItineraryCardPreview() {
       <section className="preview-section">
         <h2>EffortSplit</h2>
         <div className="preview-row">
-          <EffortSplit effort={{ bajo: 7, medio: 5, alto: 2 }} />
-          <EffortSplit effort={{ bajo: 2, medio: 3, alto: 5 }} />
-          <EffortSplit effort={{ bajo: 0, medio: 0, alto: 0 }} />
+          <EffortSplit effort={{ low: 7, medium: 5, high: 2 }} />
+          <EffortSplit effort={{ low: 2, medium: 3, high: 5 }} />
+          <EffortSplit effort={{ low: 0, medium: 0, high: 0 }} />
         </div>
       </section>
     </>

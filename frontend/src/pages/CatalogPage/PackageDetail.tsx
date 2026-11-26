@@ -22,7 +22,7 @@ import type { CatalogItinerary, CatalogPackageDetail } from "@/lib/api/catalog";
 import { ApiError } from "@/lib/api/client";
 import { attractionPoint, attractionsText } from "@/lib/attraction";
 import { formatDate, formatItineraryCode } from "@/lib/format";
-import { maxDayEffort, toEffortCount, toStops } from "@/lib/itinerary";
+import { maxDayEffort, toStops } from "@/lib/itinerary";
 import { BookingDialog } from "./BookingDialog";
 import { BOOKING_PILL, bookingFor, canBook, daysText } from "./shared";
 
@@ -237,7 +237,7 @@ function ItinerarySummary({ itinerary }: { itinerary: CatalogItinerary }) {
       <div className="catalog__fact">
         <dt className="catalog__eyebrow">Esfuerzo B · M · A</dt>
         <dd>
-          <EffortSplit effort={toEffortCount(itinerary.effort)} />
+          <EffortSplit effort={itinerary.effort} />
         </dd>
       </div>
       <div className="catalog__fact">

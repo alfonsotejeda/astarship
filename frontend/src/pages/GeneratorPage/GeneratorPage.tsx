@@ -479,7 +479,7 @@ type SelectionPanelProps = {
 };
 
 function SelectionPanel({ selected, types, total, canGenerate, generating, generated, onGenerate }: SelectionPanelProps) {
-  const effort = { bajo: 0, medio: 0, alto: 0 };
+  const effort = { low: 0, medium: 0, high: 0 };
   selected.forEach(activity => effort[toEffortLevel(activity.effort_level)]++);
 
   return (

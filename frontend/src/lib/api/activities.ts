@@ -70,9 +70,9 @@ export function toActivityType(code: string | null): ActivityType | undefined {
 
 // Same scale as the reports: 1 low, 2 medium, 3 high
 export function toEffortLevel(level: number): EffortLevel {
-  if (level <= 1) return "bajo";
-  if (level === 2) return "medio";
-  return "alto";
+  if (level <= 1) return "low";
+  if (level === 2) return "medium";
+  return "high";
 }
 
 // RNF-10: a guide gets the approved ones plus their own; the admin, all of them

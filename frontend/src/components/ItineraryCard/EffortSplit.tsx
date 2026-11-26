@@ -4,19 +4,19 @@ import "./EffortSplit.css";
 export type EffortCount = Record<EffortLevel, number>;
 
 const LEVELS: { key: EffortLevel; color: string }[] = [
-  { key: "bajo", color: "var(--effort-low)" },
-  { key: "medio", color: "var(--effort-medium)" },
-  { key: "alto", color: "var(--effort-high)" },
+  { key: "low", color: "var(--effort-low)" },
+  { key: "medium", color: "var(--effort-medium)" },
+  { key: "high", color: "var(--effort-high)" },
 ];
 
 export function EffortSplit({ effort }: { effort: EffortCount }) {
-  const total = effort.bajo + effort.medio + effort.alto || 1;
+  const total = effort.low + effort.medium + effort.high || 1;
 
   return (
     <span
       className="effort-split"
       role="img"
-      aria-label={`Esfuerzo: ${effort.bajo} bajo, ${effort.medio} medio, ${effort.alto} alto`}
+      aria-label={`Esfuerzo: ${effort.low} bajo, ${effort.medium} medio, ${effort.high} alto`}
     >
       <span className="effort-split__bar">
         {LEVELS.map(level => (
@@ -24,7 +24,7 @@ export function EffortSplit({ effort }: { effort: EffortCount }) {
         ))}
       </span>
       <span className="effort-split__count">
-        {effort.bajo} · {effort.medio} · {effort.alto}
+        {effort.low} · {effort.medium} · {effort.high}
       </span>
     </span>
   );

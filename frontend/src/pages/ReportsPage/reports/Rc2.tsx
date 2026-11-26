@@ -14,13 +14,13 @@ import { reportTable, ReportTemplate } from "../ReportTemplate";
 const NO_FILTERS: Rc2Filters = { package_id: "", date_from: "", date_to: "" };
 
 const EFFORT_SERIES: ChartSeries[] = [
-  { key: "bajo", label: "Bajo", color: "effort-low" },
-  { key: "medio", label: "Medio", color: "effort-medium" },
-  { key: "alto", label: "Alto", color: "effort-high" },
+  { key: "low", label: "Bajo", color: "effort-low" },
+  { key: "medium", label: "Medio", color: "effort-medium" },
+  { key: "high", label: "Alto", color: "effort-high" },
 ];
 
-const EFFORT_ORDER: Record<EffortLevel, number> = { bajo: 1, medio: 2, alto: 3 };
-const EFFORT_LABEL: Record<EffortLevel, string> = { bajo: "Bajo", medio: "Medio", alto: "Alto" };
+const EFFORT_ORDER: Record<EffortLevel, number> = { low: 1, medium: 2, high: 3 };
+const EFFORT_LABEL: Record<EffortLevel, string> = { low: "Bajo", medium: "Medio", high: "Alto" };
 
 function rangeText({ date_from, date_to }: Rc2Filters) {
   if (date_from && date_to) return formatDateRange(date_from, date_to);
@@ -70,9 +70,9 @@ export function Rc2() {
   // ChartPanel takes plain records; the API shape keeps its own fields for the table
   const chart: ChartDatum[] = (report.data?.chart ?? []).map(point => ({
     category: point.category,
-    bajo: point.bajo,
-    medio: point.medio,
-    alto: point.alto,
+    low: point.low,
+    medium: point.medium,
+    high: point.high,
   }));
   const summary = report.data?.summary;
   const packageName = packages.data?.find(pkg => String(pkg.id) === filters.package_id)?.name;

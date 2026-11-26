@@ -19,7 +19,6 @@ import {
   STATUS_LABEL,
   STATUS_OPTIONS,
   STATUS_ORDER,
-  toEffortCount,
 } from "@/lib/itinerary";
 
 type ItinerariesTableProps = {
@@ -84,7 +83,7 @@ export function ItinerariesTable({ items, title, allPackagesLabel }: Itineraries
       key: "effort",
       label: "Esfuerzo B · M · A",
       sortable: false,
-      render: item => <EffortSplit effort={toEffortCount(item.effort)} />,
+      render: item => <EffortSplit effort={item.effort} />,
       exportValue: item => `${item.effort.low} · ${item.effort.medium} · ${item.effort.high}`,
     },
     {

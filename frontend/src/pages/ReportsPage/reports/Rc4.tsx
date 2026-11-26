@@ -18,7 +18,7 @@ const EXPERIENCE_SERIES: ChartSeries[] = [
   { key: "abandonment", label: "Abandono", color: "bad" },
 ];
 
-const EFFORT_ORDER: Record<EffortLevel, number> = { bajo: 1, medio: 2, alto: 3 };
+const EFFORT_ORDER: Record<EffortLevel, number> = { low: 1, medium: 2, high: 3 };
 
 function percentText(value: number) {
   return `${formatDecimal(value)} %`;

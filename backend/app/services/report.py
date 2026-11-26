@@ -164,10 +164,10 @@ def rc1_generated_itineraries(
 def _effort_level(level: int) -> EffortLevel:
     """Map an activity's numeric effort level to the band shown in the report."""
     if level <= 1:
-        return EffortLevel.BAJO
+        return EffortLevel.LOW
     if level == 2:
-        return EffortLevel.MEDIO
-    return EffortLevel.ALTO
+        return EffortLevel.MEDIUM
+    return EffortLevel.HIGH
 
 
 def _rc2_sort_column(sort: Rc2SortColumn):
@@ -285,15 +285,15 @@ def rc2_most_used_activities(
             point = Rc2ChartPoint(
                 category_id=row.category_id,
                 category=row.category_name,
-                bajo=0,
-                medio=0,
-                alto=0,
+                low=0,
+                medium=0,
+                high=0,
             )
             chart_by_category[row.category_id] = point
         setattr(point, row.effort.value, getattr(point, row.effort.value) + row.uses)
     chart = sorted(
         chart_by_category.values(),
-        key=lambda point: (-(point.bajo + point.medio + point.alto), point.category),
+        key=lambda point: (-(point.low + point.medium + point.high), point.category),
     )
 
     finals_statement = _rc2_filter(select(func.count(Itinerary.id)), package_id, date_from, date_to)
@@ -301,6 +301,6 @@ def rc2_most_used_activities(
         final_itineraries=db.scalar(finals_statement) or 0,
         distinct_activities=len(rows),
         total_uses=total_uses,
-        high_effort_uses=sum(row.uses for row in rows if row.effort is EffortLevel.ALTO),
+        high_effort_uses=sum(row.uses for row in rows if row.effort is EffortLevel.HIGH),
     )
     return Rc2Report(rows=rows, chart=chart, summary=summary)

@@ -4,9 +4,9 @@ import { toEffortLevel } from "@/lib/api/activities";
 import type { ItineraryDay } from "@/lib/api/itineraries";
 
 const EFFORT_SERIES = [
-  { key: "bajo", label: EFFORT_LABEL.bajo, color: "effort-low" },
-  { key: "medio", label: EFFORT_LABEL.medio, color: "effort-medium" },
-  { key: "alto", label: EFFORT_LABEL.alto, color: "effort-high" },
+  { key: "low", label: EFFORT_LABEL.low, color: "effort-low" },
+  { key: "medium", label: EFFORT_LABEL.medium, color: "effort-medium" },
+  { key: "high", label: EFFORT_LABEL.high, color: "effort-high" },
 ];
 
 type EffortChartProps = {
@@ -16,7 +16,7 @@ type EffortChartProps = {
 
 export function EffortChart({ days, subtitle = "Número de actividades por nivel de esfuerzo" }: EffortChartProps) {
   const data = days.map(day => {
-    const counts = { day: `Día ${day.day}`, bajo: 0, medio: 0, alto: 0 };
+    const counts = { day: `Día ${day.day}`, low: 0, medium: 0, high: 0 };
     day.stops.forEach(stop => counts[toEffortLevel(stop.effort_level)]++);
     return counts;
   });

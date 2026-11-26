@@ -16,7 +16,6 @@ import type { Booking } from "@/lib/api/bookings";
 import { useMyAssignments } from "@/lib/api/trips";
 import type { AssignmentStatus } from "@/lib/api/trips";
 import { formatDate, formatDateRange, formatItineraryCode } from "@/lib/format";
-import { toEffortCount } from "@/lib/itinerary";
 import { markSeen, resolvedBookingKeys } from "@/lib/seen";
 import { ASSIGNMENT_STATUS } from "@/lib/trip";
 import { TripActions } from "./shared";
@@ -173,7 +172,7 @@ export function TripsView() {
                     creator: `Guía ${item.guide_name}`,
                     days: item.days,
                     activities: item.activity_count,
-                    effort: toEffortCount(item.effort),
+                    effort: item.effort,
                   }}
                   onClick={() => navigate(`/trip/itineraries/${item.itinerary_id}`)}
                   actions={

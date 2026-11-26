@@ -24,7 +24,6 @@ import {
   proportionText,
   reviewQueue,
   STATUS_LABEL,
-  toEffortCount,
 } from "@/lib/itinerary";
 import { ItinerariesTable } from "./ItinerariesTable";
 
@@ -178,7 +177,7 @@ function ReviewQueue({ queue }: { queue: ItinerarySummary[] }) {
                 date: formatDate(item.submitted_date ?? item.creation_date),
                 days: item.days,
                 activities: item.activity_count,
-                effort: toEffortCount(item.effort),
+                effort: item.effort,
                 params: proportionText(item.proportion_types),
               }}
               actions={

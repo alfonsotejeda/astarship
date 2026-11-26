@@ -74,13 +74,13 @@ function rc1Report(query: URLSearchParams): Rc1Report {
 }
 
 function effortBand(level: number): Rc2Row["effort"] {
-  if (level <= 1) return "bajo";
-  if (level === 2) return "medio";
-  return "alto";
+  if (level <= 1) return "low";
+  if (level === 2) return "medium";
+  return "high";
 }
 
 function chartTotal(point: Rc2ChartPoint) {
-  return point.bajo + point.medio + point.alto;
+  return point.low + point.medium + point.high;
 }
 
 function rc2Report(query: URLSearchParams): Rc2Report {
@@ -137,7 +137,7 @@ function rc2Report(query: URLSearchParams): Rc2Report {
   for (const row of rows) {
     const point =
       byCategory.get(row.category_id) ??
-      ({ category_id: row.category_id, category: row.category_name, bajo: 0, medio: 0, alto: 0 } satisfies Rc2ChartPoint);
+      ({ category_id: row.category_id, category: row.category_name, low: 0, medium: 0, high: 0 } satisfies Rc2ChartPoint);
     point[row.effort] += row.uses;
     byCategory.set(row.category_id, point);
   }
@@ -150,7 +150,7 @@ function rc2Report(query: URLSearchParams): Rc2Report {
     final_itineraries: finals.length,
     distinct_activities: rows.length,
     total_uses: totalUses,
-    high_effort_uses: rows.filter(row => row.effort === "alto").reduce((sum, row) => sum + row.uses, 0),
+    high_effort_uses: rows.filter(row => row.effort === "high").reduce((sum, row) => sum + row.uses, 0),
   };
 
   return { rows, chart, summary };
@@ -238,9 +238,9 @@ function rc3Report(query: URLSearchParams): Rc3Report {
 }
 
 // Mock for GET /reports/rc4 until backend #58 exists. It reuses the demo visits.
-const EFFORT_LEVELS: EffortLevel[] = ["bajo", "medio", "alto"];
-const EFFORT_ORDER: Record<EffortLevel, number> = { bajo: 1, medio: 2, alto: 3 };
-const EFFORT_LABEL: Record<EffortLevel, string> = { bajo: "Bajo", medio: "Medio", alto: "Alto" };
+const EFFORT_LEVELS: EffortLevel[] = ["low", "medium", "high"];
+const EFFORT_ORDER: Record<EffortLevel, number> = { low: 1, medium: 2, high: 3 };
+const EFFORT_LABEL: Record<EffortLevel, string> = { low: "Bajo", medium: "Medio", high: "Alto" };
 
 // A tourist may belong to several groups; only those of the itinerary's package apply
 function groupIdsFor(userId: number, packageId: number) {
@@ -492,12 +492,12 @@ function rc5Report(query: URLSearchParams): Rc5Report {
       taller: typePoint.taller + counts.taller,
     });
 
-    const effortPoint = effortChart.get(pkg.id) ?? { package_id: pkg.id, package_name: pkg.name, bajo: 0, medio: 0, alto: 0 };
+    const effortPoint = effortChart.get(pkg.id) ?? { package_id: pkg.id, package_name: pkg.name, low: 0, medium: 0, high: 0 };
     effortChart.set(pkg.id, {
       ...effortPoint,
-      bajo: effortPoint.bajo + effort.low,
-      medio: effortPoint.medio + effort.medium,
-      alto: effortPoint.alto + effort.high,
+      low: effortPoint.low + effort.low,
+      medium: effortPoint.medium + effort.medium,
+      high: effortPoint.high + effort.high,
     });
 
     return {
@@ -541,7 +541,7 @@ function rc5Report(query: URLSearchParams): Rc5Report {
 
 // Mock for GET /reports/rc6 until backend #60 exists. It reuses the demo visits,
 // modification requests and travel groups.
-const EFFORT_VALUE: Record<EffortLevel, number> = { bajo: 1, medio: 2, alto: 3 };
+const EFFORT_VALUE: Record<EffortLevel, number> = { low: 1, medium: 2, high: 3 };
 const TOP_ABANDONMENT = 10;
 
 function inRange(date: string, from: string | null, to: string | null) {
@@ -732,9 +732,9 @@ function rc6Report(query: URLSearchParams): Rc6Report {
     .map(({ package: pkg, efforts }) => ({
       package_id: pkg.id,
       package_name: pkg.name,
-      bajo: efforts.bajo ?? null,
-      medio: efforts.medio ?? null,
-      alto: efforts.alto ?? null,
+      low: efforts.low ?? null,
+      medium: efforts.medium ?? null,
+      high: efforts.high ?? null,
     }))
     .sort(byPackageName);
 

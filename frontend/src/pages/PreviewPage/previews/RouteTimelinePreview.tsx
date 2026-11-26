@@ -4,11 +4,11 @@ import { RouteTimeline } from "@/components/RouteTimeline/RouteTimeline";
 import type { RouteStop } from "@/components/RouteTimeline/RouteTimeline";
 
 const DAY: RouteStop[] = [
-  { id: 1, time: "08:30", name: "Castillo de la Real Fuerza", place: "Plaza de Armas", type: "visita", effort: "bajo", duration: "1 h" },
-  { id: 2, time: "10:00", name: "Ruta a pie por la Habana Vieja", place: "Calle Obispo → Plaza Vieja", type: "excursion", effort: "medio", duration: "2 h" },
-  { id: 3, time: "12:30", name: "Taller de cocina criolla", place: "Paladar El Patio", type: "taller", effort: "bajo", duration: "1 h 30 min" },
-  { id: 4, time: "15:00", name: "Subida al Morro", place: "Castillo de los Tres Reyes del Morro", type: "excursion", effort: "alto", duration: "2 h" },
-  { id: 5, time: "18:30", name: "Cañonazo de las nueve", place: "Fortaleza de La Cabaña", type: "visita", effort: "medio", duration: "1 h 30 min" },
+  { id: 1, time: "08:30", name: "Castillo de la Real Fuerza", place: "Plaza de Armas", type: "visita", effort: "low", duration: "1 h" },
+  { id: 2, time: "10:00", name: "Ruta a pie por la Habana Vieja", place: "Calle Obispo → Plaza Vieja", type: "excursion", effort: "medium", duration: "2 h" },
+  { id: 3, time: "12:30", name: "Taller de cocina criolla", place: "Paladar El Patio", type: "taller", effort: "low", duration: "1 h 30 min" },
+  { id: 4, time: "15:00", name: "Subida al Morro", place: "Castillo de los Tres Reyes del Morro", type: "excursion", effort: "high", duration: "2 h" },
+  { id: 5, time: "18:30", name: "Cañonazo de las nueve", place: "Fortaleza de La Cabaña", type: "visita", effort: "medium", duration: "1 h 30 min" },
 ];
 
 const INITIAL_TOURIST_DAY: RouteStop[] = DAY.map((stop, index) => {

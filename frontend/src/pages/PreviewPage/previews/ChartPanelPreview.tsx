@@ -2,17 +2,17 @@ import { ChartPanel } from "@/components/ChartPanel/ChartPanel";
 import type { ChartSeries } from "@/components/ChartPanel/ChartPanel";
 
 const EFFORT_SERIES: ChartSeries[] = [
-  { key: "bajo", label: "Bajo", color: "effort-low" },
-  { key: "medio", label: "Medio", color: "effort-medium" },
-  { key: "alto", label: "Alto", color: "effort-high" },
+  { key: "low", label: "Bajo", color: "effort-low" },
+  { key: "medium", label: "Medio", color: "effort-medium" },
+  { key: "high", label: "Alto", color: "effort-high" },
 ];
 
 const BY_CATEGORY = [
-  { cat: "Patrimonio", bajo: 14, medio: 9, alto: 3 },
-  { cat: "Gastronomía", bajo: 11, medio: 2, alto: 0 },
-  { cat: "Naturaleza", bajo: 2, medio: 6, alto: 8 },
-  { cat: "Música", bajo: 7, medio: 4, alto: 1 },
-  { cat: "Arte", bajo: 9, medio: 3, alto: 0 },
+  { cat: "Patrimonio", low: 14, medium: 9, high: 3 },
+  { cat: "Gastronomía", low: 11, medium: 2, high: 0 },
+  { cat: "Naturaleza", low: 2, medium: 6, high: 8 },
+  { cat: "Música", low: 7, medium: 4, high: 1 },
+  { cat: "Arte", low: 9, medium: 3, high: 0 },
 ];
 
 const SATISFACTION_SERIES: ChartSeries[] = [

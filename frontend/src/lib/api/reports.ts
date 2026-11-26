@@ -86,9 +86,9 @@ export interface Rc2Row {
 export interface Rc2ChartPoint {
   category_id: number;
   category: string;
-  bajo: number;
-  medio: number;
-  alto: number;
+  low: number;
+  medium: number;
+  high: number;
 }
 
 export interface Rc2Summary {
@@ -278,9 +278,9 @@ export interface Rc5TypeChartPoint {
 export interface Rc5EffortChartPoint {
   package_id: number;
   package_name: string;
-  bajo: number;
-  medio: number;
-  alto: number;
+  low: number;
+  medium: number;
+  high: number;
 }
 
 // RC-5: an itinerary compared against its package's balance criteria
@@ -372,9 +372,9 @@ export interface Rc6Trend {
 export interface Rc6PackagePoint {
   package_id: number;
   package_name: string;
-  bajo: number | null;
-  medio: number | null;
-  alto: number | null;
+  low: number | null;
+  medium: number | null;
+  high: number | null;
 }
 
 export interface Rc6EffortSummary {

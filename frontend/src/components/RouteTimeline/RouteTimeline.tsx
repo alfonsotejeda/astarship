@@ -38,7 +38,7 @@ type RouteTimelineProps = {
 };
 
 // Same scale as the reports: low 1, medium 2, high 3
-const EFFORT_POINTS: Record<EffortLevel, number> = { bajo: 1, medio: 2, alto: 3 };
+const EFFORT_POINTS: Record<EffortLevel, number> = { low: 1, medium: 2, high: 3 };
 
 function cumulativeEffort(stops: RouteStop[]) {
   let total = 0;

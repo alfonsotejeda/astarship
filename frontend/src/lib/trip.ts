@@ -47,7 +47,7 @@ export function doneCount(day: TripDay) {
 }
 
 export function dayEffort(day: TripDay): EffortCount {
-  const effort = { bajo: 0, medio: 0, alto: 0 };
+  const effort = { low: 0, medium: 0, high: 0 };
   day.stops.forEach(stop => effort[toEffortLevel(stop.effort_level)]++);
   return effort;
 }
