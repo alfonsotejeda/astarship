@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from app.models.status import ReviewStatus
 from app.schemas.base import ORMSchema
+from app.schemas.category import CategoryRead
 
 
 class PackageCreate(BaseModel):
@@ -37,3 +38,10 @@ class PackageRead(ORMSchema):
     status: ReviewStatus
     creation_date: date
     admin_id: int
+    categories: list[CategoryRead]
+
+
+class PackageCategoriesUpdate(BaseModel):
+    """Categories a package must cover; they replace the current ones."""
+
+    category_ids: list[int]

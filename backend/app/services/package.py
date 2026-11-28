@@ -1,11 +1,13 @@
 """Package service."""
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from app.models.category import Category
+from app.models.coverage import Coverage
 from app.models.package import Package
 from app.models.status import ReviewStatus
-from app.schemas.package import PackageCreate, PackageUpdate
+from app.schemas.package import PackageCategoriesUpdate, PackageCreate, PackageUpdate
 
 
 def list_packages(db: Session, status: ReviewStatus | None = None) -> list[Package]:
@@ -91,6 +93,44 @@ def update_package(db: Session, package: Package, data: PackageUpdate) -> Packag
         raise ValueError("Package with this name and destination already exists")
     for field, value in updates.items():
         setattr(package, field, value)
+    db.commit()
+    db.refresh(package)
+    return package
+
+
+def set_package_categories(db: Session, package: Package, data: PackageCategoriesUpdate) -> Package:
+    """Replace the categories a package covers.
+
+    RN-11: if the categories change and the package was approved, it goes back to pending.
+
+    Args:
+        db: Database session.
+        package: Package whose categories are replaced.
+        data: Ids of every category the package must cover; order and repeats don't matter.
+
+    Returns:
+        The package with its new categories.
+
+    Raises:
+        LookupError: If any of the categories doesn't exist.
+    """
+    # Part 2: every requested category must exist
+    wanted = set(data.category_ids)
+    found = set(db.scalars(select(Category.id).where(Category.id.in_(wanted))))
+    missing = wanted - found
+    if missing:
+        raise LookupError(f"Categories not found: {sorted(missing)}")
+
+    # Part 3: nothing to do if the set of categories is the same
+    current = {category.id for category in package.categories}
+    if wanted == current:
+        return package
+
+    # Part 4: replace the coverage rows and apply RN-11, all in one transaction
+    db.execute(delete(Coverage).where(Coverage.package_id == package.id))
+    db.add_all(Coverage(package_id=package.id, category_id=category_id) for category_id in wanted)
+    if package.status == ReviewStatus.APPROVED:
+        package.status = ReviewStatus.PENDING
     db.commit()
     db.refresh(package)
     return package
